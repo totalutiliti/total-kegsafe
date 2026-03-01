@@ -1,0 +1,41 @@
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { ComponentService } from './component.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
+import { Role } from '@prisma/client';
+
+@Controller('api/components')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class ComponentController {
+    constructor(private readonly componentService: ComponentService) { }
+
+    @Get()
+    async findAll(@TenantId() tenantId: string) {
+        return this.componentService.findAll(tenantId);
+    }
+
+    @Get(':id')
+    async findById(@TenantId() tenantId: string, @Param('id') id: string) {
+        return this.componentService.findById(tenantId, id);
+    }
+
+    @Post()
+    @Roles(Role.ADMIN)
+    async create(@TenantId() tenantId: string, @Body() data: any) {
+        return this.componentService.create(tenantId, data);
+    }
+
+    @Patch(':id')
+    @Roles(Role.ADMIN)
+    async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() data: any) {
+        return this.componentService.update(tenantId, id, data);
+    }
+
+    @Delete(':id')
+    @Roles(Role.ADMIN)
+    async delete(@TenantId() tenantId: string, @Param('id') id: string) {
+        return this.componentService.delete(tenantId, id);
+    }
+}
