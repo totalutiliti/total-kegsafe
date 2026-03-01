@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KegSafe Tech — Manual do Usuário</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-card: #18181b;
+            --border: #27272a;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.15);
+            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            --green: #22c55e;
+            --blue: #3b82f6;
+            --red: #ef4444;
+            --purple: #a855f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ─── HERO ─── */
+        .hero {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 24px 60px;
+            overflow: hidden;
+            background: radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
+                        var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 span {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 32px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 32px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .hero-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ─── LAYOUT ─── */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ─── NAV / TOC ─── */
+        .toc {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 11, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
+        }
+
+        .toc-inner {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 0 24px;
+            max-width: 960px;
+            margin: 0 auto;
+            scrollbar-width: none;
+        }
+
+        .toc-inner::-webkit-scrollbar { display: none; }
+
+        .toc a {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .toc a:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* ─── SECTION ─── */
+        .section {
+            padding: 80px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section:last-child { border-bottom: none; }
+
+        .section-header {
+            margin-bottom: 48px;
+        }
+
+        .section-number {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+
+        .section h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            color: var(--text-primary);
+        }
+
+        .section p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            max-width: 720px;
+        }
+
+        /* ─── SCREENSHOT ─── */
+        .screenshot-wrapper {
+            margin: 32px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .screenshot-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #1a1a1d;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .screenshot-bar .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .screenshot-bar .dot.red { background: #ff5f57; }
+        .screenshot-bar .dot.yellow { background: #febc2e; }
+        .screenshot-bar .dot.green { background: #28c840; }
+
+        .screenshot-bar .url {
+            margin-left: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 4px 12px;
+            border-radius: 4px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .screenshot-wrapper img {
+            width: 100%;
+            display: block;
+        }
+
+        /* ─── FEATURE LIST ─── */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .feature-card {
+            padding: 20px;
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .feature-card:hover { border-color: rgba(245, 158, 11, 0.3); }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* ─── TABLE ─── */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .info-table th,
+        .info-table td {
+            text-align: left;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-secondary);
+        }
+
+        .info-table td { color: var(--text-secondary); }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-green { background: rgba(34,197,94,0.1); color: #22c55e; }
+        .badge-blue { background: rgba(59,130,246,0.1); color: #3b82f6; }
+        .badge-amber { background: rgba(245,158,11,0.1); color: #f59e0b; }
+        .badge-red { background: rgba(239,68,68,0.1); color: #ef4444; }
+        .badge-purple { background: rgba(168,85,247,0.1); color: #a855f7; }
+        .badge-zinc { background: rgba(161,161,170,0.1); color: #a1a1aa; }
+
+        /* ─── TIP / NOTE BOX ─── */
+        .tip-box {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .tip-box.info {
+            background: rgba(59,130,246,0.06);
+            border: 1px solid rgba(59,130,246,0.15);
+            color: #93c5fd;
+        }
+
+        .tip-box.warning {
+            background: rgba(245,158,11,0.06);
+            border: 1px solid rgba(245,158,11,0.15);
+            color: #fcd34d;
+        }
+
+        .tip-box.success {
+            background: rgba(34,197,94,0.06);
+            border: 1px solid rgba(34,197,94,0.15);
+            color: #86efac;
+        }
+
+        .tip-emoji {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ─── STEPS ─── */
+        .steps {
+            counter-reset: step;
+            margin: 24px 0;
+        }
+
+        .step {
+            counter-increment: step;
+            position: relative;
+            padding-left: 48px;
+            margin-bottom: 20px;
+        }
+
+        .step::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 1px solid rgba(245,158,11,0.3);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step strong {
+            color: var(--text-primary);
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            padding: 48px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer strong {
+            color: var(--accent);
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; }
+            .hero p { font-size: 15px; }
+            .section { padding: 48px 0; }
+            .section h2 { font-size: 24px; }
+            .features { grid-template-columns: 1fr; }
+            .hero-meta { flex-direction: column; gap: 8px; }
+        }
+
+        @media print {
+            .toc { display: none; }
+            .hero { min-height: auto; padding: 40px 24px; }
+            .section { padding: 40px 0; break-inside: avoid; }
+            .screenshot-wrapper { box-shadow: none; }
+            body { background: #fff; color: #111; }
+            .section p, .info-table td { color: #444; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<header class="hero">
+    <div class="hero-badge">📖 Manual do Usuário</div>
+    <h1>KegSafe <span>Tech</span></h1>
+    <p>Gestão inteligente de barris de chopp — rastreamento logístico, manutenção preditiva e controle total de ativos em uma única plataforma.</p>
+    <div class="hero-meta">
+        <span>📋 Versão 1.0 MVP</span>
+        <span>📅 Fevereiro 2026</span>
+        <span>🏢 Total Utiliti</span>
+    </div>
+</header>
+
+<!-- ═══════════════ TOC ═══════════════ -->
+<nav class="toc">
+    <div class="toc-inner">
+        <a href="#login">Login</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#barrels">Barris</a>
+        <a href="#barrel-detail">Detalhe Barril</a>
+        <a href="#logistics">Logística</a>
+        <a href="#maintenance">Manutenção</a>
+        <a href="#alerts">Alertas</a>
+        <a href="#clients">Clientes</a>
+        <a href="#geofences">Geofences</a>
+        <a href="#disposal">Descarte</a>
+        <a href="#reports">Relatórios</a>
+        <a href="#users">Usuários</a>
+        <a href="#components">Componentes</a>
+    </div>
+</nav>
+
+<!-- ═══════════════ 1. LOGIN ═══════════════ -->
+<div class="container">
+    <section class="section" id="login">
+        <div class="section-header">
+            <span class="section-number">Seção 01</span>
+            <h2>Login — Autenticação</h2>
+            <p>O acesso ao sistema é feito por email e senha. Cada usuário possui um perfil de acesso (Admin, Gestor, Logística ou Manutenção) que determina quais menus e funcionalidades estarão disponíveis.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/login</span>
+            </div>
+            <img src="img/01_login.png" alt="Tela de Login">
+        </div>
+
+        <h3>Como fazer login</h3>
+        <div class="steps">
+            <div class="step"><strong>Acesse o sistema</strong> — Abra o navegador e vá para o endereço do KegSafe Tech.</div>
+            <div class="step"><strong>Digite seu email</strong> — Insira o email cadastrado pelo administrador.</div>
+            <div class="step"><strong>Digite sua senha</strong> — Insira a senha fornecida.</div>
+            <div class="step"><strong>Clique em "Entrar"</strong> — Você será redirecionado ao Dashboard.</div>
+        </div>
+
+        <h3>Perfis de Acesso</h3>
+        <table class="info-table">
+            <thead>
+                <tr><th>Perfil</th><th>Descrição</th><th>Acesso</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge badge-red">ADMIN</span></td><td>Administrador do sistema</td><td>Todos os módulos + configurações</td></tr>
+                <tr><td><span class="badge badge-blue">MANAGER</span></td><td>Gestor operacional</td><td>Dashboard, barris, alertas, manutenção, clientes, relatórios</td></tr>
+                <tr><td><span class="badge badge-green">LOGISTICS</span></td><td>Operador logístico</td><td>Barris, logística</td></tr>
+                <tr><td><span class="badge badge-amber">MAINTENANCE</span></td><td>Técnico de manutenção</td><td>Barris, manutenção</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ═══════════════ 2. DASHBOARD ═══════════════ -->
+    <section class="section" id="dashboard">
+        <div class="section-header">
+            <span class="section-number">Seção 02</span>
+            <h2>Dashboard — Visão Geral</h2>
+            <p>O dashboard apresenta os principais indicadores de desempenho (KPIs) da frota de barris, incluindo total de ativos, custo por litro, giro médio e alertas ativos.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/dashboard</span>
+            </div>
+            <img src="img/02_dashboard.png" alt="Dashboard">
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(59,130,246,0.1)">📦</div>
+                <h4>Total de Barris</h4>
+                <p>Quantidade total de barris cadastrados e quantos estão disponíveis para uso.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(34,197,94,0.1)">💰</div>
+                <h4>Custo por Litro</h4>
+                <p>Custo médio de transporte por litro, calculado com base nos custos logísticos.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(168,85,247,0.1)">🔄</div>
+                <h4>Giro Médio</h4>
+                <p>Número médio de ciclos completos (ida e volta) por barril.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(239,68,68,0.1)">⚠️</div>
+                <h4>Alertas Ativos</h4>
+                <p>Total de alertas pendentes, com destaque para os de criticidade alta.</p>
+            </div>
+        </div>
+
+        <h3>Gráficos</h3>
+        <p><strong>Distribuição da Frota</strong> — Gráfico de rosca mostrando quantos barris estão em cada status (Ativo, Em Trânsito, No Cliente, Manutenção, Bloqueado, Perdido).</p>
+        <p><strong>Saúde dos Componentes</strong> — Gráfico de barras horizontais mostrando quantos componentes estão Verde (saudável), Amarelo (atenção) ou Vermelho (crítico).</p>
+    </section>
+
+    <!-- ═══════════════ 3. BARRIS ═══════════════ -->
+    <section class="section" id="barrels">
+        <div class="section-header">
+            <span class="section-number">Seção 03</span>
+            <h2>Barris — Lista de Ativos</h2>
+            <p>Tela principal de gerenciamento de barris. Exibe todos os barris cadastrados em formato de tabela com código interno, status, saúde dos componentes, fabricante, capacidade e último evento.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/barrels</span>
+            </div>
+            <img src="img/03_barrels.png" alt="Lista de Barris">
+        </div>
+
+        <h3>Funcionalidades</h3>
+        <div class="steps">
+            <div class="step"><strong>Busca por código</strong> — Procure barris pelo código interno (ex: KS-BAR-00001) usando o campo de pesquisa.</div>
+            <div class="step"><strong>Filtro por status</strong> — Filtre barris por status: Ativo, Em Trânsito, No Cliente, Manutenção, etc.</div>
+            <div class="step"><strong>Novo Barril</strong> — Clique no botão "Novo Barril" para abrir o formulário de cadastro com campos para fabricante, modelo da válvula, capacidade, peso, material e custo.</div>
+            <div class="step"><strong>Acessar detalhes</strong> — Clique no código interno (link laranja) para acessar a página de detalhes do barril.</div>
+        </div>
+
+        <h3>Status dos Barris</h3>
+        <table class="info-table">
+            <thead>
+                <tr><th>Status</th><th>Descrição</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge badge-green">Ativo</span></td><td>Barril disponível na fábrica para uso</td></tr>
+                <tr><td><span class="badge badge-blue">Em Trânsito</span></td><td>Barril expedido, a caminho do destino</td></tr>
+                <tr><td><span class="badge badge-purple">No Cliente</span></td><td>Barril entregue e em uso no ponto de venda</td></tr>
+                <tr><td><span class="badge badge-amber">Manutenção</span></td><td>Barril em processo de manutenção preventiva ou corretiva</td></tr>
+                <tr><td><span class="badge badge-red">Bloqueado</span></td><td>Barril bloqueado — necessita triagem ou manutenção obrigatória</td></tr>
+                <tr><td><span class="badge badge-zinc">Descartado</span></td><td>Barril retirado de operação permanentemente</td></tr>
+                <tr><td><span class="badge badge-red">Perdido</span></td><td>Barril sem atividade por 60+ dias, marcado automaticamente</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Semáforo de Saúde</h3>
+        <p>Cada barril possui um indicador de saúde baseado no componente em pior estado:</p>
+        <table class="info-table">
+            <thead><tr><th>Cor</th><th>Significado</th></tr></thead>
+            <tbody>
+                <tr><td><span style="color:#22c55e;font-size:20px">●</span> Verde</td><td>Todos componentes saudáveis (&lt; 80% do limite)</td></tr>
+                <tr><td><span style="color:#f59e0b;font-size:20px">●</span> Amarelo</td><td>Ao menos 1 componente entre 80% e 100% do limite</td></tr>
+                <tr><td><span style="color:#ef4444;font-size:20px">●</span> Vermelho</td><td>Ao menos 1 componente excedeu o limite — manutenção obrigatória</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ═══════════════ 4. DETALHE DO BARRIL ═══════════════ -->
+    <section class="section" id="barrel-detail">
+        <div class="section-header">
+            <span class="section-number">Seção 04</span>
+            <h2>Detalhe do Barril</h2>
+            <p>Visão completa de um barril individual, incluindo informações gerais, saúde de cada componente e histórico de movimentações.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/barrels/[id]</span>
+            </div>
+            <img src="img/04_barrel_detail.png" alt="Detalhe do Barril">
+        </div>
+
+        <h3>Informações Exibidas</h3>
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(59,130,246,0.1)">🔄</div>
+                <h4>Ciclos Totais</h4>
+                <p>Número de ciclos completos de uso do barril (ida ao cliente e volta à fábrica).</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(34,197,94,0.1)">📏</div>
+                <h4>Capacidade</h4>
+                <p>Volume do barril em litros (ex: 30L, 50L).</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(168,85,247,0.1)">⚖️</div>
+                <h4>Peso Tara</h4>
+                <p>Peso do barril vazio em quilogramas.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(245,158,11,0.1)">💲</div>
+                <h4>Custo de Aquisição</h4>
+                <p>Valor pago na compra do barril, em reais.</p>
+            </div>
+        </div>
+
+        <h3>Saúde dos Componentes</h3>
+        <p>Cada barril possui 6 componentes monitorados individualmente. O sistema calcula a saúde como <strong>MAX(% de ciclos usados, % de dias de uso)</strong> desde a última manutenção:</p>
+        <table class="info-table">
+            <thead><tr><th>Componente</th><th>Criticidade</th><th>O que faz</th></tr></thead>
+            <tbody>
+                <tr><td>Sifão (Spear)</td><td><span class="badge badge-red">Crítico</span></td><td>Tubo interno de extração do líquido</td></tr>
+                <tr><td>O-Ring</td><td><span class="badge badge-amber">Alta</span></td><td>Anel de vedação da válvula</td></tr>
+                <tr><td>Válvula Principal</td><td><span class="badge badge-red">Crítica</span></td><td>Mecanismo de abertura/fechamento para envase</td></tr>
+                <tr><td>Corpo do Barril</td><td><span class="badge badge-amber">Alta</span></td><td>Estrutura física do barril (inox/polietileno)</td></tr>
+                <tr><td>Chimb (Neck Ring)</td><td><span class="badge badge-blue">Média</span></td><td>Anel superior para encaixe da válvula</td></tr>
+                <tr><td>Válvula de Segurança</td><td><span class="badge badge-red">Crítica</span></td><td>Válvula de alívio de pressão</td></tr>
+            </tbody>
+        </table>
+
+        <div class="tip-box info">
+            <span class="tip-emoji">💡</span>
+            <div>Cada card de componente mostra uma barra de progresso com o percentual de uso, ciclos realizados vs. limite máximo, e a data da última manutenção.</div>
+        </div>
+
+        <h3>Timeline de Movimentações</h3>
+        <p>Histórico cronológico de todos os eventos do barril: expedição, entrega, coleta, recepção e manutenções.</p>
+    </section>
+
+    <!-- ═══════════════ 5. LOGÍSTICA ═══════════════ -->
+    <section class="section" id="logistics">
+        <div class="section-header">
+            <span class="section-number">Seção 05</span>
+            <h2>Logística — Movimentações</h2>
+            <p>Controle de todas as movimentações logísticas dos barris: expedição da fábrica, entrega ao cliente, coleta e recepção de volta à fábrica.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/logistics</span>
+            </div>
+            <img src="img/05_logistics.png" alt="Logística">
+        </div>
+
+        <h3>Fluxo Logístico</h3>
+        <div class="steps">
+            <div class="step"><strong>Expedição</strong> — Barril sai da fábrica. O sistema verifica se há componentes críticos antes de permitir a expedição.</div>
+            <div class="step"><strong>Entrega</strong> — Barril chega ao cliente. Registra GPS e associa ao ponto de venda.</div>
+            <div class="step"><strong>Coleta</strong> — Barril é retirado do cliente para retorno à fábrica.</div>
+            <div class="step"><strong>Recepção</strong> — Barril retorna à fábrica. Incrementa ciclo, recalcula saúde dos componentes e gera alertas se necessário.</div>
+        </div>
+
+        <div class="tip-box warning">
+            <span class="tip-emoji">⚠️</span>
+            <div><strong>Bloqueio na Expedição:</strong> Barris com componentes em estado VERMELHO não podem ser expedidos. O sistema exibirá um alerta e bloqueará a operação até que a manutenção seja realizada.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 6. MANUTENÇÃO ═══════════════ -->
+    <section class="section" id="maintenance">
+        <div class="section-header">
+            <span class="section-number">Seção 06</span>
+            <h2>Manutenção — Ordens de Serviço</h2>
+            <p>Gerenciamento de ordens de manutenção preventiva e corretiva. Inclui checklist de componentes, registro de custos e resolução de alertas.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/maintenance</span>
+            </div>
+            <img src="img/06_maintenance.png" alt="Manutenção">
+        </div>
+
+        <h3>Funcionalidades</h3>
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(245,158,11,0.1)">🔧</div>
+                <h4>Ordens de Manutenção</h4>
+                <p>Criação e acompanhamento de ordens de manutenção com status (Pendente, Em Progresso, Concluída).</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(34,197,94,0.1)">✅</div>
+                <h4>Checklist de Componentes</h4>
+                <p>Registro detalhado da manutenção de cada componente, com reset dos ciclos e atualização de custos.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(59,130,246,0.1)">🔍</div>
+                <h4>Triagem</h4>
+                <p>Verificação de integridade: barril intacto, com dano reparável, ou bloqueio por dano irreparável.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 7. ALERTAS ═══════════════ -->
+    <section class="section" id="alerts">
+        <div class="section-header">
+            <span class="section-number">Seção 07</span>
+            <h2>Alertas — Sistema Inteligente</h2>
+            <p>Central de alertas automáticos gerados pelo sistema. Os alertas são criados por 7 jobs agendados que monitoram a frota continuamente.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/alerts</span>
+            </div>
+            <img src="img/07_alerts.png" alt="Alertas">
+        </div>
+
+        <h3>Tipos de Alerta</h3>
+        <table class="info-table">
+            <thead><tr><th>Tipo</th><th>Frequência</th><th>Descrição</th></tr></thead>
+            <tbody>
+                <tr><td>Saúde do Componente</td><td>Diário 06:00</td><td>Componente atingiu 80%+ do limite de uso</td></tr>
+                <tr><td>Barril Ocioso</td><td>Diário 08:00</td><td>Barril parado no cliente por 15+ dias</td></tr>
+                <tr><td>Manutenção Atrasada</td><td>Diário 07:00</td><td>Ordem de manutenção pendente há 7+ dias</td></tr>
+                <tr><td>Barril Perdido</td><td>Diário 09:00</td><td>Sem atividade por 60+ dias — status muda para LOST</td></tr>
+                <tr><td>Violação de Geofence</td><td>A cada hora</td><td>Entrega fora da zona geográfica esperada</td></tr>
+                <tr><td>GPS Offline</td><td>A cada 6h</td><td>Sem sinal GPS por 48+ horas (Fase 2)</td></tr>
+                <tr><td>Cache Refresh</td><td>A cada 5 min</td><td>Atualização de cache para dashboard (Fase 2)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ações</h3>
+        <p><strong>Reconhecer</strong> — Marca o alerta como visto, sem resolvê-lo.</p>
+        <p><strong>Resolver</strong> — Marca o alerta como tratado. Alertas de componentes são automaticamente resolvidos quando a manutenção é concluída.</p>
+    </section>
+
+    <!-- ═══════════════ 8. CLIENTES ═══════════════ -->
+    <section class="section" id="clients">
+        <div class="section-header">
+            <span class="section-number">Seção 08</span>
+            <h2>Clientes — Pontos de Venda</h2>
+            <p>Cadastro e gestão dos clientes (bares, restaurantes, distribuidores) que recebem os barris.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/clients</span>
+            </div>
+            <img src="img/08_clients.png" alt="Clientes">
+        </div>
+
+        <h3>Cadastro de Cliente</h3>
+        <p>Clique em <strong>"Novo Cliente"</strong> para abrir o formulário com os campos:</p>
+        <table class="info-table">
+            <thead><tr><th>Campo</th><th>Descrição</th><th>Obrigatório</th></tr></thead>
+            <tbody>
+                <tr><td>Razão Social</td><td>Nome jurídico da empresa</td><td>Sim</td></tr>
+                <tr><td>Nome Fantasia</td><td>Nome comercial</td><td>Sim</td></tr>
+                <tr><td>CNPJ</td><td>14 dígitos, validação automática</td><td>Sim</td></tr>
+                <tr><td>Telefone</td><td>Contato do cliente</td><td>Não</td></tr>
+                <tr><td>Email</td><td>Email do cliente</td><td>Não</td></tr>
+                <tr><td>Endereço</td><td>Endereço completo</td><td>Não</td></tr>
+                <tr><td>Latitude / Longitude</td><td>Coordenadas GPS para criar geofence automática</td><td>Não</td></tr>
+            </tbody>
+        </table>
+
+        <div class="tip-box success">
+            <span class="tip-emoji">✅</span>
+            <div>Ao cadastrar um cliente com coordenadas GPS, o sistema cria automaticamente uma geofence do tipo CLIENT para monitorar entregas naquele local.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 9. GEOFENCES ═══════════════ -->
+    <section class="section" id="geofences">
+        <div class="section-header">
+            <span class="section-number">Seção 09</span>
+            <h2>Geofences — Zonas Geográficas</h2>
+            <p>Definição de zonas geográficas circulares para monitoramento de entregas e detecção de desvios.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/geofences</span>
+            </div>
+            <img src="img/09_geofences.png" alt="Geofences">
+        </div>
+
+        <h3>Tipos de Zona</h3>
+        <table class="info-table">
+            <thead><tr><th>Tipo</th><th>Uso</th></tr></thead>
+            <tbody>
+                <tr><td><span class="badge badge-blue">Fábrica</span></td><td>Zona da sede/fábrica — barris devem retornar aqui</td></tr>
+                <tr><td><span class="badge badge-green">Armazém</span></td><td>Centros de distribuição ou depósitos</td></tr>
+                <tr><td><span class="badge badge-purple">Cliente</span></td><td>Zona do ponto de venda — entregas devem estar dentro do raio</td></tr>
+            </tbody>
+        </table>
+
+        <p>Cada geofence possui <strong>nome, coordenadas (lat/lng) e raio em metros</strong>. O sistema utiliza o algoritmo de <strong>Haversine</strong> para calcular a distância entre o ponto de entrega e o centro da geofence.</p>
+    </section>
+
+    <!-- ═══════════════ 10. DESCARTE ═══════════════ -->
+    <section class="section" id="disposal">
+        <div class="section-header">
+            <span class="section-number">Seção 10</span>
+            <h2>Descarte — Fim de Vida</h2>
+            <p>Gestão do processo de descarte de barris que atingiram o fim de sua vida útil. O fluxo passa por sugestão, aprovação e execução.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/disposal</span>
+            </div>
+            <img src="img/10_disposal.png" alt="Descarte">
+        </div>
+
+        <h3>Fluxo de Descarte</h3>
+        <div class="steps">
+            <div class="step"><strong>Sugestão</strong> — O sistema lista barris candidatos a descarte (componentes excessivamente gastos, custo de manutenção elevado).</div>
+            <div class="step"><strong>Criação</strong> — Técnico cria ordem de descarte com justificativa.</div>
+            <div class="step"><strong>Aprovação (MANAGER)</strong> — Gestor revisa e aprova ou rejeita.</div>
+            <div class="step"><strong>Execução (ADMIN)</strong> — Administrador finaliza o descarte. Status do barril muda para DISPOSED.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 11. RELATÓRIOS ═══════════════ -->
+    <section class="section" id="reports">
+        <div class="section-header">
+            <span class="section-number">Seção 11</span>
+            <h2>Relatórios</h2>
+            <p>Relatórios analíticos sobre a frota de barris, custos, manutenção e perdas.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/reports</span>
+            </div>
+            <img src="img/11_reports.png" alt="Relatórios">
+        </div>
+
+        <h3>Relatórios Disponíveis</h3>
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(59,130,246,0.1)">📊</div>
+                <h4>Saúde da Frota</h4>
+                <p>Distribuição dos barris por status e saúde dos componentes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(34,197,94,0.1)">💵</div>
+                <h4>Custo por Litro</h4>
+                <p>Evolução do custo operacional por litro transportado.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(168,85,247,0.1)">📈</div>
+                <h4>Giro de Ativos</h4>
+                <p>Frequência de uso e rotatividade da frota.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background:rgba(239,68,68,0.1)">📉</div>
+                <h4>Relatório de Perdas</h4>
+                <p>Barris perdidos, bloqueados e descartados com impacto financeiro.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 12. USUÁRIOS ═══════════════ -->
+    <section class="section" id="users">
+        <div class="section-header">
+            <span class="section-number">Seção 12</span>
+            <h2>Configurações — Usuários</h2>
+            <p>Gerenciamento de usuários do sistema. Apenas administradores têm acesso a esta tela.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/settings/users</span>
+            </div>
+            <img src="img/12_users.png" alt="Usuários">
+        </div>
+
+        <h3>Cadastro de Usuário</h3>
+        <p>Clique em <strong>"Novo Usuário"</strong> para criar uma conta. Campos obrigatórios:</p>
+        <table class="info-table">
+            <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+            <tbody>
+                <tr><td>Nome Completo</td><td>Nome do colaborador</td></tr>
+                <tr><td>Email</td><td>Email corporativo (será usado como login)</td></tr>
+                <tr><td>Senha</td><td>Mínimo 6 caracteres</td></tr>
+                <tr><td>Perfil</td><td>Admin, Gestor, Logística ou Manutenção</td></tr>
+            </tbody>
+        </table>
+
+        <div class="tip-box warning">
+            <span class="tip-emoji">⚠️</span>
+            <div><strong>Proteção de último admin:</strong> O sistema impede a remoção ou alteração de perfil do último administrador ativo, garantindo que sempre haja ao menos 1 admin.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ 13. COMPONENTES ═══════════════ -->
+    <section class="section" id="components">
+        <div class="section-header">
+            <span class="section-number">Seção 13</span>
+            <h2>Configurações — Componentes</h2>
+            <p>Configuração dos tipos de componentes monitorados em cada barril. Define os limites de ciclos e dias que determinam quando a manutenção é necessária.</p>
+        </div>
+
+        <div class="screenshot-wrapper">
+            <div class="screenshot-bar">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <span class="url">localhost:3000/settings/components</span>
+            </div>
+            <img src="img/13_components.png" alt="Componentes">
+        </div>
+
+        <h3>Parâmetros de Cada Componente</h3>
+        <table class="info-table">
+            <thead><tr><th>Parâmetro</th><th>Descrição</th></tr></thead>
+            <tbody>
+                <tr><td>Max Ciclos</td><td>Número máximo de ciclos antes de manutenção obrigatória</td></tr>
+                <tr><td>Max Dias</td><td>Número máximo de dias desde a última manutenção</td></tr>
+                <tr><td>Criticidade</td><td>LOW, MEDIUM, HIGH ou CRITICAL — define a prioridade dos alertas</td></tr>
+            </tbody>
+        </table>
+
+        <div class="tip-box info">
+            <span class="tip-emoji">💡</span>
+            <div><strong>Cálculo da saúde:</strong> healthPercentage = MAX(ciclosUsados / maxCiclos × 100, diasUsados / maxDias × 100). Quando atinge 80%, passa para AMARELO. Acima de 100%, fica VERMELHO.</div>
+        </div>
+    </section>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+    <p><strong>KegSafe Tech</strong> — Manual do Usuário v1.0</p>
+    <p>© 2026 Total Utiliti. Todos os direitos reservados.</p>
+</footer>
+
+</body>
+</html>

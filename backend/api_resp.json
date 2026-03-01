@@ -1,0 +1,13 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNzhhYzU2OS04YjM2LTQxYTktYWNkZC1jYmQ4MzQ0OGE5NjkiLCJ0ZW5hbnRJZCI6IjlkNjM4NzA1LTk2M2ItNGRmMC04ZTNjLTZiOWQzYzY5OWIzOCIsInJvbGUiOiJBRE1JTiIsImVtYWlsIjoiYWRtaW5AcGV0cm9wb2xpcy5jb20uYnIiLCJpYXQiOjE3NzIyOTY0OTAsImV4cCI6MTc3MjI5NzM5MH0.U1YkvrfuKYmZYT2d4bH8o7fFjl88RizmPFVE8JRAYmg",
+  "refreshToken": "956b2435d7f6917c24f41cd9c18c4cb7997ca1302060bbdb1b76c52470479a08b99e6b05724dac4bc0f30aab5e772050561082c56cf51968f59161239b694056",
+  "expiresIn": "15m",
+  "user": {
+    "id": "d78ac569-8b36-41a9-acdd-cbd83448a969",
+    "name": "Admin Petrópolis",
+    "email": "admin@petropolis.com.br",
+    "role": "ADMIN",
+    "tenantId": "9d638705-963b-4df0-8e3c-6b9d3c699b38",
+    "tenantName": "Cervejaria Petrópolis"
+  }
+}
