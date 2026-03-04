@@ -33,8 +33,8 @@ export default function UsersPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Usuários</h1>
-                        <p className="text-sm text-zinc-400 mt-1">{users.length} usuários</p>
+                        <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
+                        <p className="text-sm text-muted-foreground mt-1">{users.length} usuários</p>
                     </div>
                     <CreateUserDialog onCreated={fetchUsers} />
                 </div>
@@ -43,18 +43,18 @@ export default function UsersPage() {
                     {users.map((user) => {
                         const rc = roleConfig[user.role] || roleConfig.LOGISTICS;
                         return (
-                            <Card key={user.id} className="border-zinc-800 bg-zinc-900/50">
+                            <Card key={user.id} className="border-border bg-card/50">
                                 <CardContent className="flex items-center gap-4 p-5">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 text-sm font-bold">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground text-sm font-bold">
                                         {user.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <h3 className="text-sm font-medium text-zinc-200">{user.name}</h3>
+                                            <h3 className="text-sm font-medium text-foreground">{user.name}</h3>
                                             <Badge variant="outline" className={`text-[10px] ${rc.color}`}>{rc.label}</Badge>
                                             {!user.isActive && <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-400 border-red-500/20">Inativo</Badge>}
                                         </div>
-                                        <p className="text-xs text-zinc-500">{user.email}</p>
+                                        <p className="text-xs text-muted-foreground">{user.email}</p>
                                     </div>
                                 </CardContent>
                             </Card>

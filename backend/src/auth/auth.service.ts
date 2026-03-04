@@ -10,6 +10,7 @@ import {
     AccountDisabledException,
     AccountLockedException,
 } from '../shared/exceptions/auth.exceptions.js';
+import { HashingService } from '../shared/services/hashing.service.js';
 
 export interface JwtPayload {
     sub: string;       // userId
@@ -24,6 +25,7 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly config: ConfigService,
+        private readonly hashingService: HashingService,
     ) { }
 
     async login(email: string, password: string, ipAddress?: string, userAgent?: string) {
@@ -52,8 +54,17 @@ export class AuthService {
             throw new AccountDisabledException();
         }
 
-        // Validar senha
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+        // Validar senha (com migração lazy de bcrypt → Argon2id)
+        const isBcrypt = user.passwordHash.startsWith('$2b$') || user.passwordHash.startsWith('$2a$');
+        let isPasswordValid: boolean;
+
+        if (isBcrypt) {
+            // Hash legado (bcrypt) — verificar sem pepper
+            isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+        } else {
+            // Hash moderno (Argon2id + pepper)
+            isPasswordValid = await this.hashingService.verify(user.passwordHash, password);
+        }
 
         if (!isPasswordValid) {
             // Incrementar tentativas falhas
@@ -67,6 +78,15 @@ export class AuthService {
                 },
             });
             throw new InvalidCredentialsException();
+        }
+
+        // Migração lazy: re-hash com Argon2id + Pepper se ainda era bcrypt
+        if (isBcrypt) {
+            const newHash = await this.hashingService.hash(password);
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { passwordHash: newHash },
+            });
         }
 
         // Reset tentativas falhas e atualizar último login

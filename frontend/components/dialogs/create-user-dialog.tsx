@@ -40,31 +40,31 @@ export function CreateUserDialog({ onCreated }: { onCreated?: () => void }) {
                     <Plus className="mr-2 h-4 w-4" /> Novo Usuário
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+            <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Nome Completo</Label>
+                        <Label className="text-muted-foreground">Nome Completo</Label>
                         <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                            className="border-zinc-700 bg-zinc-800/50 text-white" />
+                            className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Email</Label>
+                        <Label className="text-muted-foreground">Email</Label>
                         <Input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                            className="border-zinc-700 bg-zinc-800/50 text-white" />
+                            className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Senha</Label>
+                        <Label className="text-muted-foreground">Senha</Label>
                         <Input type="password" required minLength={8} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                            className="border-zinc-700 bg-zinc-800/50 text-white" />
+                            className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Perfil</Label>
+                        <Label className="text-muted-foreground">Perfil</Label>
                         <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
-                            <SelectTrigger className="border-zinc-700 bg-zinc-800/50 text-white"><SelectValue /></SelectTrigger>
-                            <SelectContent className="border-zinc-700 bg-zinc-900">
+                            <SelectTrigger className="border-border bg-muted/50 text-foreground"><SelectValue /></SelectTrigger>
+                            <SelectContent className="border-border bg-card">
                                 <SelectItem value="ADMIN">Administrador</SelectItem>
                                 <SelectItem value="MANAGER">Gerente</SelectItem>
                                 <SelectItem value="LOGISTICS">Logística</SelectItem>
@@ -73,7 +73,7 @@ export function CreateUserDialog({ onCreated }: { onCreated?: () => void }) {
                         </Select>
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400">Cancelar</Button>
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
                             {loading ? 'Salvando...' : 'Criar Usuário'}
                         </Button>

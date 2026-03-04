@@ -22,18 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className={`${inter.variable} font-sans antialiased bg-zinc-950 text-zinc-100`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProvider>
           <ReactQueryProvider>
             {children}
             <Toaster
               position="top-right"
               toastOptions={{
-                style: {
-                  background: 'hsl(240, 5%, 13%)',
-                  border: '1px solid hsl(240, 5%, 20%)',
-                  color: 'hsl(0, 0%, 90%)',
-                },
+                className: 'bg-card border-border text-foreground',
               }}
             />
           </ReactQueryProvider>
