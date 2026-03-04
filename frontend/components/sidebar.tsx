@@ -31,7 +31,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
     { name: 'Barris', href: '/barrels', icon: Package, roles: ['ADMIN', 'MANAGER', 'LOGISTICS', 'MAINTENANCE'] },
-    { name: 'Logística', href: '/logistics', icon: Truck, roles: ['ADMIN', 'MANAGER', 'LOGISTICS'] },
+    { name: 'Logística', href: '/logistics', icon: Truck, roles: ['ADMIN', 'LOGISTICS'] },
     { name: 'Manutenção', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },
     { name: 'Alertas', href: '/alerts', icon: AlertTriangle, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },
     { name: 'Clientes', href: '/clients', icon: Building2, roles: ['ADMIN', 'MANAGER'] },
@@ -63,8 +63,8 @@ export function Sidebar() {
                         <Package className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-bold text-white">KegSafe</h1>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Tech Platform</p>
+                        <h1 className="text-sm font-bold text-foreground">KegSafe</h1>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Tech Platform</p>
                     </div>
                 </div>
                 {/* Close button — mobile only */}
@@ -72,18 +72,18 @@ export function Sidebar() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsOpen(false)}
-                    className="h-8 w-8 text-zinc-400 hover:text-white lg:hidden"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
                     aria-label="Fechar menu"
                 >
                     <X className="h-5 w-5" />
                 </Button>
             </div>
 
-            <Separator className="bg-zinc-800" />
+            <Separator className="bg-border" />
 
             {/* Navigation */}
             <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Menu principal">
-                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Menu</p>
+                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Menu</p>
                 {filteredNav.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                     return (
@@ -97,10 +97,10 @@ export function Sidebar() {
                                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                                 isActive
                                     ? 'bg-amber-500/10 text-amber-500 shadow-sm'
-                                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                             )}
                         >
-                            <item.icon className={cn('h-4 w-4', isActive ? 'text-amber-500' : 'text-zinc-500')} aria-hidden="true" />
+                            <item.icon className={cn('h-4 w-4', isActive ? 'text-amber-500' : 'text-muted-foreground')} aria-hidden="true" />
                             {item.name}
                         </Link>
                     );
@@ -108,8 +108,8 @@ export function Sidebar() {
 
                 {filteredSettings.length > 0 && (
                     <>
-                        <Separator className="my-3 bg-zinc-800" />
-                        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Configurações</p>
+                        <Separator className="my-3 bg-border" />
+                        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Configurações</p>
                         {filteredSettings.map((item) => {
                             const isActive = pathname === item.href;
                             return (
@@ -123,10 +123,10 @@ export function Sidebar() {
                                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                                         isActive
                                             ? 'bg-amber-500/10 text-amber-500'
-                                            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                                     )}
                                 >
-                                    <item.icon className={cn('h-4 w-4', isActive ? 'text-amber-500' : 'text-zinc-500')} aria-hidden="true" />
+                                    <item.icon className={cn('h-4 w-4', isActive ? 'text-amber-500' : 'text-muted-foreground')} aria-hidden="true" />
                                     {item.name}
                                 </Link>
                             );
@@ -135,7 +135,7 @@ export function Sidebar() {
                 )}
             </nav>
 
-            <Separator className="bg-zinc-800" />
+            <Separator className="bg-border" />
 
             {/* User Info + Theme Toggle */}
             <div className="p-4 space-y-3">
@@ -144,7 +144,7 @@ export function Sidebar() {
                     variant="ghost"
                     size="sm"
                     onClick={toggleTheme}
-                    className="w-full justify-start gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                    className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-accent"
                     aria-label={theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
                 >
                     {theme === 'dark' ? (
@@ -157,20 +157,20 @@ export function Sidebar() {
 
                 {/* User info */}
                 <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 border border-zinc-700">
-                        <AvatarFallback className="bg-zinc-800 text-xs text-zinc-300">
+                    <Avatar className="h-8 w-8 border border-border">
+                        <AvatarFallback className="bg-muted text-xs text-muted-foreground">
                             {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-zinc-200 truncate">{user?.name}</p>
-                        <p className="text-[11px] text-zinc-500">{user?.role}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{user?.role}</p>
                     </div>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={logout}
-                        className="h-8 w-8 text-zinc-500 hover:text-red-400"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-400"
                         aria-label="Sair da conta"
                     >
                         <LogOut className="h-4 w-4" aria-hidden="true" />
@@ -187,7 +187,7 @@ export function Sidebar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(true)}
-                className="fixed top-4 left-4 z-40 h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 lg:hidden"
+                className="fixed top-4 left-4 z-40 h-10 w-10 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent lg:hidden"
                 aria-label="Abrir menu"
             >
                 <Menu className="h-5 w-5" />
@@ -205,7 +205,7 @@ export function Sidebar() {
             {/* Sidebar — desktop: always visible; mobile: overlay */}
             <aside
                 className={cn(
-                    'flex h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform duration-300 ease-in-out',
+                    'flex h-screen w-64 flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out',
                     // Desktop: static
                     'hidden lg:flex',
                     // Mobile: fixed overlay (shown via isOpen below)
@@ -217,7 +217,7 @@ export function Sidebar() {
             {/* Sidebar — mobile overlay */}
             <aside
                 className={cn(
-                    'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform duration-300 ease-in-out lg:hidden',
+                    'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out lg:hidden',
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >

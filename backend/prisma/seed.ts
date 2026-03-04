@@ -1,5 +1,5 @@
 import { PrismaClient, Role, Criticality, GeofenceType, BarrelStatus, HealthScore } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
@@ -7,6 +7,20 @@ import pg from 'pg';
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+
+const PEPPER = process.env.PEPPER_SECRET;
+if (!PEPPER) {
+    throw new Error('PEPPER_SECRET não configurado nas variáveis de ambiente (necessário para seed)');
+}
+
+async function hashPassword(password: string): Promise<string> {
+    return argon2.hash(password + PEPPER, {
+        type: argon2.argon2id,
+        memoryCost: 65536,
+        timeCost: 3,
+        parallelism: 1,
+    });
+}
 
 const users = [
     { name: 'Administrador', email: 'admin@petropolis.com.br', role: Role.ADMIN, password: 'Admin@123' },
@@ -65,7 +79,7 @@ async function main() {
                     name: u.name,
                     email: u.email,
                     role: u.role,
-                    passwordHash: await bcrypt.hash(u.password, 10),
+                    passwordHash: await hashPassword(u.password),
                 },
             });
             usersCreated++;

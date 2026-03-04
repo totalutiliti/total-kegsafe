@@ -29,12 +29,12 @@ export default function GeofencesPage() {
     };
 
     return (
-        <RoleGuard allowedRoles={['ADMIN']}>
+        <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Geofences</h1>
-                        <p className="text-sm text-zinc-400 mt-1">{geofences.length} zonas cadastradas</p>
+                        <h1 className="text-2xl font-bold text-foreground">Geofences</h1>
+                        <p className="text-sm text-muted-foreground mt-1">{geofences.length} zonas cadastradas</p>
                     </div>
                     <CreateGeofenceDialog onCreated={fetchGeofences} />
                 </div>
@@ -43,19 +43,19 @@ export default function GeofencesPage() {
                     {geofences.map((geo) => {
                         const tc = typeConfig[geo.type] || typeConfig.CLIENT;
                         return (
-                            <Card key={geo.id} className="border-zinc-800 bg-zinc-900/50">
+                            <Card key={geo.id} className="border-border bg-card/50">
                                 <CardContent className="p-5">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-sm font-medium text-zinc-200 truncate">{geo.name}</h3>
+                                        <h3 className="text-sm font-medium text-foreground truncate">{geo.name}</h3>
                                         <Badge variant="outline" className={`text-[10px] ${tc.color}`}>{tc.label}</Badge>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <Radio className="h-3 w-3" /> Raio: {geo.radiusMeters}m
                                     </div>
-                                    <p className="text-xs text-zinc-600 mt-1 font-mono">
+                                    <p className="text-xs text-muted-foreground mt-1 font-mono">
                                         {Number(geo.latitude).toFixed(4)}, {Number(geo.longitude).toFixed(4)}
                                     </p>
-                                    {geo.client && <p className="text-xs text-zinc-500 mt-2">Cliente: {geo.client.name}</p>}
+                                    {geo.client && <p className="text-xs text-muted-foreground mt-2">Cliente: {geo.client.name}</p>}
                                 </CardContent>
                             </Card>
                         );
