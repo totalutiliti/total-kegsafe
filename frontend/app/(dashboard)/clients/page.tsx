@@ -34,42 +34,42 @@ export default function ClientsPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Clientes</h1>
-                        <p className="text-sm text-zinc-400 mt-1">{total} clientes cadastrados</p>
+                        <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
+                        <p className="text-sm text-muted-foreground mt-1">{total} clientes cadastrados</p>
                     </div>
                     <CreateClientDialog onCreated={fetchClients} />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {clients.map((client) => (
-                        <Card key={client.id} className="border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <Card key={client.id} className="border-border bg-card/50 hover:border-accent transition-colors">
                             <CardContent className="p-5">
                                 <div className="flex items-start gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 flex-shrink-0">
                                         <Building2 className="h-5 w-5 text-purple-400" />
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="text-sm font-medium text-zinc-200 truncate">{client.tradeName || client.name}</h3>
-                                        <p className="text-xs text-zinc-500 truncate">{client.name}</p>
+                                        <h3 className="text-sm font-medium text-foreground truncate">{client.tradeName || client.name}</h3>
+                                        <p className="text-xs text-muted-foreground truncate">{client.name}</p>
                                         <div className="mt-3 space-y-1">
                                             {client.phone && (
-                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     <Phone className="h-3 w-3" /> {client.phone}
                                                 </div>
                                             )}
                                             {client.email && (
-                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     <Mail className="h-3 w-3" /> {client.email}
                                                 </div>
                                             )}
                                             {client.address && (
-                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     <MapPin className="h-3 w-3" /> <span className="truncate">{client.address}</span>
                                                 </div>
                                             )}
                                         </div>
                                         {client.geofences?.length > 0 && (
-                                            <Badge variant="outline" className="mt-2 text-[10px] border-zinc-700 text-zinc-500">
+                                            <Badge variant="outline" className="mt-2 text-[10px] border-border text-muted-foreground">
                                                 {client.geofences.length} geofence(s)
                                             </Badge>
                                         )}
@@ -83,7 +83,7 @@ export default function ClientsPage() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-zinc-500">
+                        <p className="text-sm text-muted-foreground">
                             Página {page} de {totalPages}
                         </p>
                         <div className="flex gap-2">
@@ -92,7 +92,7 @@ export default function ClientsPage() {
                                 size="sm"
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                                className="border-border text-foreground hover:bg-accent"
                             >
                                 <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                             </Button>
@@ -101,7 +101,7 @@ export default function ClientsPage() {
                                 size="sm"
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
-                                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                                className="border-border text-foreground hover:bg-accent"
                             >
                                 Próximo <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>

@@ -1,0 +1,153 @@
+# ============================================================================
+# KegSafe Tech — CI/CD Deploy to Azure (App Service + Container Registry)
+# ============================================================================
+#
+# Pre-requisitos no Azure:
+#   1. Resource Group: rg-kegsafe-prod
+#   2. Azure Container Registry (ACR): kegsafeacr
+#   3. App Service Plan: asp-kegsafe-prod (Linux, B1+)
+#   4. App Service Backend: kegsafe-backend
+#   5. App Service Frontend: kegsafe-frontend
+#   6. Azure Database for PostgreSQL - Flexible Server
+#
+# Secrets necessários no GitHub (Settings > Secrets > Actions):
+#   - AZURE_CREDENTIALS          → JSON do service principal (az ad sp create-for-rbac)
+#   - ACR_LOGIN_SERVER            → kegsafeacr.azurecr.io
+#   - ACR_USERNAME                → username do ACR
+#   - ACR_PASSWORD                → password do ACR
+#   - DATABASE_URL                → postgresql://user:pass@host:5432/kegsafe_prod?sslmode=require
+#   - JWT_SECRET                  → secret forte (openssl rand -base64 32)
+#   - JWT_REFRESH_SECRET          → secret forte (openssl rand -base64 32)
+#   - CORS_ORIGINS                → https://kegsafe-frontend.azurewebsites.net
+#   - NEXT_PUBLIC_API_URL         → https://kegsafe-backend.azurewebsites.net
+# ============================================================================
+
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+
+jobs:
+  # -------------------------------------------------------
+  # Build & push backend image
+  # -------------------------------------------------------
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/kegsafe-backend:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/kegsafe-backend:latest
+
+  # -------------------------------------------------------
+  # Build & push frontend image
+  # -------------------------------------------------------
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/kegsafe-frontend:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/kegsafe-frontend:latest
+
+  # -------------------------------------------------------
+  # Deploy backend to Azure App Service
+  # -------------------------------------------------------
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: build-backend
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy backend to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: kegsafe-backend
+          images: ${{ env.ACR_LOGIN_SERVER }}/kegsafe-backend:${{ github.sha }}
+
+      - name: Configure backend environment
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: kegsafe-backend
+          app-settings-json: |
+            [
+              { "name": "NODE_ENV",               "value": "production" },
+              { "name": "PORT",                    "value": "8080" },
+              { "name": "DATABASE_URL",            "value": "${{ secrets.DATABASE_URL }}" },
+              { "name": "JWT_SECRET",              "value": "${{ secrets.JWT_SECRET }}" },
+              { "name": "JWT_EXPIRATION",          "value": "15m" },
+              { "name": "JWT_REFRESH_SECRET",      "value": "${{ secrets.JWT_REFRESH_SECRET }}" },
+              { "name": "JWT_REFRESH_EXPIRATION",  "value": "7d" },
+              { "name": "CORS_ORIGINS",            "value": "${{ secrets.CORS_ORIGINS }}" },
+              { "name": "WEBSITES_PORT",           "value": "8080" }
+            ]
+
+  # -------------------------------------------------------
+  # Deploy frontend to Azure App Service
+  # -------------------------------------------------------
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy frontend to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: kegsafe-frontend
+          images: ${{ env.ACR_LOGIN_SERVER }}/kegsafe-frontend:${{ github.sha }}
+
+      - name: Configure frontend environment
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: kegsafe-frontend
+          app-settings-json: |
+            [
+              { "name": "NODE_ENV",       "value": "production" },
+              { "name": "PORT",           "value": "8080" },
+              { "name": "HOSTNAME",       "value": "0.0.0.0" },
+              { "name": "WEBSITES_PORT",  "value": "8080" }
+            ]

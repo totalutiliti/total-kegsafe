@@ -4,6 +4,7 @@ import { ClsModule } from 'nestjs-cls';
 import { GlobalExceptionFilter } from './filters/http-exception.filter.js';
 import { AuditInterceptor } from './interceptors/audit.interceptor.js';
 import { StructuredLogger } from './services/logger.service.js';
+import { HashingService } from './services/hashing.service.js';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { StructuredLogger } from './services/logger.service.js';
     ],
     providers: [
         StructuredLogger,
+        HashingService,
         {
             provide: APP_FILTER,
             useClass: GlobalExceptionFilter,
@@ -25,6 +27,6 @@ import { StructuredLogger } from './services/logger.service.js';
             useClass: AuditInterceptor,
         },
     ],
-    exports: [StructuredLogger],
+    exports: [StructuredLogger, HashingService],
 })
 export class SharedModule { }

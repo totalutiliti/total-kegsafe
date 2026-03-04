@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 
+export const ROLE_HOME: Record<string, string> = {
+    ADMIN: '/dashboard',
+    MANAGER: '/dashboard',
+    LOGISTICS: '/barrels',
+    MAINTENANCE: '/barrels',
+};
+
 interface User {
     id: string;
     tenantId: string;

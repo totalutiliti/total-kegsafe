@@ -9,7 +9,7 @@ function Skeleton({
     return (
         <div
             className={cn(
-                'animate-pulse rounded-lg bg-zinc-800/60',
+                'animate-pulse rounded-lg bg-muted/60',
                 className
             )}
             {...props}
@@ -23,7 +23,7 @@ export function DashboardSkeleton() {
             {/* KPI Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-3">
+                    <div key={i} className="rounded-xl border border-border bg-card/50 p-6 space-y-3">
                         <Skeleton className="h-3 w-24" />
                         <Skeleton className="h-8 w-20" />
                         <Skeleton className="h-2 w-16" />
@@ -32,11 +32,11 @@ export function DashboardSkeleton() {
             </div>
             {/* Charts */}
             <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <div className="rounded-xl border border-border bg-card/50 p-6">
                     <Skeleton className="h-4 w-40 mb-4" />
                     <Skeleton className="h-48 w-full rounded-xl" />
                 </div>
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <div className="rounded-xl border border-border bg-card/50 p-6">
                     <Skeleton className="h-4 w-40 mb-4" />
                     <Skeleton className="h-48 w-full rounded-xl" />
                 </div>
@@ -44,7 +44,7 @@ export function DashboardSkeleton() {
             {/* Mini cards */}
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-2">
+                    <div key={i} className="rounded-xl border border-border bg-card/50 p-4 space-y-2">
                         <Skeleton className="h-6 w-8" />
                         <Skeleton className="h-3 w-16" />
                     </div>
@@ -68,15 +68,15 @@ export function TableSkeleton({ rows = 8 }: { rows?: number }) {
                 <Skeleton className="h-10 w-32 rounded-lg" />
             </div>
             {/* Table header */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div className="flex gap-4 p-4 border-b border-zinc-800">
+            <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
+                <div className="flex gap-4 p-4 border-b border-border">
                     {[...Array(6)].map((_, i) => (
                         <Skeleton key={i} className="h-3 w-20" />
                     ))}
                 </div>
                 {/* Table rows */}
                 {[...Array(rows)].map((_, i) => (
-                    <div key={i} className="flex gap-4 p-4 border-b border-zinc-800/50">
+                    <div key={i} className="flex gap-4 p-4 border-b border-border/50">
                         {[...Array(6)].map((_, j) => (
                             <Skeleton key={j} className="h-4 w-20" />
                         ))}
@@ -96,7 +96,7 @@ export function CardGridSkeleton({ count = 4 }: { count?: number }) {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[...Array(count)].map((_, i) => (
-                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-3">
+                    <div key={i} className="rounded-xl border border-border bg-card/50 p-6 space-y-3">
                         <div className="flex items-center gap-3">
                             <Skeleton className="h-10 w-10 rounded-full" />
                             <div className="space-y-2 flex-1">
@@ -125,7 +125,7 @@ export function DetailSkeleton() {
             {/* Info cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-3">
+                    <div key={i} className="rounded-xl border border-border bg-card/50 p-6 space-y-3">
                         <Skeleton className="h-3 w-20" />
                         <Skeleton className="h-8 w-16" />
                     </div>
@@ -135,7 +135,7 @@ export function DetailSkeleton() {
             <Skeleton className="h-5 w-40" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+                    <div key={i} className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
                         <div className="flex justify-between">
                             <Skeleton className="h-4 w-28" />
                             <Skeleton className="h-5 w-16 rounded-full" />

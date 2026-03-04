@@ -7,6 +7,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton';
 import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { RoleGuard } from '@/components/role-guard';
+import Link from 'next/link';
 
 const STATUS_COLORS: Record<string, string> = {
     active: '#22c55e',
@@ -51,79 +52,87 @@ export default function DashboardPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                    <p className="text-sm text-zinc-400 mt-1">Visão geral da frota e indicadores-chave</p>
+                    <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Visão geral da frota e indicadores-chave</p>
                 </div>
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-zinc-800 bg-zinc-900/50">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Total Barris</p>
-                                    <p className="mt-2 text-3xl font-bold text-white">{barrels.total || 0}</p>
-                                    <p className="mt-1 text-xs text-zinc-500">{barrels.active || 0} disponíveis</p>
+                    <Link href="/barrels">
+                        <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-blue-500/40 hover:bg-card/80">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Barris</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">{barrels.total || 0}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">{barrels.active || 0} disponíveis</p>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                                        <Package className="h-6 w-6 text-blue-400" />
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                                    <Package className="h-6 w-6 text-blue-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="border-zinc-800 bg-zinc-900/50">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Custo/Litro</p>
-                                    <p className="mt-2 text-3xl font-bold text-white">R$ {costData?.costPerLiter || '0.00'}</p>
-                                    <p className="mt-1 text-xs text-zinc-500">{costData?.totalLiters || 0}L transportados</p>
+                    <Link href="/reports">
+                        <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-green-500/40 hover:bg-card/80">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Custo/Litro</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">R$ {costData?.costPerLiter || '0.00'}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">{costData?.totalLiters || 0}L transportados</p>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
+                                        <DollarSign className="h-6 w-6 text-green-400" />
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
-                                    <DollarSign className="h-6 w-6 text-green-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="border-zinc-800 bg-zinc-900/50">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Giro Médio</p>
-                                    <p className="mt-2 text-3xl font-bold text-white">{turnoverData?.avgCyclesPerBarrel || 0}</p>
-                                    <p className="mt-1 text-xs text-zinc-500">ciclos/barril</p>
+                    <Link href="/reports">
+                        <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-purple-500/40 hover:bg-card/80">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Giro Médio</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">{turnoverData?.avgCyclesPerBarrel || 0}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">ciclos/barril</p>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
+                                        <TrendingUp className="h-6 w-6 text-purple-400" />
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
-                                    <TrendingUp className="h-6 w-6 text-purple-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="border-zinc-800 bg-zinc-900/50">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Alertas Ativos</p>
-                                    <p className="mt-2 text-3xl font-bold text-white">{alertCounts?.total || 0}</p>
-                                    <p className="mt-1 text-xs text-zinc-500">{alertCounts?.critical || 0} críticos</p>
+                    <Link href="/alerts">
+                        <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-red-500/40 hover:bg-card/80">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Alertas Ativos</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">{alertCounts?.total || 0}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">{alertCounts?.critical || 0} críticos</p>
+                                    </div>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
+                                        <AlertTriangle className="h-6 w-6 text-red-400" />
+                                    </div>
                                 </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
-                                    <AlertTriangle className="h-6 w-6 text-red-400" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
 
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     {/* Fleet Distribution */}
-                    <Card className="border-zinc-800 bg-zinc-900/50">
+                    <Card className="border-border bg-card/50">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-zinc-300">Distribuição da Frota</CardTitle>
+                            <CardTitle className="text-sm font-medium text-foreground">Distribuição da Frota</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center gap-8">
@@ -143,9 +152,9 @@ export default function DashboardPage() {
                                         <div key={i} className="flex items-center justify-between text-sm">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                                <span className="text-zinc-400">{entry.name}</span>
+                                                <span className="text-muted-foreground">{entry.name}</span>
                                             </div>
-                                            <span className="font-medium text-zinc-200">{entry.value}</span>
+                                            <span className="font-medium text-foreground">{entry.value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -154,9 +163,9 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* Component Health */}
-                    <Card className="border-zinc-800 bg-zinc-900/50">
+                    <Card className="border-border bg-card/50">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-zinc-300">Saúde dos Componentes</CardTitle>
+                            <CardTitle className="text-sm font-medium text-foreground">Saúde dos Componentes</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="h-48">
@@ -184,24 +193,26 @@ export default function DashboardPage() {
                 {/* Status Quick Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                     {[
-                        { label: 'Em Trânsito', icon: Truck, value: barrels.inTransit, color: 'text-blue-400 bg-blue-500/10' },
-                        { label: 'No Cliente', icon: MapPin, value: barrels.atClient, color: 'text-purple-400 bg-purple-500/10' },
-                        { label: 'Manutenção', icon: Wrench, value: barrels.inMaintenance, color: 'text-amber-400 bg-amber-500/10' },
-                        { label: 'Bloqueados', icon: Ban, value: barrels.blocked, color: 'text-red-400 bg-red-500/10' },
-                        { label: 'Descartados', icon: Package, value: barrels.disposed, color: 'text-zinc-400 bg-zinc-500/10' },
-                        { label: 'Perdidos', icon: AlertTriangle, value: barrels.lost, color: 'text-red-400 bg-red-500/10' },
+                        { label: 'Em Trânsito', icon: Truck, value: barrels.inTransit, color: 'text-blue-400 bg-blue-500/10', status: 'IN_TRANSIT', hoverBorder: 'hover:border-blue-500/40' },
+                        { label: 'No Cliente', icon: MapPin, value: barrels.atClient, color: 'text-purple-400 bg-purple-500/10', status: 'AT_CLIENT', hoverBorder: 'hover:border-purple-500/40' },
+                        { label: 'Manutenção', icon: Wrench, value: barrels.inMaintenance, color: 'text-amber-400 bg-amber-500/10', status: 'IN_MAINTENANCE', hoverBorder: 'hover:border-amber-500/40' },
+                        { label: 'Bloqueados', icon: Ban, value: barrels.blocked, color: 'text-red-400 bg-red-500/10', status: 'BLOCKED', hoverBorder: 'hover:border-red-500/40' },
+                        { label: 'Descartados', icon: Package, value: barrels.disposed, color: 'text-muted-foreground bg-zinc-500/10', status: 'DISPOSED', hoverBorder: 'hover:border-zinc-500/40' },
+                        { label: 'Perdidos', icon: AlertTriangle, value: barrels.lost, color: 'text-red-400 bg-red-500/10', status: 'LOST', hoverBorder: 'hover:border-red-500/40' },
                     ].map((item, i) => (
-                        <Card key={i} className="border-zinc-800 bg-zinc-900/50">
-                            <CardContent className="flex items-center gap-3 p-4">
-                                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${item.color.split(' ')[1]}`}>
-                                    <item.icon className={`h-4.5 w-4.5 ${item.color.split(' ')[0]}`} />
-                                </div>
-                                <div>
-                                    <p className="text-xl font-bold text-white">{item.value || 0}</p>
-                                    <p className="text-[11px] text-zinc-500">{item.label}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <Link key={i} href={`/barrels?status=${item.status}`}>
+                            <Card className={`border-border bg-card/50 cursor-pointer transition-colors ${item.hoverBorder} hover:bg-card/80`}>
+                                <CardContent className="flex items-center gap-3 p-4">
+                                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${item.color.split(' ')[1]}`}>
+                                        <item.icon className={`h-4.5 w-4.5 ${item.color.split(' ')[0]}`} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-foreground">{item.value || 0}</p>
+                                        <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     ))}
                 </div>
             </div>
