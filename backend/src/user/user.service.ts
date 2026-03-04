@@ -2,13 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
-import * as bcrypt from 'bcrypt';
+import { HashingService } from '../shared/services/hashing.service.js';
 import { ResourceNotFoundException, ResourceAlreadyExistsException } from '../shared/exceptions/resource.exceptions.js';
 import { BusinessException } from '../shared/exceptions/business.exception.js';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly hashingService: HashingService,
+    ) { }
 
     async findAll(tenantId: string) {
         return this.prisma.user.findMany({
@@ -44,7 +47,7 @@ export class UserService {
             throw new ResourceAlreadyExistsException('User', 'email', dto.email);
         }
 
-        const passwordHash = await bcrypt.hash(dto.password, 10);
+        const passwordHash = await this.hashingService.hash(dto.password);
         return this.prisma.user.create({
             data: {
                 tenantId,
@@ -76,7 +79,7 @@ export class UserService {
 
         const data: any = { ...dto };
         if (dto.password) {
-            data.passwordHash = await bcrypt.hash(dto.password, 10);
+            data.passwordHash = await this.hashingService.hash(dto.password);
             delete data.password;
         }
         return this.prisma.user.update({

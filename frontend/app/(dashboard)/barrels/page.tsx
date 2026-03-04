@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +19,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
     AT_CLIENT: { label: 'No Cliente', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
     IN_MAINTENANCE: { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
     BLOCKED: { label: 'Bloqueado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
-    DISPOSED: { label: 'Descartado', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
+    DISPOSED: { label: 'Descartado', color: 'bg-zinc-500/10 text-muted-foreground border-zinc-500/20' },
     LOST: { label: 'Perdido', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };
 
@@ -29,11 +30,12 @@ const healthConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function BarrelsPage() {
+    const searchParams = useSearchParams();
     const [barrels, setBarrels] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
     const [loading, setLoading] = useState(true);
 
     const fetchBarrels = async () => {
@@ -65,8 +67,8 @@ export default function BarrelsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Barris</h1>
-                    <p className="text-sm text-zinc-400 mt-1">{total} barris cadastrados</p>
+                    <h1 className="text-2xl font-bold text-foreground">Barris</h1>
+                    <p className="text-sm text-muted-foreground mt-1">{total} barris cadastrados</p>
                 </div>
                 <CreateBarrelDialog onCreated={fetchBarrels} />
             </div>
@@ -74,20 +76,20 @@ export default function BarrelsPage() {
             {/* Filters */}
             <div className="flex gap-3">
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Buscar por código ou QR..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && fetchBarrels()}
-                        className="border-zinc-700 bg-zinc-800/50 pl-10 text-white placeholder:text-zinc-500"
+                        className="border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-44 border-zinc-700 bg-zinc-800/50 text-zinc-300">
+                    <SelectTrigger className="w-44 border-border bg-muted/50 text-foreground">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent className="border-zinc-700 bg-zinc-900">
+                    <SelectContent className="border-border bg-card">
                         <SelectItem value="all">Todos</SelectItem>
                         {Object.entries(statusConfig).map(([key, cfg]) => (
                             <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
@@ -97,38 +99,38 @@ export default function BarrelsPage() {
             </div>
 
             {/* Table */}
-            <Card className="border-zinc-800 bg-zinc-900/50 overflow-hidden">
+            <Card className="border-border bg-card/50 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-zinc-800">
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Código</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">QR Code</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Capacidade</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Ciclos</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Saúde</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Status</th>
+                            <tr className="border-b border-border">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Código</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">QR Code</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Capacidade</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Ciclos</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Saúde</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={6} className="px-4 py-12 text-center text-zinc-500">Carregando...</td></tr>
+                                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Carregando...</td></tr>
                             ) : barrels.length === 0 ? (
-                                <tr><td colSpan={6} className="px-4 py-12 text-center text-zinc-500">Nenhum barril encontrado</td></tr>
+                                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Nenhum barril encontrado</td></tr>
                             ) : barrels.map((barrel) => {
                                 const worst = getWorstHealth(barrel.componentCycles);
                                 const hc = healthConfig[worst];
                                 const sc = statusConfig[barrel.status] || statusConfig.ACTIVE;
                                 return (
-                                    <tr key={barrel.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors cursor-pointer">
+                                    <tr key={barrel.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer">
                                         <td className="px-4 py-3">
                                             <Link href={`/barrels/${barrel.id}`} className="text-sm font-medium text-amber-400 hover:text-amber-300">
                                                 {barrel.internalCode}
                                             </Link>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-zinc-400 font-mono">{barrel.qrCode}</td>
-                                        <td className="px-4 py-3 text-sm text-zinc-300">{barrel.capacityLiters}L</td>
-                                        <td className="px-4 py-3 text-sm text-zinc-300">{barrel.totalCycles}</td>
+                                        <td className="px-4 py-3 text-sm text-muted-foreground font-mono">{barrel.qrCode}</td>
+                                        <td className="px-4 py-3 text-sm text-foreground">{barrel.capacityLiters}L</td>
+                                        <td className="px-4 py-3 text-sm text-foreground">{barrel.totalCycles}</td>
                                         <td className="px-4 py-3">
                                             <span className={`text-lg ${hc.color}`}>{hc.label}</span>
                                         </td>
@@ -142,13 +144,13 @@ export default function BarrelsPage() {
                     </table>
                 </div>
                 {total > 20 && (
-                    <div className="flex items-center justify-between border-t border-zinc-800 px-4 py-3">
-                        <p className="text-sm text-zinc-500">Página {page} de {Math.ceil(total / 20)}</p>
+                    <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                        <p className="text-sm text-muted-foreground">Página {page} de {Math.ceil(total / 20)}</p>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="border-zinc-700 text-zinc-300">
+                            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="border-border text-foreground">
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page * 20 >= total} className="border-zinc-700 text-zinc-300">
+                            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page * 20 >= total} className="border-border text-foreground">
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>

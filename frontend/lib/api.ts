@@ -14,6 +14,10 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // Don't retry auth endpoints — let the error propagate to the caller
+            if (originalRequest.url?.includes('/api/auth/login') || originalRequest.url?.includes('/api/auth/refresh')) {
+                return Promise.reject(error);
+            }
             originalRequest._retry = true;
             try {
                 // Refresh token is sent automatically via httpOnly cookie

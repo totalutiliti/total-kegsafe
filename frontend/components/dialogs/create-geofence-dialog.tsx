@@ -44,21 +44,21 @@ export function CreateGeofenceDialog({ onCreated }: { onCreated?: () => void }) 
                     <Plus className="mr-2 h-4 w-4" /> Nova Geofence
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+            <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Nova Geofence</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Nome</Label>
+                        <Label className="text-muted-foreground">Nome</Label>
                         <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                            placeholder="Ex: Fábrica São Paulo" className="border-zinc-700 bg-zinc-800/50 text-white" />
+                            placeholder="Ex: Fábrica São Paulo" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Tipo</Label>
+                        <Label className="text-muted-foreground">Tipo</Label>
                         <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-                            <SelectTrigger className="border-zinc-700 bg-zinc-800/50 text-white"><SelectValue /></SelectTrigger>
-                            <SelectContent className="border-zinc-700 bg-zinc-900">
+                            <SelectTrigger className="border-border bg-muted/50 text-foreground"><SelectValue /></SelectTrigger>
+                            <SelectContent className="border-border bg-card">
                                 <SelectItem value="FACTORY">Fábrica</SelectItem>
                                 <SelectItem value="WAREHOUSE">Armazém</SelectItem>
                                 <SelectItem value="CLIENT">Cliente</SelectItem>
@@ -67,23 +67,23 @@ export function CreateGeofenceDialog({ onCreated }: { onCreated?: () => void }) 
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-zinc-400">Latitude</Label>
+                            <Label className="text-muted-foreground">Latitude</Label>
                             <Input type="number" step="any" required value={form.latitude} onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
-                                placeholder="-23.5505" className="border-zinc-700 bg-zinc-800/50 text-white" />
+                                placeholder="-23.5505" className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-zinc-400">Longitude</Label>
+                            <Label className="text-muted-foreground">Longitude</Label>
                             <Input type="number" step="any" required value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
-                                placeholder="-46.6333" className="border-zinc-700 bg-zinc-800/50 text-white" />
+                                placeholder="-46.6333" className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-zinc-400">Raio (metros)</Label>
+                        <Label className="text-muted-foreground">Raio (metros)</Label>
                         <Input type="number" required value={form.radiusMeters} onChange={e => setForm(f => ({ ...f, radiusMeters: +e.target.value }))}
-                            className="border-zinc-700 bg-zinc-800/50 text-white" />
+                            className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400">Cancelar</Button>
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
                             {loading ? 'Salvando...' : 'Criar Geofence'}
                         </Button>

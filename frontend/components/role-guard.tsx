@@ -1,19 +1,11 @@
 'use client';
 
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore, ROLE_HOME } from '@/lib/auth-store';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 type Role = 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE';
-
-// Map each role to its first permitted route
-const ROLE_HOME: Record<Role, string> = {
-    ADMIN: '/dashboard',
-    MANAGER: '/dashboard',
-    LOGISTICS: '/barrels',
-    MAINTENANCE: '/barrels',
-};
 
 interface RoleGuardProps {
     allowedRoles: Role[];
@@ -37,9 +29,9 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
                     <AlertTriangle className="h-8 w-8 text-red-400" />
                 </div>
                 <div className="text-center space-y-2">
-                    <h1 className="text-2xl font-bold text-white">Acesso Negado</h1>
-                    <p className="text-zinc-400 max-w-md">
-                        Seu perfil <span className="font-semibold text-zinc-200">({user.role})</span> não
+                    <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+                    <p className="text-muted-foreground max-w-md">
+                        Seu perfil <span className="font-semibold text-foreground">({user.role})</span> não
                         tem permissão para acessar esta página.
                     </p>
                 </div>
