@@ -222,7 +222,7 @@ model Barrel {
   tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   
   /// Código interno de identificação (auto-gerado)
-  /// Formato: KS-BAR-NNNNN (ex: KS-BAR-00001)
+  /// Formato: KS-BAR-NNNNNNNNN (ex: KS-BAR-000000001)
   /// Usado para referência em relatórios e comunicação
   internalCode    String       @db.VarChar(20)
   
