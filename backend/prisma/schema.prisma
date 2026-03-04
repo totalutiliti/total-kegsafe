@@ -213,13 +213,13 @@ model Barrel {
   tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   
   /// Código interno de identificação (auto-gerado)
-  /// Formato: KS-BAR-NNNNN (ex: KS-BAR-00001)
+  /// Formato: KS-BAR-NNNNNNNNN (ex: KS-BAR-000000001)
   /// Usado para referência em relatórios e comunicação
   internalCode    String       @db.VarChar(20)
   
   /// Código do QR Code físico gravado/colado no barril
   /// Escaneado pelo app mobile para identificação
-  qrCode          String       @db.VarChar(50)
+  qrCode          String?      @db.VarChar(50)
   
   /// Código de barras adicional (opcional, backup)
   barcode         String?      @db.VarChar(50)

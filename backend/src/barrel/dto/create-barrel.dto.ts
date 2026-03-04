@@ -2,9 +2,10 @@ import { IsString, IsEnum, IsNumber, IsOptional, MaxLength, Min, Max, IsDateStri
 import { ValveModel, BarrelMaterial } from '@prisma/client';
 
 export class CreateBarrelDto {
+    @IsOptional()
     @IsString()
     @MaxLength(50)
-    qrCode!: string;
+    qrCode?: string;
 
     @IsOptional()
     @IsString()

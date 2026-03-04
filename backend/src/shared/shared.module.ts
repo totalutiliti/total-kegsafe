@@ -5,6 +5,7 @@ import { GlobalExceptionFilter } from './filters/http-exception.filter.js';
 import { AuditInterceptor } from './interceptors/audit.interceptor.js';
 import { StructuredLogger } from './services/logger.service.js';
 import { HashingService } from './services/hashing.service.js';
+import { ExcelService } from './services/excel.service.js';
 
 @Global()
 @Module({
@@ -17,6 +18,7 @@ import { HashingService } from './services/hashing.service.js';
     providers: [
         StructuredLogger,
         HashingService,
+        ExcelService,
         {
             provide: APP_FILTER,
             useClass: GlobalExceptionFilter,
@@ -27,6 +29,6 @@ import { HashingService } from './services/hashing.service.js';
             useClass: AuditInterceptor,
         },
     ],
-    exports: [StructuredLogger, HashingService],
+    exports: [StructuredLogger, HashingService, ExcelService],
 })
 export class SharedModule { }

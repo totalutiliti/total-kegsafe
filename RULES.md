@@ -89,7 +89,7 @@
 | **Email** | RFC 5322 | `^[^\s@]+@[^\s@]+\.[^\s@]+$` | `user@kegsafe.tech` |
 | **Telefone** | E.164 internacional | `^\+[1-9]\d{6,14}$` | `+5511999999999` |
 | **QR Code** | Alfanumérico | `^[A-Za-z0-9-]{6,50}$` | `KS-BAR-00001` |
-| **Internal Code** | Padrão KegSafe | `^KS-BAR-\d{5}$` | `KS-BAR-00001` |
+| **Internal Code** | Padrão KegSafe | `^KS-BAR-\d{9}$` | `KS-BAR-000000001` |
 | **UUID** | UUID v4 | RFC 4122 | `550e8400-e29b-41d4-a716-446655440000` |
 | **Slug** | URL-friendly | `^[a-z0-9-]{3,50}$` | `cervejaria-petropolis` |
 | **Latitude** | Decimal | `-90.0000000` a `90.0000000` | `-23.5505199` |

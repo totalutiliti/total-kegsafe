@@ -21,7 +21,32 @@
       "Bash(npx tsc --noEmit)",
       "Bash(npx next build)",
       "Bash(npm run build)",
-      "Bash(xargs grep -l \"qrCode\\\\|QrCode\")"
+      "Bash(xargs grep -l \"qrCode\\\\|QrCode\")",
+      "Bash(npx jest --testPathPatterns \"dashboard.service.spec|barrel.service.spec|alert-jobs.service.spec|hashing.service.spec\" --verbose)",
+      "Bash(npx eslint src/)",
+      "Bash(npx prettier --write \"src/dashboard/dashboard.service.ts\" \"src/dashboard/dashboard.service.spec.ts\" \"src/barrel/barrel.service.ts\" \"src/barrel/barrel.service.spec.ts\" \"src/alert/alert-jobs.service.ts\" \"src/alert/alert-jobs.service.spec.ts\" \"src/component/component.service.ts\")",
+      "Bash(npx eslint src/dashboard/dashboard.service.ts src/dashboard/dashboard.service.spec.ts src/barrel/barrel.service.ts src/barrel/barrel.service.spec.ts src/alert/alert-jobs.service.ts src/alert/alert-jobs.service.spec.ts src/component/component.service.ts)",
+      "Bash(dir \"D:\\\\0000_totalutiliti\\\\projetos\\\\0012_barril\\\\projeto\\\\backend\\\\prisma\\\\migrations\" /B)",
+      "Bash(npx jest --no-cache)",
+      "Bash(npx prettier --write \"src/barrel/barrel.service.ts\" \"src/alert/alert-jobs.service.spec.ts\" \"src/barrel/barrel.service.spec.ts\" \"src/dashboard/dashboard.service.spec.ts\" \"prisma/seed.ts\")",
+      "Bash(npx prisma migrate dev --name repad_internal_code_9_digits)",
+      "Bash(npx prisma migrate status)",
+      "Bash(npx prisma migrate resolve --applied 20260228160052_init)",
+      "Bash(npx prisma migrate dev)",
+      "Bash(npx prisma:*)",
+      "Bash(PGPASSWORD=kegsafe123 psql -h localhost -p 5439 -U kegsafe -d kegsafe_dev -c 'SELECT \"\"internalCode\"\" FROM barrels ORDER BY \"\"internalCode\"\" DESC LIMIT 5;')",
+      "Bash(node -e \":*)",
+      "Bash(npx prettier --write \"src/health/health.controller.ts\" \"src/barrel/barrel.controller.ts\" \"src/barrel/barrel.service.spec.ts\" \"src/barrel/dto/find-barrels-query.dto.ts\")",
+      "Bash(npx prettier --write \"app/\\(dashboard\\)/barrels/page.tsx\")",
+      "Bash(npx tsx -e \":*)",
+      "Bash(xargs grep -l \"multer\\\\|upload\")",
+      "Bash(xargs grep -l \"multer\\\\|FileInterceptor\\\\|upload\")",
+      "Bash(xargs grep -l \"FileInterceptor\\\\|UploadedFile\\\\|multer\")",
+      "Bash(ls -1 /d/0000_totalutiliti/projetos/0012_barril/projeto/backend/src/*/)",
+      "Bash(find \"/d/0000_totalutiliti/projetos/0012_barril/projeto/backend/src\" -type f -name \"*.ts\" -exec grep -l \"platform-express\\\\|@nestjs/swagger\\\\|FileInterceptor\\\\|UseInterceptors\" {} ;)",
+      "Bash(npm install xlsx @types/multer)",
+      "Bash(npm install html5-qrcode)",
+      "Bash(npx prettier --write \"src/barrel/barrel.service.spec.ts\" \"src/shared/services/excel.service.spec.ts\")"
     ]
   }
 }
