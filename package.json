@@ -7,6 +7,9 @@
   },
   "devDependencies": {
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.2"
+    "lint-staged": "^15.5.2"
+  },
+  "lint-staged": {
+    "backend/src/**/*.ts": "npx --prefix backend eslint --config backend/eslint.config.mjs --no-warn-ignored --fix"
   }
 }

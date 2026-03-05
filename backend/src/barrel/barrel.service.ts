@@ -470,7 +470,7 @@ export class BarrelService {
   /**
    * Gera o template Excel para importação de barris.
    */
-  generateImportTemplate(): Buffer {
+  async generateImportTemplate(): Promise<Buffer> {
     return this.excelService.generateTemplate(
       IMPORT_COLUMNS,
       [
@@ -507,7 +507,7 @@ export class BarrelService {
    * Valida um arquivo de importação e armazena em sessão temporária.
    */
   async validateImport(tenantId: string, buffer: Buffer, filename: string) {
-    const rawRows = this.excelService.parseFile(buffer, filename);
+    const rawRows = await this.excelService.parseFile(buffer, filename);
     const errors: { row: number; field: string; message: string }[] = [];
     const validRows: ValidatedRow[] = [];
     const seenQrCodes = new Set<string>();
@@ -965,7 +965,7 @@ export class BarrelService {
     buffer: Buffer,
     filename: string,
   ) {
-    const rawRows = this.excelService.parseFile(buffer, filename);
+    const rawRows = await this.excelService.parseFile(buffer, filename);
     const items = rawRows
       .filter((r) => r['internalCode'] && r['qrCode'])
       .map((r) => ({

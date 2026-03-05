@@ -417,10 +417,10 @@ describe('BarrelService', () => {
   // =============================================
 
   describe('generateImportTemplate', () => {
-    it('deve chamar excelService.generateTemplate com colunas corretas', () => {
-      excelService.generateTemplate.mockReturnValue(Buffer.from('mock'));
+    it('deve chamar excelService.generateTemplate com colunas corretas', async () => {
+      excelService.generateTemplate.mockResolvedValue(Buffer.from('mock'));
 
-      const result = service.generateImportTemplate();
+      const result = await service.generateImportTemplate();
 
       expect(excelService.generateTemplate).toHaveBeenCalledTimes(1);
       const [columns, examples, instructions] =
@@ -435,7 +435,7 @@ describe('BarrelService', () => {
 
   describe('validateImport', () => {
     it('deve validar arquivo com dados corretos', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         {
           qrCode: 'QR-001',
           fabricante: 'Franke',
@@ -468,7 +468,7 @@ describe('BarrelService', () => {
     });
 
     it('deve reportar erro para qrCode ausente', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { fabricante: 'Franke', capacidade: 50 }, // sem qrCode
       ]);
 
@@ -483,7 +483,7 @@ describe('BarrelService', () => {
     });
 
     it('deve reportar erro para capacidade inválida (fora do range 5-100)', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 200 }, // fora do range
         { qrCode: 'QR-002', capacidade: 2 }, // abaixo do mínimo
       ]);
@@ -501,7 +501,7 @@ describe('BarrelService', () => {
     });
 
     it('deve detectar duplicatas internas no arquivo', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-DUP', capacidade: 50 },
         { qrCode: 'QR-DUP', capacidade: 30 }, // duplicata
       ]);
@@ -519,7 +519,7 @@ describe('BarrelService', () => {
     });
 
     it('deve detectar qrCodes já existentes no banco', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-EXISTS', capacidade: 50 },
         { qrCode: 'QR-NEW', capacidade: 30 },
       ]);
@@ -537,7 +537,7 @@ describe('BarrelService', () => {
     });
 
     it('deve reportar erro para modeloValvula inválido', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50, modeloValvula: 'INVALID_TYPE' },
       ]);
 
@@ -554,7 +554,7 @@ describe('BarrelService', () => {
     });
 
     it('deve reportar erro para material inválido', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50, material: 'WOOD' },
       ]);
 
@@ -580,7 +580,7 @@ describe('BarrelService', () => {
 
     it('deve lançar ImportInProgressException se já em andamento', async () => {
       // Primeiro validar para criar a sessão
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50 },
       ]);
       prisma.barrel.findMany.mockResolvedValue([]);
@@ -606,7 +606,7 @@ describe('BarrelService', () => {
     });
 
     it('deve retornar status in_progress imediatamente', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50 },
       ]);
       prisma.barrel.findMany.mockResolvedValue([]);
@@ -629,7 +629,7 @@ describe('BarrelService', () => {
     });
 
     it('deve rejeitar sessão de outro tenant', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50 },
       ]);
       prisma.barrel.findMany.mockResolvedValue([]);
@@ -649,7 +649,7 @@ describe('BarrelService', () => {
 
   describe('getImportProgress', () => {
     it('deve retornar progresso da importação', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { qrCode: 'QR-001', capacidade: 50 },
       ]);
       prisma.barrel.findMany.mockResolvedValue([]);
@@ -918,7 +918,7 @@ describe('BarrelService', () => {
 
   describe('batchLinkQrFromFile', () => {
     it('deve parsear arquivo e delegar para batchLinkQr', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { internalCode: 'KS-BAR-000000001', qrCode: 'QR-001' },
       ]);
 
@@ -945,7 +945,7 @@ describe('BarrelService', () => {
     });
 
     it('deve retornar erro quando nenhum par encontrado no arquivo', async () => {
-      excelService.parseFile.mockReturnValue([
+      excelService.parseFile.mockResolvedValue([
         { coluna_errada: 'valor' }, // sem internalCode nem qrCode
       ]);
 
@@ -972,7 +972,7 @@ describe('BarrelService', () => {
         },
       ]);
 
-      excelService.generateFromData.mockReturnValue(Buffer.from('xlsx-data'));
+      excelService.generateFromData.mockResolvedValue(Buffer.from('xlsx-data'));
 
       const result = await service.exportUnlinked(TENANT_ID);
 

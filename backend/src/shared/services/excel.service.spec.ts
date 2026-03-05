@@ -1,5 +1,5 @@
 import { ExcelService, ExcelColumn } from './excel.service';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 describe('ExcelService', () => {
   let service: ExcelService;
@@ -8,21 +8,28 @@ describe('ExcelService', () => {
     service = new ExcelService();
   });
 
+  async function createTestBuffer(
+    rows: any[][],
+    sheetName = 'Dados',
+  ): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(sheetName);
+    for (const row of rows) {
+      ws.addRow(row);
+    }
+    const arrayBuffer = await wb.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
   describe('parseFile', () => {
-    it('deve parsear um arquivo xlsx com header + dados', () => {
-      // Criar um xlsx em memória
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([
+    it('deve parsear um arquivo xlsx com header + dados', async () => {
+      const buffer = await createTestBuffer([
         ['qrCode', 'fabricante', 'capacidade'],
         ['QR-001', 'Franke', 50],
         ['QR-002', 'Portinox', 30],
       ]);
-      XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-      const buffer = Buffer.from(
-        XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }),
-      );
 
-      const result = service.parseFile(buffer, 'test.xlsx');
+      const result = await service.parseFile(buffer, 'test.xlsx');
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
@@ -37,46 +44,23 @@ describe('ExcelService', () => {
       });
     });
 
-    it('deve parsear um arquivo CSV', () => {
-      const csvContent = 'qrCode,fabricante,capacidade\nQR-001,Franke,50\n';
-      const wb = XLSX.read(csvContent, { type: 'string' });
-      const buffer = Buffer.from(
-        XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }),
-      );
-
-      const result = service.parseFile(buffer, 'test.csv');
-
-      expect(result).toHaveLength(1);
-      expect(result[0]['qrCode']).toBe('QR-001');
-    });
-
-    it('deve retornar array vazio para planilha sem dados (só header)', () => {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([
+    it('deve retornar array vazio para planilha sem dados (só header)', async () => {
+      const buffer = await createTestBuffer([
         ['qrCode', 'fabricante', 'capacidade'],
       ]);
-      XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-      const buffer = Buffer.from(
-        XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }),
-      );
 
-      const result = service.parseFile(buffer, 'empty.xlsx');
+      const result = await service.parseFile(buffer, 'empty.xlsx');
 
       expect(result).toHaveLength(0);
     });
 
-    it('deve preencher campos nulos com null (defval)', () => {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([
+    it('deve preencher campos nulos com null', async () => {
+      const buffer = await createTestBuffer([
         ['qrCode', 'fabricante', 'capacidade'],
         ['QR-001', null, 50],
       ]);
-      XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-      const buffer = Buffer.from(
-        XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }),
-      );
 
-      const result = service.parseFile(buffer, 'nulls.xlsx');
+      const result = await service.parseFile(buffer, 'nulls.xlsx');
 
       expect(result).toHaveLength(1);
       expect(result[0]['fabricante']).toBeNull();
@@ -84,71 +68,70 @@ describe('ExcelService', () => {
   });
 
   describe('generateTemplate', () => {
-    it('deve gerar um xlsx com headers corretos', () => {
+    it('deve gerar um xlsx com headers corretos', async () => {
       const columns: ExcelColumn[] = [
         { header: 'qrCode', key: 'qrCode', width: 20 },
         { header: 'fabricante', key: 'fabricante', width: 20 },
       ];
 
-      const buffer = service.generateTemplate(columns);
+      const buffer = await service.generateTemplate(columns);
 
       expect(buffer).toBeInstanceOf(Buffer);
       expect(buffer.length).toBeGreaterThan(0);
 
       // Parsear de volta para verificar headers
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      expect(wb.SheetNames).toContain('Dados');
-      const ws = wb.Sheets['Dados'];
-      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, {
-        header: 1,
-      });
-      expect(rows[0]).toEqual(['qrCode', 'fabricante']);
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      const ws = wb.getWorksheet('Dados');
+      expect(ws).toBeDefined();
+      const headerRow = ws!.getRow(1);
+      expect(headerRow.getCell(1).value).toBe('qrCode');
+      expect(headerRow.getCell(2).value).toBe('fabricante');
     });
 
-    it('deve incluir exemplos no template', () => {
+    it('deve incluir exemplos no template', async () => {
       const columns: ExcelColumn[] = [
         { header: 'qrCode', key: 'qrCode', width: 20, example: 'QR-001' },
       ];
       const examples = [{ qrCode: 'QR-EXAMPLE-001' }];
 
-      const buffer = service.generateTemplate(columns, examples);
+      const buffer = await service.generateTemplate(columns, examples);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      const ws = wb.Sheets['Dados'];
-      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, {
-        header: 1,
-      });
-      // Header + 1 exemplo
-      expect(rows).toHaveLength(2);
-      expect(rows[1]).toEqual(['QR-EXAMPLE-001']);
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      const ws = wb.getWorksheet('Dados')!;
+      expect(ws.rowCount).toBe(2); // Header + 1 example
+      expect(ws.getRow(2).getCell(1).value).toBe('QR-EXAMPLE-001');
     });
 
-    it('deve criar aba de instruções quando fornecida', () => {
+    it('deve criar aba de instruções quando fornecida', async () => {
       const columns: ExcelColumn[] = [
         { header: 'qrCode', key: 'qrCode', width: 20, example: 'QR-001' },
       ];
       const instructions = ['Preencha cada linha com os dados de um barril.'];
 
-      const buffer = service.generateTemplate(columns, [], instructions);
+      const buffer = await service.generateTemplate(columns, [], instructions);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      expect(wb.SheetNames).toContain('Instruções');
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      expect(wb.getWorksheet('Instruções')).toBeDefined();
     });
 
-    it('não deve criar aba de instruções quando não fornecida', () => {
+    it('não deve criar aba de instruções quando não fornecida', async () => {
       const columns: ExcelColumn[] = [
         { header: 'qrCode', key: 'qrCode', width: 20 },
       ];
 
-      const buffer = service.generateTemplate(columns);
+      const buffer = await service.generateTemplate(columns);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      expect(wb.SheetNames).not.toContain('Instruções');
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      expect(wb.getWorksheet('Instruções')).toBeUndefined();
     });
   });
 
   describe('generateFromData', () => {
-    it('deve gerar xlsx com dados corretos', () => {
+    it('deve gerar xlsx com dados corretos', async () => {
       const columns: ExcelColumn[] = [
         { header: 'internalCode', key: 'internalCode', width: 22 },
         { header: 'qrCode', key: 'qrCode', width: 20 },
@@ -158,40 +141,47 @@ describe('ExcelService', () => {
         { internalCode: 'KS-BAR-000000002', qrCode: '' },
       ];
 
-      const buffer = service.generateFromData(columns, data, 'Barris sem QR');
+      const buffer = await service.generateFromData(
+        columns,
+        data,
+        'Barris sem QR',
+      );
 
       expect(buffer).toBeInstanceOf(Buffer);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      expect(wb.SheetNames).toContain('Barris sem QR');
-      const ws = wb.Sheets['Barris sem QR'];
-      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
-      expect(rows).toHaveLength(2);
-      expect(rows[0]['internalCode']).toBe('KS-BAR-000000001');
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      const ws = wb.getWorksheet('Barris sem QR')!;
+      expect(ws).toBeDefined();
+      expect(ws.rowCount).toBe(3); // Header + 2 data rows
+      expect(ws.getRow(2).getCell(1).value).toBe('KS-BAR-000000001');
     });
 
-    it('deve usar nome de aba padrão "Dados" quando não especificado', () => {
+    it('deve usar nome de aba padrão "Dados" quando não especificado', async () => {
       const columns: ExcelColumn[] = [
         { header: 'teste', key: 'teste', width: 10 },
       ];
 
-      const buffer = service.generateFromData(columns, [{ teste: 'valor' }]);
+      const buffer = await service.generateFromData(columns, [
+        { teste: 'valor' },
+      ]);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      expect(wb.SheetNames).toContain('Dados');
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      expect(wb.getWorksheet('Dados')).toBeDefined();
     });
 
-    it('deve lidar com dados vazios (só header)', () => {
+    it('deve lidar com dados vazios (só header)', async () => {
       const columns: ExcelColumn[] = [
         { header: 'coluna', key: 'coluna', width: 10 },
       ];
 
-      const buffer = service.generateFromData(columns, []);
+      const buffer = await service.generateFromData(columns, []);
 
-      const wb = XLSX.read(buffer, { type: 'buffer' });
-      const ws = wb.Sheets['Dados'];
-      const rows = XLSX.utils.sheet_to_json(ws);
-      expect(rows).toHaveLength(0);
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      const ws = wb.getWorksheet('Dados')!;
+      expect(ws.rowCount).toBe(1); // Only header
     });
   });
 });

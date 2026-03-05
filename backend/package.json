@@ -40,6 +40,7 @@
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
     "helmet": "^8.1.0",
     "nest-winston": "^1.10.2",
     "nestjs-cls": "^6.2.0",
@@ -51,7 +52,6 @@
     "rxjs": "^7.8.1",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -102,11 +102,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "lint-staged": {
-    "src/**/*.ts": [
-      "eslint --fix --no-warn-ignored"
-    ]
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
