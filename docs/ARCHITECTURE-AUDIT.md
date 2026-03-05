@@ -6,6 +6,15 @@
 
 ## Resumo Executivo
 
+### Round 3 (Type Safety + Integracao + Maturidade)
+- **Part A:** 559 ESLint `no-unsafe-*` warnings eliminados, regras promovidas para ERROR
+- **Part B:** 26 testes de integracao com PostgreSQL real (tenant isolation, optimistic locking, soft delete, RBAC)
+- **Part C:** 5 itens de maturidade implementados (degradation registry, SLO/error budgets, STRIDE, interfaces, chaos)
+- Lint: **0 erros, 0 warnings**
+- Testes unitarios: **87 passando**
+- Testes e2e: **13 passando**
+- Testes de integracao: **26 passando**
+
 ### Round 2 (Pos-Correcoes)
 - Total de pendencias resolvidas: **10/10**
 - ✅ Todos os itens pendentes da Round 1 foram corrigidos
@@ -93,7 +102,7 @@
 
 | Item | Status Antes | Status Depois | Acao Tomada |
 |------|-------------|---------------|-------------|
-| 6.1 Testes de Integracao | ⚠️ | ✅ | **[Round 2]** 13 testes e2e criados com supertest cobrindo: auth (login/refresh/logout/me), guards (JWT/RBAC deny-by-default), validation pipe (whitelist/forbidNonWhitelisted), security headers (helmet), routing (404/prefix). Mocks de AuthService e PrismaService para execucao sem DB. 87 testes unitarios + 13 e2e = 100 testes totais. |
+| 6.1 Testes de Integracao | ⚠️ | ✅ | **[Round 2]** 13 testes e2e com supertest (auth, guards, validation, headers, routing). **[Round 3]** 26 testes de integracao com PostgreSQL real: tenant isolation (4), optimistic locking (4), soft delete (3), RBAC (15). Total: 87 unitarios + 13 e2e + 26 integracao = 126 testes. |
 | 6.2 Seeds e Mocks | ✅ | ✅ | **[Round 2]** Seed expandido: adicionados Suppliers (2) e ServiceProviders (2) ao seed existente. Total de dados de seed: 1 tenant, 4 usuarios, 6 component configs, 2 geofences, 3 clientes, 50 barris com component cycles, 2 fornecedores, 2 prestadores de servico. |
 | 6.3 Testabilidade | ✅ | ✅ | Todos services usam DI corretamente via `@Injectable()` e constructor injection. Dependencias podem ser mockadas via `@nestjs/testing`. |
 
@@ -121,19 +130,28 @@
 
 ---
 
-### Fase 8 — Maturidade Avancada (Documentar, nao implementar)
+### Fase 8 — Maturidade Avancada
 
-| Item | Status | Acao Tomada |
-|------|--------|-------------|
-| 8.1 Graceful Degradation | 📋 | Documentado em `docs/MATURITY-ROADMAP.md` com matrizes de degradacao para PostgreSQL, Redis, Blob Storage. |
-| 8.2 SLOs e Error Budgets | 📋 | Documentado: 99.5% disponibilidade, p95 < 500ms, mecanismo de error budget. |
-| 8.3 Threat Modeling (STRIDE) | 📋 | Documentado: analise STRIDE para auth, logistics e barrel endpoints. |
-| 8.4 Arquitetura Substituivel | 📋 | Documentado: avaliacao de acoplamento e substituibilidade por modulo. |
-| 8.5 Chaos Engineering | 📋 | Documentado: 3 experimentos propostos (falha PostgreSQL, saturacao de memoria, migration falhada). |
+| Item | Status Antes | Status Depois | Acao Tomada |
+|------|-------------|---------------|-------------|
+| 8.1 Graceful Degradation | 📋 | ✅ | **[Round 3]** Implementado `DegradationService` com registry de estados (ACTIVE/DEGRADED/DISABLED). Decorator `@Degradable('feature', fallback)` para metodos. Modulo global `DegradationModule`. |
+| 8.2 SLOs e Error Budgets | 📋 | ✅ | **[Round 3]** Implementado `SloService` com metricas in-memory (availability 99.5%, p95 latency 500ms). `SloInterceptor` global auto-rastreia requests. Endpoints `GET /admin/slo` e `/admin/slo/budget` (ADMIN only). |
+| 8.3 Threat Modeling (STRIDE) | 📋 | ✅ | **[Round 3]** Criado `docs/STRIDE-THREAT-MODEL.md` com analise completa por categoria STRIDE, mitigacoes existentes mapeadas e gaps identificados. |
+| 8.4 Arquitetura Substituivel | 📋 | ✅ | **[Round 3]** Extraidas interfaces `IBarrelService`, `IAuthService`, `IMaintenanceService`. Modulos atualizados com injection tokens (`BARREL_SERVICE`, `AUTH_SERVICE`, `MAINTENANCE_SERVICE`) via `useClass`. |
+| 8.5 Chaos Engineering | 📋 | ✅ | **[Round 3]** Implementado `ChaosService` com injecao de falhas (latencia, erros). `ChaosMiddleware` configuravel. Ativo somente com `CHAOS_ENABLED=true` e `NODE_ENV !== 'production'`. |
 
 ---
 
 ## Pendencias e Recomendacoes
+
+### Resolvidas na Round 3
+1. ~~**Type Safety (1.5):**~~ ✅ 559 ESLint `no-unsafe-*` warnings eliminados, regras promovidas para `error`.
+2. ~~**Testes de Integracao com DB (6.1):**~~ ✅ 26 testes de integracao com PostgreSQL real.
+3. ~~**Graceful Degradation (8.1):**~~ ✅ DegradationService + decorator implementados.
+4. ~~**SLOs e Error Budgets (8.2):**~~ ✅ SloService + interceptor + endpoints implementados.
+5. ~~**STRIDE Threat Model (8.3):**~~ ✅ Documento completo criado.
+6. ~~**Arquitetura Substituivel (8.4):**~~ ✅ Interfaces de servico extraidas com injection tokens.
+7. ~~**Chaos Engineering (8.5):**~~ ✅ ChaosService + middleware implementados.
 
 ### Resolvidas na Round 2
 1. ~~**Lint Errors (1.5):**~~ ✅ 540 erros resolvidos, husky + lint-staged ativados.
@@ -196,6 +214,46 @@
 - `backend/src/*/\*.controller.ts` — @Roles() em todos os 14 controllers
 - `backend/prisma/seed.ts` — Adicionados suppliers e service providers
 
+### Arquivos Criados/Atualizados na Round 3
+
+**Part A — Type Safety:**
+- `backend/src/shared/types/authenticated-request.ts` — Tipos compartilhados (JwtUser, AuthenticatedRequest, HttpExceptionResponse)
+- `backend/eslint.config.mjs` — Regras `no-unsafe-*` e `no-floating-promises` promovidas para `error`
+- ~32 arquivos `.ts` corrigidos (guards, filters, interceptors, controllers, services, specs)
+
+**Part B — Testes de Integracao:**
+- `docker-compose.test.yml` — PostgreSQL de teste na porta 5440
+- `backend/test/jest-integration.json` — Config Jest para `*.integration-spec.ts`
+- `backend/test/integration/setup.ts` — Setup global (env vars + prisma migrate)
+- `backend/test/integration/teardown.ts` — Teardown global (truncate tables)
+- `backend/test/integration/helpers.ts` — Factories (createTestApp, createTestTenant, createTestUser, getAuthCookie)
+- `backend/test/integration/tenant-isolation.integration-spec.ts` — 4 testes
+- `backend/test/integration/optimistic-locking.integration-spec.ts` — 4 testes
+- `backend/test/integration/soft-delete.integration-spec.ts` — 3 testes
+- `backend/test/integration/rbac.integration-spec.ts` — 15 testes
+- `.github/workflows/ci.yml` — Adicionado step de Integration Tests
+
+**Part C — Maturidade (Fase 8):**
+- `backend/src/shared/resilience/degradation.service.ts` — Registry de degradacao graceful
+- `backend/src/shared/resilience/degradation.decorator.ts` — Decorator `@Degradable()`
+- `backend/src/shared/resilience/degradation.module.ts` — Modulo global
+- `backend/src/shared/slo/slo.service.ts` — Metricas SLO in-memory
+- `backend/src/shared/slo/slo.interceptor.ts` — Interceptor de rastreamento automatico
+- `backend/src/shared/slo/slo.controller.ts` — Endpoints `/admin/slo` e `/admin/slo/budget`
+- `backend/src/shared/slo/slo.module.ts` — Modulo global
+- `backend/src/shared/chaos/chaos.service.ts` — Injecao de falhas (dev only)
+- `backend/src/shared/chaos/chaos.middleware.ts` — Middleware de chaos
+- `backend/src/shared/chaos/chaos.module.ts` — Modulo NestJS
+- `backend/src/barrel/barrel.service.interface.ts` — Interface `IBarrelService`
+- `backend/src/auth/auth.service.interface.ts` — Interface `IAuthService`
+- `backend/src/maintenance/maintenance.service.interface.ts` — Interface `IMaintenanceService`
+- `docs/STRIDE-THREAT-MODEL.md` — Analise STRIDE completa
+- `backend/src/app.module.ts` — Imports de DegradationModule, SloModule, ChaosModule
+- `backend/src/main.ts` — SloInterceptor global
+- `backend/src/barrel/barrel.module.ts` — Token BARREL_SERVICE
+- `backend/src/auth/auth.module.ts` — Token AUTH_SERVICE
+- `backend/src/maintenance/maintenance.module.ts` — Token MAINTENANCE_SERVICE
+
 ### Documentacao Criada
 - `docs/ARCHITECTURE-AUDIT.md` — Este relatorio
 - `docs/DATA-CLASSIFICATION.md` — Classificacao de dados sensiveis (PII/SPI/Financial/Credential)
@@ -205,6 +263,7 @@
 - `docs/RUNBOOKS.md` — Runbooks operacionais (6 cenarios)
 - `docs/INFRASTRUCTURE.md` — Documentacao da infraestrutura Azure
 - `docs/MATURITY-ROADMAP.md` — Roadmap de maturidade (Fase 8)
+- `docs/STRIDE-THREAT-MODEL.md` — Modelo de ameacas STRIDE
 - `docs/adr/ADR-001-stack.md` — Decisao: NestJS + Prisma + PostgreSQL
 - `docs/adr/ADR-002-multitenancy.md` — Decisao: Multi-tenancy via CLS
 - `docs/adr/ADR-003-deploy.md` — Decisao: Azure + Docker + GitHub Actions
