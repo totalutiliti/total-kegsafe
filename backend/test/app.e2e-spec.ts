@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { Server } from 'http';
 import { AppModule } from './../src/app.module';
 import { AuthService } from './../src/auth/auth.service';
+import { AUTH_SERVICE } from './../src/auth/auth.constants';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { TenantThrottlerGuard } from './../src/shared/guards/tenant-throttler.guard';
 
@@ -67,6 +68,8 @@ describe('KegSafe API (e2e)', () => {
       imports: [AppModule],
     })
       .overrideProvider(AuthService)
+      .useValue(authServiceMock)
+      .overrideProvider(AUTH_SERVICE)
       .useValue(authServiceMock)
       .overrideProvider(PrismaService)
       .useValue(prismaServiceMock)

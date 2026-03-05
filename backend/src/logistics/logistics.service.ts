@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { BarrelService } from '../barrel/barrel.service.js';
+import type { IBarrelService } from '../barrel/barrel.service.interface.js';
+import { BARREL_SERVICE } from '../barrel/barrel.constants.js';
 import { ComponentService } from '../component/component.service.js';
 import { GeofenceService } from '../geofence/geofence.service.js';
 import {
@@ -22,7 +23,7 @@ import {
 export class LogisticsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly barrelService: BarrelService,
+    @Inject(BARREL_SERVICE) private readonly barrelService: IBarrelService,
     private readonly componentService: ComponentService,
     private readonly geofenceService: GeofenceService,
   ) {}
