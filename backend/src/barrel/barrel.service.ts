@@ -21,6 +21,7 @@ import {
   ImportNotFoundException,
   ImportInProgressException,
 } from '../shared/exceptions/import.exceptions.js';
+import { OptimisticLockException } from '../shared/exceptions/resource.exceptions.js';
 
 // Transições de status válidas conforme RULES.md
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -338,18 +339,27 @@ export class BarrelService {
 
   async update(tenantId: string, id: string, dto: UpdateBarrelDto) {
     await this.findById(tenantId, id);
-    return this.prisma.barrel.update({
-      where: { id },
-      data: {
-        manufacturer: dto.manufacturer,
-        valveModel: dto.valveModel,
-        capacityLiters: dto.capacityLiters,
-        tareWeightKg: dto.tareWeightKg,
-        material: dto.material,
-        acquisitionCost: dto.acquisitionCost,
-      },
-      include: BARREL_INCLUDE,
-    });
+
+    const { version, ...updateData } = dto;
+
+    try {
+      return await this.prisma.barrel.update({
+        where: { id, version },
+        data: {
+          ...updateData,
+          version: { increment: 1 },
+        },
+        include: BARREL_INCLUDE,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new OptimisticLockException('Barrel');
+      }
+      throw error;
+    }
   }
 
   async delete(tenantId: string, id: string) {

@@ -25,6 +25,17 @@ export class ResourceAlreadyExistsException extends KegSafeException {
   }
 }
 
+export class OptimisticLockException extends KegSafeException {
+  readonly statusCode = 409;
+  readonly code = 'OPTIMISTIC_LOCK_CONFLICT';
+
+  constructor(resource: string) {
+    super(
+      `${resource} was modified by another user. Please reload and try again.`,
+    );
+  }
+}
+
 export class ResourceDeletedException extends KegSafeException {
   readonly statusCode = 410;
   readonly code = 'RESOURCE_DELETED';

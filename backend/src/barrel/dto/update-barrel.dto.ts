@@ -10,6 +10,9 @@ import {
 import { ValveModel, BarrelMaterial } from '@prisma/client';
 
 export class UpdateBarrelDto {
+  @IsNumber()
+  @Min(1)
+  version: number;
   @IsOptional()
   @IsString()
   @MaxLength(100)
