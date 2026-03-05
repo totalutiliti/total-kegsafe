@@ -73,8 +73,8 @@ export class BarrelController {
   // --- Feature 2: Importação ---
   @Get('import/template')
   @Roles(Role.ADMIN, Role.MANAGER)
-  downloadTemplate(@Res() res: Response) {
-    const buffer = this.barrelService.generateImportTemplate();
+  async downloadTemplate(@Res() res: Response) {
+    const buffer = await this.barrelService.generateImportTemplate();
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
