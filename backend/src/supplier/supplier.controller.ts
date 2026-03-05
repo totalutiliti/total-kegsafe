@@ -38,7 +38,19 @@ export class SupplierController {
 
   @Post('suppliers')
   @Roles(Role.ADMIN)
-  async createSupplier(@TenantId() tenantId: string, @Body() data: any) {
+  async createSupplier(
+    @TenantId() tenantId: string,
+    @Body()
+    data: {
+      name: string;
+      supplyType: string;
+      cnpj?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+      paymentTerms?: string;
+      leadTimeDays?: number;
+    },
+  ) {
     return this.supplierService.createSupplier(tenantId, data);
   }
 
@@ -47,7 +59,17 @@ export class SupplierController {
   async updateSupplier(
     @TenantId() tenantId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body()
+    data: {
+      name?: string;
+      supplyType?: string;
+      cnpj?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+      paymentTerms?: string;
+      leadTimeDays?: number;
+      isActive?: boolean;
+    },
   ) {
     return this.supplierService.updateSupplier(tenantId, id, data);
   }
@@ -76,7 +98,19 @@ export class SupplierController {
 
   @Post('service-providers')
   @Roles(Role.ADMIN)
-  async createProvider(@TenantId() tenantId: string, @Body() data: any) {
+  async createProvider(
+    @TenantId() tenantId: string,
+    @Body()
+    data: {
+      name: string;
+      specialty: string;
+      certifications?: string;
+      hourlyRate?: number;
+      serviceRate?: number;
+      contactEmail?: string;
+      contactPhone?: string;
+    },
+  ) {
     return this.supplierService.createProvider(tenantId, data);
   }
 
@@ -85,7 +119,17 @@ export class SupplierController {
   async updateProvider(
     @TenantId() tenantId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body()
+    data: {
+      name?: string;
+      specialty?: string;
+      certifications?: string;
+      hourlyRate?: number;
+      serviceRate?: number;
+      contactEmail?: string;
+      contactPhone?: string;
+      isActive?: boolean;
+    },
   ) {
     return this.supplierService.updateProvider(tenantId, id, data);
   }

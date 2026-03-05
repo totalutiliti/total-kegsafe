@@ -84,7 +84,7 @@ export class StructuredLogger implements LoggerService {
   }
 
   private writeLog(level: string, message: string, context?: LogContext) {
-    const logEntry = {
+    const logEntry: Record<string, unknown> = {
       level,
       message,
       context: this.context,

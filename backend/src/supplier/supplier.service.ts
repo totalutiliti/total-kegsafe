@@ -22,11 +22,35 @@ export class SupplierService {
     return supplier;
   }
 
-  async createSupplier(tenantId: string, data: any) {
+  async createSupplier(
+    tenantId: string,
+    data: {
+      name: string;
+      supplyType: string;
+      cnpj?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+      paymentTerms?: string;
+      leadTimeDays?: number;
+    },
+  ) {
     return this.prisma.supplier.create({ data: { tenantId, ...data } });
   }
 
-  async updateSupplier(tenantId: string, id: string, data: any) {
+  async updateSupplier(
+    tenantId: string,
+    id: string,
+    data: {
+      name?: string;
+      supplyType?: string;
+      cnpj?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+      paymentTerms?: string;
+      leadTimeDays?: number;
+      isActive?: boolean;
+    },
+  ) {
     await this.findSupplierById(tenantId, id);
     return this.prisma.supplier.update({ where: { id }, data });
   }
@@ -52,11 +76,35 @@ export class SupplierService {
     return provider;
   }
 
-  async createProvider(tenantId: string, data: any) {
+  async createProvider(
+    tenantId: string,
+    data: {
+      name: string;
+      specialty: string;
+      certifications?: string;
+      hourlyRate?: number;
+      serviceRate?: number;
+      contactEmail?: string;
+      contactPhone?: string;
+    },
+  ) {
     return this.prisma.serviceProvider.create({ data: { tenantId, ...data } });
   }
 
-  async updateProvider(tenantId: string, id: string, data: any) {
+  async updateProvider(
+    tenantId: string,
+    id: string,
+    data: {
+      name?: string;
+      specialty?: string;
+      certifications?: string;
+      hourlyRate?: number;
+      serviceRate?: number;
+      contactEmail?: string;
+      contactPhone?: string;
+      isActive?: boolean;
+    },
+  ) {
     await this.findProviderById(tenantId, id);
     return this.prisma.serviceProvider.update({ where: { id }, data });
   }

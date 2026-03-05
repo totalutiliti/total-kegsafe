@@ -78,7 +78,12 @@ interface ImportSession {
   rows: ValidatedRow[];
   validatedAt: Date;
   status: 'validated' | 'in_progress' | 'completed' | 'failed';
-  progress: { processed: number; total: number; failed: number; errors: any[] };
+  progress: {
+    processed: number;
+    total: number;
+    failed: number;
+    errors: Array<{ chunkStart: number; message: string }>;
+  };
 }
 
 export interface ValidatedRow {
@@ -317,8 +322,14 @@ export class BarrelService {
         );
 
         return result;
-      } catch (error: any) {
-        const isRetryable = error.code === 'P2034' || error.code === 'P2002';
+      } catch (error: unknown) {
+        const prismaError = error as {
+          code?: string;
+          message?: string;
+          stack?: string;
+        };
+        const isRetryable =
+          prismaError.code === 'P2034' || prismaError.code === 'P2002';
 
         if (isRetryable && attempt < MAX_RETRIES - 1) {
           this.logger.warn(
@@ -450,8 +461,14 @@ export class BarrelService {
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
-      } catch (error: any) {
-        const isRetryable = error.code === 'P2034' || error.code === 'P2002';
+      } catch (error: unknown) {
+        const prismaError = error as {
+          code?: string;
+          message?: string;
+          stack?: string;
+        };
+        const isRetryable =
+          prismaError.code === 'P2034' || prismaError.code === 'P2002';
         if (isRetryable && attempt < MAX_RETRIES - 1) {
           this.logger.warn(
             `internalCodes batch generation conflict (attempt ${attempt + 1}/${MAX_RETRIES}), retrying...`,
@@ -757,13 +774,15 @@ export class BarrelService {
         );
 
         session.progress.processed += chunk.length;
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errObj = error as { message?: string; stack?: string };
+        const message = errObj.message ?? 'Unknown error';
         session.progress.failed += chunk.length;
         session.progress.errors.push({
           chunkStart: session.progress.processed,
-          message: error.message,
+          message,
         });
-        this.logger.error(`Import chunk failed: ${error.message}`, error.stack);
+        this.logger.error(`Import chunk failed: ${message}`, errObj.stack);
       }
     }
 

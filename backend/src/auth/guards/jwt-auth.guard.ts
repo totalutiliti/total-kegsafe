@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { TokenInvalidException } from '../../shared/exceptions/auth.exceptions.js';
+import type { JwtUser } from '../../shared/types/authenticated-request.js';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -23,7 +24,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest<T = JwtUser>(
+    err: Error | null,
+    user: T | false,
+    info?: { message?: string },
+  ): T {
     if (err || !user) {
       throw err || new TokenInvalidException(info?.message);
     }

@@ -10,17 +10,28 @@ import { tap } from 'rxjs/operators';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
+import type { Prisma } from '@prisma/client';
 
 export const AUDIT_KEY = 'audit';
 export interface AuditOptions {
   action: string;
   entityType: string;
-  getEntityId?: (req: any, result: any) => string;
+  getEntityId?: (req: Request, result: AuditResult) => string;
+}
+
+interface AuditResult {
+  id?: string;
+  [key: string]: unknown;
 }
 
 export const Audit = (options: AuditOptions) => {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
-    Reflect.defineMetadata(AUDIT_KEY, options, descriptor.value);
+  return (
+    _target: object,
+    _propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) => {
+    Reflect.defineMetadata(AUDIT_KEY, options, descriptor.value as object);
     return descriptor;
   };
 };
@@ -35,8 +46,8 @@ export class AuditInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
     const handler = context.getHandler();
 
     const auditOptions = Reflect.getMetadata(AUDIT_KEY, handler) as
@@ -47,17 +58,18 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const tenantId = this.cls.get('tenantId');
-    const userId = this.cls.get('userId');
-    const oldData = request.body;
+    const tenantId: string = this.cls.get('tenantId');
+    const userId: string = this.cls.get('userId');
+    const oldData = request.body as Prisma.InputJsonValue;
 
     return next.handle().pipe(
-      tap((result) => {
+      tap((result: unknown) => {
         void (async () => {
           try {
+            const auditResult = result as AuditResult | undefined;
             const entityId = auditOptions.getEntityId
-              ? auditOptions.getEntityId(request, result)
-              : result?.id || request.params?.id;
+              ? auditOptions.getEntityId(request, auditResult ?? {})
+              : auditResult?.id || request.params?.id;
 
             await this.prisma.auditLog.create({
               data: {
@@ -67,15 +79,17 @@ export class AuditInterceptor implements NestInterceptor {
                 entityType: auditOptions.entityType,
                 entityId: entityId?.toString() || 'unknown',
                 oldData: request.method !== 'POST' ? oldData : null,
-                newData: result,
+                newData: auditResult as Prisma.InputJsonValue,
                 ipAddress: request.ip,
                 userAgent: request.headers['user-agent'],
               },
             });
-          } catch (error: any) {
+          } catch (error: unknown) {
+            const err =
+              error instanceof Error ? error : new Error(String(error));
             this.logger.error('Audit log failed', {
-              message: error?.message,
-              stack: error?.stack,
+              message: err.message,
+              stack: err.stack,
             });
           }
         })();

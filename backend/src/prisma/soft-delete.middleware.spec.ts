@@ -63,7 +63,7 @@ describe('PrismaService soft delete integration', () => {
   describe('withTenantFilter', () => {
     it('should add deletedAt: null by default', () => {
       // Simulate the withTenantFilter logic
-      const withTenantFilter = (where?: Record<string, any>) => ({
+      const withTenantFilter = (where?: Record<string, unknown>) => ({
         ...where,
         deletedAt: where?.deletedAt !== undefined ? where.deletedAt : null,
       });
@@ -73,7 +73,7 @@ describe('PrismaService soft delete integration', () => {
     });
 
     it('should not override explicit deletedAt', () => {
-      const withTenantFilter = (where?: Record<string, any>) => ({
+      const withTenantFilter = (where?: Record<string, unknown>) => ({
         ...where,
         deletedAt: where?.deletedAt !== undefined ? where.deletedAt : null,
       });

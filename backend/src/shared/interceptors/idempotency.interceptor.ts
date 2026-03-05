@@ -10,7 +10,8 @@ import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Response } from 'express';
+import type { Request, Response } from 'express';
+import type { Prisma } from '@prisma/client';
 
 export const IDEMPOTENT_KEY = 'idempotent';
 
@@ -19,8 +20,12 @@ export const IDEMPOTENT_KEY = 'idempotent';
  * Endpoints marcados verificam o header Idempotency-Key.
  */
 export const Idempotent = () => {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
-    Reflect.defineMetadata(IDEMPOTENT_KEY, true, descriptor.value);
+  return (
+    _target: object,
+    _propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) => {
+    Reflect.defineMetadata(IDEMPOTENT_KEY, true, descriptor.value as object);
     return descriptor;
   };
 };
@@ -37,23 +42,27 @@ export class IdempotencyInterceptor implements NestInterceptor {
   async intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Promise<Observable<any>> {
+  ): Promise<Observable<unknown>> {
     const handler = context.getHandler();
-    const isIdempotent = Reflect.getMetadata(IDEMPOTENT_KEY, handler);
+    const isIdempotent = Reflect.getMetadata(IDEMPOTENT_KEY, handler) as
+      | boolean
+      | undefined;
 
     if (!isIdempotent) {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
-    const idempotencyKey = request.headers['idempotency-key'] as string;
+    const idempotencyKey = request.headers['idempotency-key'] as
+      | string
+      | undefined;
 
     if (!idempotencyKey) {
       return next.handle();
     }
 
-    const tenantId = this.cls.get('tenantId');
+    const tenantId: string = this.cls.get('tenantId');
 
     // Check if key already exists
     try {
@@ -65,34 +74,38 @@ export class IdempotencyInterceptor implements NestInterceptor {
         response.status(existing.statusCode);
         return of(existing.response);
       }
-    } catch (error: any) {
-      this.logger.warn(`Idempotency check failed: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Idempotency check failed: ${msg}`);
     }
 
     return next.handle().pipe(
-      tap((result) => {
+      tap((result: unknown) => {
         void (async () => {
           try {
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 
+            const responseData = (result ?? {}) as Prisma.InputJsonValue;
+
             await this.prisma.idempotencyKey.upsert({
               where: { key: `${tenantId}:${idempotencyKey}` },
               update: {
                 statusCode: response.statusCode || HttpStatus.OK,
-                response: result || {},
+                response: responseData,
                 expiresAt,
               },
               create: {
                 key: `${tenantId}:${idempotencyKey}`,
                 tenantId,
                 statusCode: response.statusCode || HttpStatus.OK,
-                response: result || {},
+                response: responseData,
                 expiresAt,
               },
             });
-          } catch (error: any) {
-            this.logger.warn(`Idempotency save failed: ${error.message}`);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Idempotency save failed: ${msg}`);
           }
         })();
       }),

@@ -12,6 +12,10 @@ import {
   ErrorResponse,
 } from '../exceptions/base.exception.js';
 import { ClsService } from 'nestjs-cls';
+import type {
+  AuthenticatedRequest,
+  HttpExceptionResponse,
+} from '../types/authenticated-request.js';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -24,8 +28,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const requestId =
-      this.cls.get('requestId') ||
+    const clsRequestId: string = this.cls.get('requestId');
+    const requestId: string =
+      clsRequestId ||
       (request.headers['x-request-id'] as string) ||
       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -40,29 +45,41 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logError(exception, request, requestId, 'warn');
     } else if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
+      const exceptionResponse = exception.getResponse() as
+        | string
+        | HttpExceptionResponse;
 
-      errorResponse = {
-        statusCode: status,
-        error: this.getHttpErrorName(status),
-        code: this.mapHttpStatusToCode(status),
-        message:
-          typeof exceptionResponse === 'string'
-            ? exceptionResponse
-            : (exceptionResponse as any).message || 'An error occurred',
-        details:
-          typeof exceptionResponse === 'object'
-            ? (exceptionResponse as any).details
-            : undefined,
-        traceId: requestId,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      };
-
-      if (Array.isArray((exceptionResponse as any).message)) {
-        errorResponse.details = {
-          validationErrors: (exceptionResponse as any).message,
+      if (typeof exceptionResponse === 'string') {
+        errorResponse = {
+          statusCode: status,
+          error: this.getHttpErrorName(status),
+          code: this.mapHttpStatusToCode(status),
+          message: exceptionResponse,
+          traceId: requestId,
+          timestamp: new Date().toISOString(),
+          path: request.url,
         };
+      } else {
+        const message = Array.isArray(exceptionResponse.message)
+          ? exceptionResponse.message.join(', ')
+          : exceptionResponse.message || 'An error occurred';
+
+        errorResponse = {
+          statusCode: status,
+          error: this.getHttpErrorName(status),
+          code: this.mapHttpStatusToCode(status),
+          message,
+          details: exceptionResponse.details,
+          traceId: requestId,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        };
+
+        if (Array.isArray(exceptionResponse.message)) {
+          errorResponse.details = {
+            validationErrors: exceptionResponse.message,
+          };
+        }
       }
 
       this.logError(exception, request, requestId, 'warn');
@@ -89,13 +106,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     requestId: string,
     level: 'warn' | 'error',
   ) {
+    const authReq = request as Partial<AuthenticatedRequest>;
     const logData = {
       requestId,
       method: request.method,
       path: request.url,
-      userId: (request as any).user?.id,
-      tenantId: (request as any).user?.tenantId,
-      body: this.sanitizeBody(request.body),
+      userId: authReq.user?.id,
+      tenantId: authReq.user?.tenantId,
+      body: this.sanitizeBody(request.body as Record<string, unknown>),
       error:
         exception instanceof Error
           ? {
@@ -113,7 +131,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
   }
 
-  private sanitizeBody(body: any): any {
+  private sanitizeBody(
+    body: Record<string, unknown> | undefined,
+  ): Record<string, unknown> | undefined {
     if (!body) return body;
     const sensitiveFields = [
       'password',

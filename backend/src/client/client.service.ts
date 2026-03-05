@@ -84,7 +84,23 @@ export class ClientService {
     return this.findById(tenantId, client.id);
   }
 
-  async update(tenantId: string, id: string, data: any, _userId?: string) {
+  async update(
+    tenantId: string,
+    id: string,
+    data: {
+      name?: string;
+      tradeName?: string;
+      cnpj?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      connectorType?: string;
+      isActive?: boolean;
+    },
+    _userId?: string,
+  ) {
     await this.findById(tenantId, id);
     return this.prisma.client.update({
       where: { id },

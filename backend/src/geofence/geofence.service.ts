@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { GeofenceType } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
 
 @Injectable()
@@ -21,11 +22,35 @@ export class GeofenceService {
     return geofence;
   }
 
-  async create(tenantId: string, data: any, _userId?: string) {
+  async create(
+    tenantId: string,
+    data: {
+      name: string;
+      type: GeofenceType;
+      latitude: number;
+      longitude: number;
+      radiusMeters: number;
+      clientId?: string;
+      isActive?: boolean;
+    },
+    _userId?: string,
+  ) {
     return this.prisma.geofence.create({ data: { tenantId, ...data } });
   }
 
-  async update(tenantId: string, id: string, data: any, _userId?: string) {
+  async update(
+    tenantId: string,
+    id: string,
+    data: {
+      name?: string;
+      type?: GeofenceType;
+      latitude?: number;
+      longitude?: number;
+      radiusMeters?: number;
+      isActive?: boolean;
+    },
+    _userId?: string,
+  ) {
     await this.findById(tenantId, id);
     return this.prisma.geofence.update({ where: { id }, data: { ...data } });
   }

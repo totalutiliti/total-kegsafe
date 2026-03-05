@@ -5,10 +5,40 @@ import { AlertService } from './alert.service';
 import { ComponentService } from '../component/component.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+interface MockPrismaModel {
+  findMany: jest.Mock;
+  updateMany: jest.Mock;
+  createMany: jest.Mock;
+}
+
+interface MockPrisma {
+  tenant: Pick<MockPrismaModel, 'findMany'>;
+  barrel: Pick<MockPrismaModel, 'updateMany'>;
+  alert: Pick<MockPrismaModel, 'createMany'>;
+  logisticsEvent: Pick<MockPrismaModel, 'findMany'>;
+  geofence: Pick<MockPrismaModel, 'findMany'>;
+  maintenanceOrder: Pick<MockPrismaModel, 'findMany'>;
+  componentCycle: Pick<MockPrismaModel, 'findMany'>;
+  $queryRaw: jest.Mock;
+}
+
+interface MockAlertService {
+  createAlert: jest.Mock;
+}
+
+interface CreateManyArgs {
+  data: Array<{ alertType: string; priority?: string }>;
+  skipDuplicates: boolean;
+}
+
+function getCreateManyCall(mock: jest.Mock, index = 0): CreateManyArgs {
+  return (mock.mock.calls as Array<[CreateManyArgs]>)[index][0];
+}
+
 describe('AlertJobsService', () => {
   let service: AlertJobsService;
-  let prisma: any;
-  let alertService: any;
+  let prisma: MockPrisma;
+  let alertService: MockAlertService;
 
   const TENANT_1 = { id: 't1', settings: { idleThresholdDays: 15 } };
   const TENANT_2 = { id: 't2', settings: { idleThresholdDays: 20 } };
@@ -36,9 +66,18 @@ describe('AlertJobsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AlertJobsService,
-        { provide: PrismaService, useValue: prisma },
-        { provide: AlertService, useValue: alertService },
-        { provide: ComponentService, useValue: componentService },
+        {
+          provide: PrismaService,
+          useValue: prisma as unknown as PrismaService,
+        },
+        {
+          provide: AlertService,
+          useValue: alertService as unknown as AlertService,
+        },
+        {
+          provide: ComponentService,
+          useValue: componentService as unknown as ComponentService,
+        },
         { provide: ConfigService, useValue: { get: () => false } },
       ],
     }).compile();
@@ -79,7 +118,7 @@ describe('AlertJobsService', () => {
 
       // Deve usar createMany com skipDuplicates (batch insert)
       expect(prisma.alert.createMany).toHaveBeenCalledTimes(1);
-      const call = prisma.alert.createMany.mock.calls[0][0];
+      const call = getCreateManyCall(prisma.alert.createMany);
       expect(call.data).toHaveLength(2);
       expect(call.skipDuplicates).toBe(true);
 
@@ -110,7 +149,7 @@ describe('AlertJobsService', () => {
       await service.checkIdleBarrels();
 
       expect(prisma.alert.createMany).toHaveBeenCalledTimes(1);
-      const call = prisma.alert.createMany.mock.calls[0][0];
+      const call = getCreateManyCall(prisma.alert.createMany);
       expect(call.data).toHaveLength(2);
       expect(call.data[0].alertType).toBe('IDLE_AT_CLIENT');
       expect(call.skipDuplicates).toBe(true);
@@ -129,7 +168,7 @@ describe('AlertJobsService', () => {
       await service.checkMaintenanceOverdue();
 
       expect(prisma.alert.createMany).toHaveBeenCalledTimes(1);
-      const call = prisma.alert.createMany.mock.calls[0][0];
+      const call = getCreateManyCall(prisma.alert.createMany);
       expect(call.data[0].alertType).toBe('MANDATORY_INSPECTION');
       expect(call.data[0].priority).toBe('HIGH');
     });
@@ -157,7 +196,8 @@ describe('AlertJobsService', () => {
 
       // Deve criar alertas em batch
       expect(prisma.alert.createMany).toHaveBeenCalledTimes(1);
-      expect(prisma.alert.createMany.mock.calls[0][0].data).toHaveLength(2);
+      const call = getCreateManyCall(prisma.alert.createMany);
+      expect(call.data).toHaveLength(2);
     });
 
     it('não deve fazer nada quando não há barris perdidos', async () => {
@@ -206,7 +246,7 @@ describe('AlertJobsService', () => {
 
       // Deve criar alertas em batch
       expect(prisma.alert.createMany).toHaveBeenCalledTimes(1);
-      const call = prisma.alert.createMany.mock.calls[0][0];
+      const call = getCreateManyCall(prisma.alert.createMany);
       expect(call.data[0].alertType).toBe('GEOFENCE_VIOLATION');
     });
 

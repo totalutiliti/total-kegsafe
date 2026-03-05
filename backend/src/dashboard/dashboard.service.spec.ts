@@ -2,9 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+interface MockPrismaService {
+  barrel: {
+    groupBy: jest.Mock;
+    count: jest.Mock;
+    findMany: jest.Mock;
+  };
+  componentCycle: {
+    groupBy: jest.Mock;
+  };
+  $queryRaw: jest.Mock;
+}
+
 describe('DashboardService', () => {
   let service: DashboardService;
-  let prisma: any;
+  let prisma: MockPrismaService;
 
   const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 

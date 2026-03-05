@@ -18,6 +18,7 @@ import { Roles } from './decorators/roles.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
 import { Role } from '@prisma/client';
+import type { JwtUser } from '../shared/types/authenticated-request.js';
 
 const COOKIE_OPTIONS_BASE = {
   httpOnly: true,
@@ -42,11 +43,11 @@ export class AuthController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   async login(
     @Body() dto: LoginDto,
-    @Req() req: any,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const ipAddress = req.ip;
-    const userAgent = req.headers?.['user-agent'];
+    const userAgent = req.headers['user-agent'];
     const result = await this.authService.login(
       dto.email,
       dto.password,
@@ -83,7 +84,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     // Read refresh token from cookie (fallback to body for API clients)
-    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    const refreshToken =
+      (req.cookies as Record<string, string> | undefined)?.refreshToken ||
+      (req.body as Record<string, string> | undefined)?.refreshToken;
     if (!refreshToken) {
       return res
         .status(HttpStatus.UNAUTHORIZED)
@@ -112,7 +115,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Revoke refresh token server-side
-    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    const refreshToken =
+      (req.cookies as Record<string, string> | undefined)?.refreshToken ||
+      (req.body as Record<string, string> | undefined)?.refreshToken;
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
@@ -126,7 +131,7 @@ export class AuthController {
 
   @Get('me')
   @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
-  me(@CurrentUser() user: any) {
+  me(@CurrentUser() user: JwtUser) {
     return user;
   }
 }

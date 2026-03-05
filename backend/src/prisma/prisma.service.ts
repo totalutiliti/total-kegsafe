@@ -14,6 +14,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(private readonly cls: ClsService) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Prisma PG adapter requires this cast
     super({ adapter } as any);
   }
 
@@ -50,7 +51,10 @@ export class PrismaService
     return {
       ...where,
       ...(tenantId ? { tenantId } : {}),
-      deletedAt: where?.deletedAt !== undefined ? where.deletedAt : null,
+      deletedAt:
+        where?.deletedAt !== undefined
+          ? (where.deletedAt as Date | null)
+          : null,
     };
   }
 
