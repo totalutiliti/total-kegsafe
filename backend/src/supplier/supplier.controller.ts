@@ -22,11 +22,13 @@ export class SupplierController {
 
   // Suppliers
   @Get('suppliers')
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findAllSuppliers(@TenantId() tenantId: string) {
     return this.supplierService.findAllSuppliers(tenantId);
   }
 
   @Get('suppliers/:id')
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findSupplierById(
     @TenantId() tenantId: string,
     @Param('id') id: string,
@@ -58,11 +60,13 @@ export class SupplierController {
 
   // Service Providers
   @Get('service-providers')
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findAllProviders(@TenantId() tenantId: string) {
     return this.supplierService.findAllProviders(tenantId);
   }
 
   @Get('service-providers/:id')
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findProviderById(
     @TenantId() tenantId: string,
     @Param('id') id: string,

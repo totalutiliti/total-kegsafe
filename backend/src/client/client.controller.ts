@@ -24,7 +24,7 @@ export class ClientController {
   constructor(private readonly clientService: ClientService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
   async findAll(
     @TenantId() tenantId: string,
     @Query('page') page?: number,
@@ -34,7 +34,7 @@ export class ClientController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
   async findById(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.clientService.findById(tenantId, id);
   }
@@ -50,7 +50,7 @@ export class ClientController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(Role.ADMIN)
   async update(
     @TenantId() tenantId: string,
     @CurrentUser('id') userId: string,

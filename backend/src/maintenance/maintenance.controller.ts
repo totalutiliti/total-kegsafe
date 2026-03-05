@@ -45,7 +45,7 @@ export class MaintenanceController {
   }
 
   @Post('orders')
-  @Roles(Role.MAINTENANCE, Role.ADMIN, Role.MANAGER)
+  @Roles(Role.MAINTENANCE, Role.ADMIN)
   async createOrder(
     @TenantId() tenantId: string,
     @Body() dto: CreateMaintenanceOrderDto,
@@ -64,7 +64,7 @@ export class MaintenanceController {
   }
 
   @Post('triage')
-  @Roles(Role.MAINTENANCE, Role.LOGISTICS, Role.ADMIN)
+  @Roles(Role.MAINTENANCE, Role.ADMIN)
   async registerTriage(
     @TenantId() tenantId: string,
     @CurrentUser('id') userId: string,

@@ -37,6 +37,7 @@ export class BarrelController {
   // =============================================
 
   @Get()
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
   async findAll(
     @TenantId() tenantId: string,
     @Query() query: FindBarrelsQueryDto,
@@ -96,6 +97,7 @@ export class BarrelController {
 
   // --- Rotas existentes com parâmetros ---
   @Get('qr/:qrCode')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
   async findByQrCode(
     @TenantId() tenantId: string,
     @Param('qrCode') qrCode: string,
@@ -104,11 +106,13 @@ export class BarrelController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
   async findById(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.barrelService.findById(tenantId, id);
   }
 
   @Get(':id/timeline')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
   async getTimeline(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.barrelService.getTimeline(tenantId, id);
   }
