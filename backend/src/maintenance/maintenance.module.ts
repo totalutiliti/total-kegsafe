@@ -4,9 +4,9 @@ import { MaintenanceController } from './maintenance.controller.js';
 import { ComponentModule } from '../component/component.module.js';
 
 @Module({
-    imports: [ComponentModule],
-    providers: [MaintenanceService],
-    controllers: [MaintenanceController],
-    exports: [MaintenanceService],
+  imports: [ComponentModule],
+  providers: [MaintenanceService],
+  controllers: [MaintenanceController],
+  exports: [MaintenanceService],
 })
-export class MaintenanceModule { }
+export class MaintenanceModule {}

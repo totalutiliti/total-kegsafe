@@ -27,7 +27,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { Role } from '@prisma/client';
 
-@Controller('api/barrels')
+@Controller('barrels')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BarrelController {
   constructor(private readonly barrelService: BarrelService) {}
@@ -56,10 +56,7 @@ export class BarrelController {
 
   @Get('unlinked/export')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async exportUnlinked(
-    @TenantId() tenantId: string,
-    @Res() res: Response,
-  ) {
+  async exportUnlinked(@TenantId() tenantId: string, @Res() res: Response) {
     const buffer = await this.barrelService.exportUnlinked(tenantId);
     res.setHeader(
       'Content-Type',

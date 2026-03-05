@@ -9,23 +9,24 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 
 @Module({
-    imports: [
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.registerAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => {
-                const secret = config.get<string>('JWT_SECRET');
-                if (!secret) throw new Error('JWT_SECRET is required. Set it in your .env file.');
-                return {
-                    secret,
-                    signOptions: { expiresIn: 900 }, // 15 minutes in seconds
-                };
-            },
-        }),
-    ],
-    providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-    controllers: [AuthController],
-    exports: [AuthService, JwtAuthGuard, RolesGuard],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET');
+        if (!secret)
+          throw new Error('JWT_SECRET is required. Set it in your .env file.');
+        return {
+          secret,
+          signOptions: { expiresIn: 900 }, // 15 minutes in seconds
+        };
+      },
+    }),
+  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  controllers: [AuthController],
+  exports: [AuthService, JwtAuthGuard, RolesGuard],
 })
-export class AuthModule { }
+export class AuthModule {}

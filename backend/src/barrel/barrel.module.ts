@@ -3,8 +3,8 @@ import { BarrelService } from './barrel.service.js';
 import { BarrelController } from './barrel.controller.js';
 
 @Module({
-    providers: [BarrelService],
-    controllers: [BarrelController],
-    exports: [BarrelService],
+  providers: [BarrelService],
+  controllers: [BarrelController],
+  exports: [BarrelService],
 })
-export class BarrelModule { }
+export class BarrelModule {}

@@ -283,10 +283,14 @@ model Barrel {
   /// Data da última atualização
   updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
   
+  /// Versão para optimistic locking — evita overwrite silencioso
+  /// Incrementada a cada update; conflito detectado se version != expected
+  version         Int          @default(1)
+
   /// Usuário que criou o registro (auditoria)
   createdById     String?      @db.Uuid
   createdBy       User?        @relation("BarrelCreatedBy", fields: [createdById], references: [id])
-  
+
   /// Usuário que fez a última atualização (auditoria)
   updatedById     String?      @db.Uuid
   updatedBy       User?        @relation("BarrelUpdatedBy", fields: [updatedById], references: [id])
@@ -1254,4 +1258,35 @@ model AuditLog {
   @@index([tenantId, action])
   @@index([tenantId, userId, timestamp])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// IDEMPOTÊNCIA
+// Controle de operações idempotentes para evitar duplicação
+// ============================================================================
+
+/// Chave de idempotência para operações críticas (transferências, movimentações)
+/// Garante que uma mesma operação executada 2x retorna o mesmo resultado
+model IdempotencyKey {
+  /// Chave única enviada pelo cliente no header Idempotency-Key
+  key        String   @id @db.VarChar(255)
+
+  /// Tenant que criou a chave
+  tenantId   String   @db.Uuid
+
+  /// Status code da resposta original
+  statusCode Int
+
+  /// Body da resposta original (JSON)
+  response   Json
+
+  /// Data de criação (para TTL/cleanup)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  /// Data de expiração (24h por padrão)
+  expiresAt  DateTime @db.Timestamptz(3)
+
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

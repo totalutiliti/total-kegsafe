@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { BarrelStatus, BarrelMaterial, ValveModel, Prisma } from '@prisma/client';
+import {
+  BarrelStatus,
+  BarrelMaterial,
+  ValveModel,
+  Prisma,
+} from '@prisma/client';
 import { CreateBarrelDto } from './dto/create-barrel.dto.js';
 import { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import { QuickRegisterDto } from './dto/quick-register.dto.js';
@@ -312,8 +317,7 @@ export class BarrelService {
 
         return result;
       } catch (error: any) {
-        const isRetryable =
-          error.code === 'P2034' || error.code === 'P2002';
+        const isRetryable = error.code === 'P2034' || error.code === 'P2002';
 
         if (isRetryable && attempt < MAX_RETRIES - 1) {
           this.logger.warn(
@@ -429,15 +433,15 @@ export class BarrelService {
               lastNumber = await tx.barrel.count({ where: { tenantId } });
             }
 
-            return Array.from({ length: count }, (_, i) =>
-              `KS-BAR-${String(lastNumber + i + 1).padStart(9, '0')}`,
+            return Array.from(
+              { length: count },
+              (_, i) => `KS-BAR-${String(lastNumber + i + 1).padStart(9, '0')}`,
             );
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
       } catch (error: any) {
-        const isRetryable =
-          error.code === 'P2034' || error.code === 'P2002';
+        const isRetryable = error.code === 'P2034' || error.code === 'P2002';
         if (isRetryable && attempt < MAX_RETRIES - 1) {
           this.logger.warn(
             `internalCodes batch generation conflict (attempt ${attempt + 1}/${MAX_RETRIES}), retrying...`,
@@ -492,11 +496,7 @@ export class BarrelService {
   /**
    * Valida um arquivo de importação e armazena em sessão temporária.
    */
-  async validateImport(
-    tenantId: string,
-    buffer: Buffer,
-    filename: string,
-  ) {
+  async validateImport(tenantId: string, buffer: Buffer, filename: string) {
     const rawRows = this.excelService.parseFile(buffer, filename);
     const errors: { row: number; field: string; message: string }[] = [];
     const validRows: ValidatedRow[] = [];
@@ -678,10 +678,7 @@ export class BarrelService {
   /**
    * Processa chunks de importação sequencialmente.
    */
-  private async processImportChunks(
-    tenantId: string,
-    session: ImportSession,
-  ) {
+  private async processImportChunks(tenantId: string, session: ImportSession) {
     const rows = session.rows;
     const chunks: ValidatedRow[][] = [];
     for (let i = 0; i < rows.length; i += IMPORT_CHUNK_SIZE) {
@@ -754,10 +751,7 @@ export class BarrelService {
           chunkStart: session.progress.processed,
           message: error.message,
         });
-        this.logger.error(
-          `Import chunk failed: ${error.message}`,
-          error.stack,
-        );
+        this.logger.error(`Import chunk failed: ${error.message}`, error.stack);
       }
     }
 
@@ -968,7 +962,15 @@ export class BarrelService {
       }));
 
     if (items.length === 0) {
-      return { linked: 0, errors: [{ internalCode: '-', message: 'Nenhum par internalCode/qrCode encontrado no arquivo' }] };
+      return {
+        linked: 0,
+        errors: [
+          {
+            internalCode: '-',
+            message: 'Nenhum par internalCode/qrCode encontrado no arquivo',
+          },
+        ],
+      };
     }
 
     return this.batchLinkQr(tenantId, items);

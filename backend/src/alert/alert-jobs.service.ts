@@ -154,14 +154,11 @@ export class AlertJobsService {
 
     try {
       const tenants = await this.getActiveTenants();
-      this.logger.log(
-        `checkIdleBarrels: ${tenants.length} tenants to process`,
-      );
+      this.logger.log(`checkIdleBarrels: ${tenants.length} tenants to process`);
 
       await this.processTenantsInParallel(tenants, async (tenant) => {
         try {
-          const thresholdDays =
-            (tenant.settings as any)?.idleThresholdDays || 15;
+          const thresholdDays = tenant.settings?.idleThresholdDays || 15;
           const threshold = new Date(
             Date.now() - thresholdDays * 24 * 60 * 60 * 1000,
           );
@@ -312,9 +309,7 @@ export class AlertJobsService {
     try {
       const threshold = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
       const tenants = await this.getActiveTenants();
-      this.logger.log(
-        `checkLostBarrels: ${tenants.length} tenants to process`,
-      );
+      this.logger.log(`checkLostBarrels: ${tenants.length} tenants to process`);
 
       await this.processTenantsInParallel(tenants, async (tenant) => {
         try {
