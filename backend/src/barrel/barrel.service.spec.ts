@@ -572,10 +572,10 @@ describe('BarrelService', () => {
   });
 
   describe('executeImport', () => {
-    it('deve lançar ImportNotFoundException para uploadId inexistente', async () => {
-      await expect(
+    it('deve lançar ImportNotFoundException para uploadId inexistente', () => {
+      expect(() =>
         service.executeImport(TENANT_ID, 'non-existent-upload-id'),
-      ).rejects.toThrow(ImportNotFoundException);
+      ).toThrow(ImportNotFoundException);
     });
 
     it('deve lançar ImportInProgressException se já em andamento', async () => {
@@ -641,9 +641,9 @@ describe('BarrelService', () => {
       );
 
       const otherTenant = '00000000-0000-0000-0000-000000000099';
-      await expect(
+      expect(() =>
         service.executeImport(otherTenant, validation.uploadId),
-      ).rejects.toThrow(ImportNotFoundException);
+      ).toThrow(ImportNotFoundException);
     });
   });
 
