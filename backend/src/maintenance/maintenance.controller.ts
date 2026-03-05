@@ -6,8 +6,10 @@ import {
   Param,
   Query,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
-import { MaintenanceService } from './maintenance.service.js';
+import type { IMaintenanceService } from './maintenance.service.interface.js';
+import { MAINTENANCE_SERVICE } from './maintenance.constants.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -21,7 +23,10 @@ import { CreateTriageDto } from './dto/create-triage.dto.js';
 @Controller('maintenance')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MaintenanceController {
-  constructor(private readonly maintenanceService: MaintenanceService) {}
+  constructor(
+    @Inject(MAINTENANCE_SERVICE)
+    private readonly maintenanceService: IMaintenanceService,
+  ) {}
 
   @Get('orders')
   @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)

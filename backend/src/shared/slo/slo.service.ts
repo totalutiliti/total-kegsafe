@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+// NOTE: Metrics are stored in-memory and will be lost on container restart.
+// For production with real traffic, migrate to Application Insights or Prometheus.
+
 /** Default SLO targets */
 const DEFAULT_SLO = {
   availability: 0.995,

@@ -7,12 +7,14 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthService } from './auth.service.js';
+import type { IAuthService } from './auth.service.interface.js';
+import { AUTH_SERVICE } from './auth.constants.js';
 import { LoginDto } from './dto/login.dto.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
@@ -29,7 +31,7 @@ const COOKIE_OPTIONS_BASE = {
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
+    @Inject(AUTH_SERVICE) private readonly authService: IAuthService,
     private readonly config: ConfigService,
   ) {}
 

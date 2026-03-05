@@ -11,10 +11,12 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Inject,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import { BarrelService } from './barrel.service.js';
+import type { IBarrelService } from './barrel.service.interface.js';
+import { BARREL_SERVICE } from './barrel.constants.js';
 import { CreateBarrelDto } from './dto/create-barrel.dto.js';
 import { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import { FindBarrelsQueryDto } from './dto/find-barrels-query.dto.js';
@@ -30,7 +32,9 @@ import { Role } from '@prisma/client';
 @Controller('barrels')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BarrelController {
-  constructor(private readonly barrelService: BarrelService) {}
+  constructor(
+    @Inject(BARREL_SERVICE) private readonly barrelService: IBarrelService,
+  ) {}
 
   // =============================================
   // IMPORTANTE: Rotas estáticas DEVEM vir antes de :id
