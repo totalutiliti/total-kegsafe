@@ -8,6 +8,9 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 
+/** Injection token for IAuthService — use with @Inject(AUTH_SERVICE) */
+export const AUTH_SERVICE = 'AUTH_SERVICE';
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -25,8 +28,14 @@ import { RolesGuard } from './guards/roles.guard.js';
       },
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  providers: [
+    AuthService,
+    { provide: AUTH_SERVICE, useClass: AuthService },
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
   controllers: [AuthController],
-  exports: [AuthService, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, AUTH_SERVICE, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
