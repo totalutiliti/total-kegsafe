@@ -21,7 +21,7 @@ export function CreateUserDialog({ onCreated }: { onCreated?: () => void }) {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/users', form);
+            await api.post('/users', form);
             toast.success('Usuário criado com sucesso!');
             setOpen(false);
             setForm({ name: '', email: '', password: '', role: 'LOGISTICS' });

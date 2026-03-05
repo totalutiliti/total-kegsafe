@@ -19,8 +19,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Package,
   Search,
@@ -31,6 +38,7 @@ import {
   QrCode,
   Upload,
   Link2,
+  Download,
 } from "lucide-react";
 import { CreateBarrelDialog } from "@/components/dialogs/create-barrel-dialog";
 import { toast } from "sonner";
@@ -85,13 +93,32 @@ export default function BarrelsPage() {
   const [loading, setLoading] = useState(true);
   const limit = 20;
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await api.get("/barrels/import/template", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "template-importacao-barris.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Template baixado!");
+    } catch {
+      toast.error("Erro ao baixar template");
+    }
+  };
+
   const fetchBarrels = async () => {
     setLoading(true);
     try {
       const params: any = { page, limit };
       if (search) params.search = search;
       if (statusFilter && statusFilter !== "all") params.status = statusFilter;
-      const { data } = await api.get("/api/barrels", { params });
+      const { data } = await api.get("/barrels", { params });
       setBarrels(data.items);
       setTotal(data.total);
       setTotalPages(data.totalPages ?? Math.ceil(data.total / limit));
@@ -134,25 +161,64 @@ export default function BarrelsPage() {
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="border-border bg-card">
-              <Link href="/barrels/quick-register">
-                <DropdownMenuItem className="cursor-pointer">
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Cadastro Rápido (scan)
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/barrels/import">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Importar Planilha
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/barrels/link-qr">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Link2 className="mr-2 h-4 w-4" />
-                  Vincular QR Codes
-                </DropdownMenuItem>
-              </Link>
+            <DropdownMenuContent align="end" className="border-border bg-card w-72">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/barrels/quick-register">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <QrCode className="mr-2 h-4 w-4 shrink-0" />
+                      <div>
+                        <p>Cadastro Rápido (scan)</p>
+                        <p className="text-xs text-muted-foreground font-normal">Escaneie QR codes para cadastrar barris um a um</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p>Use a câmera para escanear o QR code de cada barril novo. Ideal para recebimento de lotes pequenos no chão de fábrica.</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/barrels/import">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Upload className="mr-2 h-4 w-4 shrink-0" />
+                      <div>
+                        <p>Importar Planilha</p>
+                        <p className="text-xs text-muted-foreground font-normal">Importe barris em massa via arquivo .xlsx ou .csv</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p>Faça upload de uma planilha com os dados dos barris. Colunas: QR Code, Fabricante, Válvula, Capacidade, Tara, Material, Custo.</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/barrels/link-qr">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link2 className="mr-2 h-4 w-4 shrink-0" />
+                      <div>
+                        <p>Vincular QR Codes</p>
+                        <p className="text-xs text-muted-foreground font-normal">Associe QR codes a barris já cadastrados sem QR</p>
+                      </div>
+                    </DropdownMenuItem>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p>Para barris importados sem QR code. Selecione o barril na lista e escaneie a etiqueta QR, ou faça upload de uma planilha com o mapeamento código → QR.</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">Templates</DropdownMenuLabel>
+              <DropdownMenuItem className="cursor-pointer" onSelect={(e) => { e.preventDefault(); handleDownloadTemplate(); }}>
+                <Download className="mr-2 h-4 w-4 shrink-0" />
+                <div>
+                  <p>Template Importação (.xlsx)</p>
+                  <p className="text-xs text-muted-foreground font-normal">Planilha modelo para cadastro em massa</p>
+                </div>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

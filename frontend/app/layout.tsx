@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { ReactQueryProvider } from "@/lib/query-provider";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProvider>
           <ReactQueryProvider>
+            <TooltipProvider delayDuration={300}>
             {children}
             <Toaster
               position="top-right"
@@ -32,6 +34,7 @@ export default function RootLayout({
                 className: 'bg-card border-border text-foreground',
               }}
             />
+            </TooltipProvider>
           </ReactQueryProvider>
         </ThemeProvider>
       </body>

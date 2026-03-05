@@ -20,7 +20,7 @@ export default function ComponentsPage() {
     const [components, setComponents] = useState<any[]>([]);
 
     const fetchComponents = () => {
-        api.get('/api/components').then(r => setComponents(r.data)).catch(() => toast.error('Erro ao carregar componentes'));
+        api.get('/components').then(r => setComponents(r.data)).catch(() => toast.error('Erro ao carregar componentes'));
     };
 
     useEffect(() => {

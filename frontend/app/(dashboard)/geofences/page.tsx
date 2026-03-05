@@ -25,7 +25,7 @@ export default function GeofencesPage() {
     }, []);
 
     const fetchGeofences = () => {
-        api.get('/api/geofences').then(r => setGeofences(r.data)).catch(() => toast.error('Erro ao carregar geofences'));
+        api.get('/geofences').then(r => setGeofences(r.data)).catch(() => toast.error('Erro ao carregar geofences'));
     };
 
     return (

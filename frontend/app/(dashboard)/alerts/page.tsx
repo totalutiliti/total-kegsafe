@@ -27,7 +27,7 @@ export default function AlertsPage() {
         try {
             const params: any = { page, limit: 20 };
             if (resolved !== 'all') params.resolved = resolved === 'true';
-            const { data } = await api.get('/api/alerts', { params });
+            const { data } = await api.get('/alerts', { params });
             setAlerts(data.items);
             setTotal(data.total);
         } catch (error) {
@@ -39,14 +39,14 @@ export default function AlertsPage() {
 
     const handleAcknowledge = async (id: string) => {
         try {
-            await api.post(`/api/alerts/${id}/acknowledge`);
+            await api.post(`/alerts/${id}/acknowledge`);
             fetchAlerts();
         } catch (error) { toast.error('Erro ao reconhecer alerta'); }
     };
 
     const handleResolve = async (id: string) => {
         try {
-            await api.post(`/api/alerts/${id}/resolve`, { resolution: 'Resolvido manualmente' });
+            await api.post(`/alerts/${id}/resolve`, { resolution: 'Resolvido manualmente' });
             fetchAlerts();
         } catch (error) { toast.error('Erro ao resolver alerta'); }
     };

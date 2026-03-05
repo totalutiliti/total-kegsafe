@@ -21,7 +21,7 @@ export default function ClientsPage() {
     }, [page]);
 
     const fetchClients = () => {
-        api.get('/api/clients', { params: { page, limit: 20 } })
+        api.get('/clients', { params: { page, limit: 20 } })
             .then(r => {
                 setClients(r.data.items);
                 setTotal(r.data.total);

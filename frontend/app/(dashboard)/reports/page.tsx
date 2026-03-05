@@ -14,9 +14,9 @@ export default function ReportsPage() {
 
     useEffect(() => {
         Promise.all([
-            api.get('/api/dashboard/cost-per-liter'),
-            api.get('/api/dashboard/asset-turnover'),
-            api.get('/api/dashboard/loss-report'),
+            api.get('/dashboard/cost-per-liter'),
+            api.get('/dashboard/asset-turnover'),
+            api.get('/dashboard/loss-report'),
         ]).then(([c, t, l]) => {
             setCostData(c.data);
             setTurnoverData(t.data);

@@ -21,7 +21,7 @@ export function CreateGeofenceDialog({ onCreated }: { onCreated?: () => void }) 
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/geofences', {
+            await api.post('/geofences', {
                 ...form,
                 latitude: +form.latitude,
                 longitude: +form.longitude,

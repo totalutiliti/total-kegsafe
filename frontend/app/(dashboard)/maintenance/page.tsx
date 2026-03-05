@@ -27,7 +27,7 @@ export default function MaintenancePage() {
             try {
                 const params: any = { limit: 50 };
                 if (statusFilter !== 'all') params.status = statusFilter;
-                const { data } = await api.get('/api/maintenance/orders', { params });
+                const { data } = await api.get('/maintenance/orders', { params });
                 setOrders(data.items);
                 setTotal(data.total);
             } catch (error) { toast.error('Erro ao carregar ordens de manutenção'); }
