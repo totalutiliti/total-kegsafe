@@ -41,6 +41,10 @@ export class PrismaService
     }
   }
 
+  /**
+   * Adds tenantId and deletedAt: null filter to queries.
+   * All read queries on soft-delete models should use this.
+   */
   withTenantFilter(where?: Record<string, any>): Record<string, any> {
     const tenantId = this.getCurrentTenantId();
     return {
@@ -72,5 +76,13 @@ export class PrismaService
       ...data,
       ...(userId ? { updatedById: userId } : {}),
     };
+  }
+
+  /**
+   * Soft delete data payload — sets deletedAt to current timestamp.
+   * Usage: prisma.barrel.update({ where: { id }, data: prisma.softDeleteData() })
+   */
+  softDeleteData(): { deletedAt: Date } {
+    return { deletedAt: new Date() };
   }
 }
