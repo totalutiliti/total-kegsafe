@@ -22,7 +22,7 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/components', {
+            await api.post('/components', {
                 ...form,
                 averageReplacementCost: form.averageReplacementCost || undefined,
             });

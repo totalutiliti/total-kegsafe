@@ -32,13 +32,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     login: async (email: string, password: string) => {
         // Cookies are set by the server via httpOnly — no localStorage needed
-        const { data } = await api.post('/api/auth/login', { email, password });
+        const { data } = await api.post('/auth/login', { email, password });
         set({ user: data.user, isAuthenticated: true });
     },
 
     logout: () => {
         // Server clears httpOnly cookies
-        api.post('/api/auth/logout').catch(() => { });
+        api.post('/auth/logout').catch(() => { });
         set({ user: null, isAuthenticated: false });
         window.location.href = '/login';
     },
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     checkAuth: async () => {
         try {
             // Cookie is sent automatically — server validates it
-            const { data } = await api.get('/api/auth/me');
+            const { data } = await api.get('/auth/me');
             set({ user: data, isAuthenticated: true, isLoading: false });
         } catch {
             set({ user: null, isAuthenticated: false, isLoading: false });

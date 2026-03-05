@@ -25,7 +25,7 @@ export default function UsersPage() {
     }, []);
 
     const fetchUsers = () => {
-        api.get('/api/users').then(r => setUsers(r.data)).catch(() => toast.error('Erro ao carregar usuários'));
+        api.get('/users').then(r => setUsers(r.data)).catch(() => toast.error('Erro ao carregar usuários'));
     };
 
     return (

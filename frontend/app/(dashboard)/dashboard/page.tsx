@@ -20,10 +20,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-    const { data: fleetData, isLoading: loadingFleet } = useApiQuery(['dashboard', 'fleet'], '/api/dashboard/fleet-health');
-    const { data: costData } = useApiQuery(['dashboard', 'cost'], '/api/dashboard/cost-per-liter');
-    const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/api/dashboard/asset-turnover');
-    const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/api/alerts/counts');
+    const { data: fleetData, isLoading: loadingFleet } = useApiQuery(['dashboard', 'fleet'], '/dashboard/fleet-health');
+    const { data: costData } = useApiQuery(['dashboard', 'cost'], '/dashboard/cost-per-liter');
+    const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/dashboard/asset-turnover');
+    const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/alerts/counts');
 
     if (loadingFleet) {
         return <DashboardSkeleton />;

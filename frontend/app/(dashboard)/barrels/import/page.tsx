@@ -57,7 +57,7 @@ export default function ImportBarrelsPage() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await api.get("/api/barrels/import/template", {
+      const response = await api.get("/barrels/import/template", {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -96,7 +96,7 @@ export default function ImportBarrelsPage() {
       const formData = new FormData();
       formData.append("file", file);
       const { data } = await api.post(
-        "/api/barrels/import/validate",
+        "/barrels/import/validate",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -117,7 +117,7 @@ export default function ImportBarrelsPage() {
     if (!validation) return;
     setStep("importing");
     try {
-      await api.post("/api/barrels/import/execute", {
+      await api.post("/barrels/import/execute", {
         uploadId: validation.uploadId,
       });
 
@@ -125,7 +125,7 @@ export default function ImportBarrelsPage() {
       pollingRef.current = setInterval(async () => {
         try {
           const { data } = await api.get(
-            `/api/barrels/import/progress/${validation.uploadId}`,
+            `/barrels/import/progress/${validation.uploadId}`,
           );
           setProgress(data);
           if (data.status === "completed" || data.status === "failed") {

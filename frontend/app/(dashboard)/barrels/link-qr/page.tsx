@@ -56,7 +56,7 @@ export default function LinkQrPage() {
   const fetchUnlinked = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/api/barrels/unlinked", {
+      const { data } = await api.get("/barrels/unlinked", {
         params: { page, limit: 20 },
       });
       setBarrels(data.items);
@@ -82,7 +82,7 @@ export default function LinkQrPage() {
       }
 
       try {
-        await api.patch(`/api/barrels/${selectedBarrel.id}/link-qr`, {
+        await api.patch(`/barrels/${selectedBarrel.id}/link-qr`, {
           qrCode,
         });
         playSuccessBeep();
@@ -120,7 +120,7 @@ export default function LinkQrPage() {
 
   const handleExportUnlinked = async () => {
     try {
-      const response = await api.get("/api/barrels/unlinked/export", {
+      const response = await api.get("/barrels/unlinked/export", {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -142,7 +142,7 @@ export default function LinkQrPage() {
     try {
       const formData = new FormData();
       formData.append("file", uploadFile);
-      const { data } = await api.post("/api/barrels/link-qr/batch", formData, {
+      const { data } = await api.post("/barrels/link-qr/batch", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setLinkResult(data);

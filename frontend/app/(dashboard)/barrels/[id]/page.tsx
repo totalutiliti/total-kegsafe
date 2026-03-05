@@ -47,8 +47,8 @@ export default function BarrelDetailPage() {
         const load = async () => {
             try {
                 const [barrelRes, timelineRes] = await Promise.all([
-                    api.get(`/api/barrels/${params.id}`),
-                    api.get(`/api/barrels/${params.id}/timeline`),
+                    api.get(`/barrels/${params.id}`),
+                    api.get(`/barrels/${params.id}/timeline`),
                 ]);
                 setBarrel(barrelRes.data);
                 setTimeline(timelineRes.data || []);

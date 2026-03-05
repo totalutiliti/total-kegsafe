@@ -22,7 +22,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/barrels', form);
+            await api.post('/barrels', form);
             toast.success('Barril criado com sucesso!');
             setOpen(false);
             setForm({ qrCode: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50, tareWeightKg: 13.2, material: 'INOX_304', acquisitionCost: 800 });

@@ -23,8 +23,8 @@ export default function DisposalPage() {
 
     useEffect(() => {
         Promise.all([
-            api.get('/api/disposals'),
-            api.get('/api/disposals/suggestions'),
+            api.get('/disposals'),
+            api.get('/disposals/suggestions'),
         ]).then(([d, s]) => {
             setDisposals(d.data);
             setSuggestions(s.data);

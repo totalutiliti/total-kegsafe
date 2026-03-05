@@ -56,7 +56,7 @@ export default function QuickRegisterPage() {
       }
 
       try {
-        const { data } = await api.post("/api/barrels/quick-register", {
+        const { data } = await api.post("/barrels/quick-register", {
           qrCode,
           manufacturer: template.manufacturer || undefined,
           valveModel: template.valveModel,
