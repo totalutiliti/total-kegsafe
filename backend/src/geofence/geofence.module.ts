@@ -3,8 +3,8 @@ import { GeofenceService } from './geofence.service.js';
 import { GeofenceController } from './geofence.controller.js';
 
 @Module({
-    providers: [GeofenceService],
-    controllers: [GeofenceController],
-    exports: [GeofenceService],
+  providers: [GeofenceService],
+  controllers: [GeofenceController],
+  exports: [GeofenceService],
 })
-export class GeofenceModule { }
+export class GeofenceModule {}

@@ -18,11 +18,17 @@ async function bootstrap() {
     }
     if (!process.env.CORS_ORIGINS) {
       throw new Error(
-        '🚨 CORS_ORIGINS must be explicitly set in production. ' +
-        'Example: CORS_ORIGINS=https://app.kegsafe.com.br,https://admin.kegsafe.com.br',
+        'CORS_ORIGINS must be explicitly set in production. ' +
+          'Example: CORS_ORIGINS=https://app.kegsafe.com.br,https://admin.kegsafe.com.br',
       );
     }
   }
+
+  // API versioning — all routes under /api/v1/
+  app.setGlobalPrefix('api/v1');
+
+  // Graceful shutdown — allow in-flight requests to complete
+  app.enableShutdownHooks();
 
   // Helmet — secure HTTP headers with Content Security Policy
   app.use(
@@ -32,7 +38,7 @@ async function bootstrap() {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:", "blob:"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
           fontSrc: ["'self'"],
           connectSrc: ["'self'"],
           frameSrc: ["'none'"],
@@ -50,7 +56,7 @@ async function bootstrap() {
 
   // CORS — restrict origins from env (production-safe)
   const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
     : ['http://localhost:3000'];
   app.enableCors({
     origin: corsOrigins,
@@ -58,22 +64,34 @@ async function bootstrap() {
   });
 
   // Swagger / OpenAPI documentation (disabled in production by default)
-  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER_DOCS === 'true') {
+  if (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.ENABLE_SWAGGER_DOCS === 'true'
+  ) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('KegSafe Tech API')
-      .setDescription('API de gestão de barris de chopp — rastreamento logístico e manutenção preditiva')
+      .setDescription(
+        'API de gestão de barris de chopp — rastreamento logístico e manutenção preditiva',
+      )
       .setVersion('1.0')
-      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'Bearer')
-      .addCookieAuth('accessToken', { type: 'apiKey', in: 'cookie', name: 'accessToken' })
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        'Bearer',
+      )
+      .addCookieAuth('accessToken', {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'accessToken',
+      })
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api/docs', app, document);
-    logger.log('📚 Swagger docs available at /api/docs');
+    logger.log('Swagger docs available at /api/docs');
   }
 
   const port = process.env.PORT ?? 3009;
   await app.listen(port);
-  logger.log(`🚀 KegSafe API running on http://localhost:${port}`);
+  logger.log(`KegSafe API running on http://localhost:${port}`);
+  logger.log(`All routes available under /api/v1/`);
 }
 bootstrap();
-

@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { validateEnv } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -26,7 +27,11 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      validate: validateEnv,
+    }),
     ScheduleModule.forRoot(),
     // Rate limiting — 100 requests per 60 seconds per IP (auth endpoints override with stricter limits)
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),

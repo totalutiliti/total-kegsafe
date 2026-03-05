@@ -6,29 +6,29 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { Role } from '@prisma/client';
 
-@Controller('api/dashboard')
+@Controller('dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.MANAGER, Role.ADMIN)
 export class DashboardController {
-    constructor(private readonly dashboardService: DashboardService) { }
+  constructor(private readonly dashboardService: DashboardService) {}
 
-    @Get('fleet-health')
-    async getFleetHealth(@TenantId() tenantId: string) {
-        return this.dashboardService.getFleetHealth(tenantId);
-    }
+  @Get('fleet-health')
+  async getFleetHealth(@TenantId() tenantId: string) {
+    return this.dashboardService.getFleetHealth(tenantId);
+  }
 
-    @Get('cost-per-liter')
-    async getCostPerLiter(@TenantId() tenantId: string) {
-        return this.dashboardService.getCostPerLiter(tenantId);
-    }
+  @Get('cost-per-liter')
+  async getCostPerLiter(@TenantId() tenantId: string) {
+    return this.dashboardService.getCostPerLiter(tenantId);
+  }
 
-    @Get('asset-turnover')
-    async getAssetTurnover(@TenantId() tenantId: string) {
-        return this.dashboardService.getAssetTurnover(tenantId);
-    }
+  @Get('asset-turnover')
+  async getAssetTurnover(@TenantId() tenantId: string) {
+    return this.dashboardService.getAssetTurnover(tenantId);
+  }
 
-    @Get('loss-report')
-    async getLossReport(@TenantId() tenantId: string) {
-        return this.dashboardService.getLossReport(tenantId);
-    }
+  @Get('loss-report')
+  async getLossReport(@TenantId() tenantId: string) {
+    return this.dashboardService.getLossReport(tenantId);
+  }
 }
