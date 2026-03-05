@@ -69,3 +69,6 @@ jobs:
 
       - name: Test
         run: npm test -- --passWithNoTests
+
+      - name: Integration Tests
+        run: npm run test:integration
