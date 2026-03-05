@@ -1,7 +1,8 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TenantThrottlerGuard } from './shared/guards/tenant-throttler.guard.js';
 import { validateEnv } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SharedModule } from './shared/shared.module.js';
@@ -64,7 +65,7 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
     },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: TenantThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {
