@@ -4,14 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AlertService } from './alert.service.js';
 import { ComponentService } from '../component/component.service.js';
-import {
-  HealthScore,
-  BarrelStatus,
-  Criticality,
-  AlertType,
-  AlertPriority,
-  AlertStatus,
-} from '@prisma/client';
+import { BarrelStatus, AlertType, AlertPriority } from '@prisma/client';
 
 /** Limite de concorrência para processamento paralelo de tenants */
 const TENANT_CONCURRENCY = 10;
@@ -481,7 +474,7 @@ export class AlertJobsService {
    * Phase 2: Will check GPS device battery/signal on barrels with IoT hardware
    */
   @Cron('0 */6 * * *')
-  async checkGpsOffline() {
+  checkGpsOffline() {
     if (!this.config.get<boolean>('ENABLE_PHASE2_CRONS', false)) {
       this.logger.log(
         'GPS offline check skipped — GPS/IoT integration pending (Phase 2)',
@@ -495,7 +488,7 @@ export class AlertJobsService {
    * Job 7: CACHE_REFRESH - Every 5 min (Phase 2: Redis cache for dashboard metrics)
    */
   @Cron(CronExpression.EVERY_5_MINUTES)
-  async refreshCache() {
+  refreshCache() {
     if (!this.config.get<boolean>('ENABLE_PHASE2_CRONS', false)) {
       this.logger.log(
         'Cache refresh skipped — Redis integration pending (Phase 2)',

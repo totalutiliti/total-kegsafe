@@ -51,7 +51,7 @@ export class ClientService {
       longitude?: number;
       connectorType?: string;
     },
-    userId?: string,
+    _userId?: string,
   ) {
     // Verificar CNPJ único
     if (data.cnpj) {
@@ -84,7 +84,7 @@ export class ClientService {
     return this.findById(tenantId, client.id);
   }
 
-  async update(tenantId: string, id: string, data: any, userId?: string) {
+  async update(tenantId: string, id: string, data: any, _userId?: string) {
     await this.findById(tenantId, id);
     return this.prisma.client.update({
       where: { id },

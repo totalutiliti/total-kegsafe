@@ -21,11 +21,11 @@ export class GeofenceService {
     return geofence;
   }
 
-  async create(tenantId: string, data: any, userId?: string) {
+  async create(tenantId: string, data: any, _userId?: string) {
     return this.prisma.geofence.create({ data: { tenantId, ...data } });
   }
 
-  async update(tenantId: string, id: string, data: any, userId?: string) {
+  async update(tenantId: string, id: string, data: any, _userId?: string) {
     await this.findById(tenantId, id);
     return this.prisma.geofence.update({ where: { id }, data: { ...data } });
   }

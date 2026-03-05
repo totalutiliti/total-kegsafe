@@ -648,7 +648,7 @@ export class BarrelService {
    * Executa importação de barris validados, processando em chunks.
    * Retorna imediatamente e processa em background.
    */
-  async executeImport(tenantId: string, uploadId: string) {
+  executeImport(tenantId: string, uploadId: string) {
     const session = this.importSessions.get(uploadId);
     if (!session || session.tenantId !== tenantId) {
       throw new ImportNotFoundException(uploadId);
@@ -666,7 +666,9 @@ export class BarrelService {
     };
 
     // Processar em background (não bloquear a response)
-    setImmediate(() => this.processImportChunks(tenantId, session));
+    setImmediate(() => {
+      void this.processImportChunks(tenantId, session);
+    });
 
     return {
       uploadId,

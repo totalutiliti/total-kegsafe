@@ -52,31 +52,33 @@ export class AuditInterceptor implements NestInterceptor {
     const oldData = request.body;
 
     return next.handle().pipe(
-      tap(async (result) => {
-        try {
-          const entityId = auditOptions.getEntityId
-            ? auditOptions.getEntityId(request, result)
-            : result?.id || request.params?.id;
+      tap((result) => {
+        void (async () => {
+          try {
+            const entityId = auditOptions.getEntityId
+              ? auditOptions.getEntityId(request, result)
+              : result?.id || request.params?.id;
 
-          await this.prisma.auditLog.create({
-            data: {
-              tenantId,
-              userId,
-              action: auditOptions.action,
-              entityType: auditOptions.entityType,
-              entityId: entityId?.toString() || 'unknown',
-              oldData: request.method !== 'POST' ? oldData : null,
-              newData: result,
-              ipAddress: request.ip,
-              userAgent: request.headers['user-agent'],
-            },
-          });
-        } catch (error: any) {
-          this.logger.error('Audit log failed', {
-            message: error?.message,
-            stack: error?.stack,
-          });
-        }
+            await this.prisma.auditLog.create({
+              data: {
+                tenantId,
+                userId,
+                action: auditOptions.action,
+                entityType: auditOptions.entityType,
+                entityId: entityId?.toString() || 'unknown',
+                oldData: request.method !== 'POST' ? oldData : null,
+                newData: result,
+                ipAddress: request.ip,
+                userAgent: request.headers['user-agent'],
+              },
+            });
+          } catch (error: any) {
+            this.logger.error('Audit log failed', {
+              message: error?.message,
+              stack: error?.stack,
+            });
+          }
+        })();
       }),
     );
   }

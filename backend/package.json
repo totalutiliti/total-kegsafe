@@ -103,6 +103,11 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix --no-warn-ignored"
+    ]
+  },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   }
