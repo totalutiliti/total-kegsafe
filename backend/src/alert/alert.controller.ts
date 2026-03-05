@@ -45,7 +45,7 @@ export class AlertController {
   }
 
   @Post(':id/acknowledge')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async acknowledge(
     @TenantId() tenantId: string,
     @Param('id') id: string,
@@ -55,7 +55,7 @@ export class AlertController {
   }
 
   @Post(':id/resolve')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN)
   async resolve(
     @TenantId() tenantId: string,
     @Param('id') id: string,

@@ -24,17 +24,19 @@ export class GeofenceController {
   constructor(private readonly geofenceService: GeofenceService) {}
 
   @Get()
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
   async findAll(@TenantId() tenantId: string) {
     return this.geofenceService.findAll(tenantId);
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
   async findById(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.geofenceService.findById(tenantId, id);
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async create(
     @TenantId() tenantId: string,
     @CurrentUser('id') userId: string,

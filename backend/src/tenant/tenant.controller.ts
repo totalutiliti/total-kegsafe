@@ -12,6 +12,7 @@ export class TenantController {
   constructor(private readonly tenantService: TenantService) {}
 
   @Get('current')
+  @Roles(Role.ADMIN, Role.MANAGER)
   async getCurrent(@TenantId() tenantId: string) {
     return this.tenantService.findById(tenantId);
   }

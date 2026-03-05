@@ -21,11 +21,13 @@ export class ComponentController {
   constructor(private readonly componentService: ComponentService) {}
 
   @Get()
+  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
   async findAll(@TenantId() tenantId: string) {
     return this.componentService.findAll(tenantId);
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
   async findById(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.componentService.findById(tenantId, id);
   }

@@ -15,25 +15,25 @@ export class DisposalController {
   constructor(private readonly disposalService: DisposalService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findAll(@TenantId() tenantId: string) {
     return this.disposalService.findAll(tenantId);
   }
 
   @Get('suggestions')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async getSuggestions(@TenantId() tenantId: string) {
     return this.disposalService.getSuggestions(tenantId);
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async findById(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.disposalService.findById(tenantId, id);
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  @Roles(Role.ADMIN, Role.MANAGER)
   async create(
     @TenantId() tenantId: string,
     @CurrentUser('id') userId: string,
