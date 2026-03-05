@@ -11,7 +11,7 @@ import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export const AUDIT_KEY = 'audit';
 export interface AuditOptions {
@@ -78,7 +78,7 @@ export class AuditInterceptor implements NestInterceptor {
                 action: auditOptions.action,
                 entityType: auditOptions.entityType,
                 entityId: entityId?.toString() || 'unknown',
-                oldData: request.method !== 'POST' ? oldData : null,
+                oldData: request.method !== 'POST' ? oldData : Prisma.JsonNull,
                 newData: auditResult as Prisma.InputJsonValue,
                 ipAddress: request.ip,
                 userAgent: request.headers['user-agent'],
