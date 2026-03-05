@@ -30,7 +30,7 @@ async function bootstrap() {
   // Graceful shutdown — allow in-flight requests to complete
   app.enableShutdownHooks();
 
-  // Helmet — secure HTTP headers with Content Security Policy
+  // Helmet — secure HTTP headers with CSP and HSTS
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -47,6 +47,11 @@ async function bootstrap() {
           formAction: ["'self'"],
         },
       },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
       crossOriginEmbedderPolicy: false,
     }),
   );
@@ -61,6 +66,13 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Idempotency-Key',
+      'X-Request-Id',
+    ],
+    exposedHeaders: ['X-Request-Id'],
   });
 
   // Swagger / OpenAPI documentation (disabled in production by default)
