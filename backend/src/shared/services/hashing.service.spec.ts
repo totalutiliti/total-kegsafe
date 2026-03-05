@@ -47,7 +47,7 @@ describe('HashingService', () => {
   });
 
   it('deve lançar erro se PEPPER_SECRET não estiver configurado', async () => {
-    expect(() => {
+    await expect(() => {
       return Test.createTestingModule({
         providers: [
           HashingService,

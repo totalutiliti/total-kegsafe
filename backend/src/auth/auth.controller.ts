@@ -15,7 +15,6 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
-import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
@@ -127,7 +126,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@CurrentUser() user: any) {
+  me(@CurrentUser() user: any) {
     return user;
   }
 }

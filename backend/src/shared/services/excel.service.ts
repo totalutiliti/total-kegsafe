@@ -14,7 +14,7 @@ export class ExcelService {
    * Parseia um arquivo Excel (.xlsx/.xls) ou CSV em array de objetos.
    * As chaves dos objetos são os headers da primeira linha.
    */
-  parseFile(buffer: Buffer, filename: string): Record<string, any>[] {
+  parseFile(buffer: Buffer, _filename: string): Record<string, any>[] {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];

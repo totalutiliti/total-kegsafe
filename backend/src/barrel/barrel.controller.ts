@@ -72,7 +72,7 @@ export class BarrelController {
   // --- Feature 2: Importação ---
   @Get('import/template')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async downloadTemplate(@Res() res: Response) {
+  downloadTemplate(@Res() res: Response) {
     const buffer = this.barrelService.generateImportTemplate();
     res.setHeader(
       'Content-Type',
@@ -87,7 +87,7 @@ export class BarrelController {
 
   @Get('import/progress/:uploadId')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async getImportProgress(
+  getImportProgress(
     @TenantId() tenantId: string,
     @Param('uploadId') uploadId: string,
   ) {
@@ -152,10 +152,7 @@ export class BarrelController {
 
   @Post('import/execute')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async executeImport(
-    @TenantId() tenantId: string,
-    @Body() dto: ExecuteImportDto,
-  ) {
+  executeImport(@TenantId() tenantId: string, @Body() dto: ExecuteImportDto) {
     return this.barrelService.executeImport(tenantId, dto.uploadId);
   }
 

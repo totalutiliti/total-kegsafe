@@ -205,7 +205,7 @@ describe('BarrelService', () => {
 
       prisma.componentConfig.findMany.mockResolvedValue([]);
 
-      const result = await service.create(TENANT_ID, {
+      await service.create(TENANT_ID, {
         capacityLiters: 50,
       } as any);
 
@@ -597,12 +597,12 @@ describe('BarrelService', () => {
       txMock.barrel.createMany.mockResolvedValue({ count: 1 });
       txMock.barrel.findMany.mockResolvedValue([{ id: 'barrel-1' }]);
 
-      await service.executeImport(TENANT_ID, validation.uploadId);
+      service.executeImport(TENANT_ID, validation.uploadId);
 
       // Tentar executar novamente (já está in_progress)
-      await expect(
+      expect(() =>
         service.executeImport(TENANT_ID, validation.uploadId),
-      ).rejects.toThrow(ImportInProgressException);
+      ).toThrow(ImportInProgressException);
     });
 
     it('deve retornar status in_progress imediatamente', async () => {
@@ -622,10 +622,7 @@ describe('BarrelService', () => {
       txMock.barrel.createMany.mockResolvedValue({ count: 1 });
       txMock.barrel.findMany.mockResolvedValue([{ id: 'barrel-1' }]);
 
-      const result = await service.executeImport(
-        TENANT_ID,
-        validation.uploadId,
-      );
+      const result = service.executeImport(TENANT_ID, validation.uploadId);
 
       expect(result.status).toBe('in_progress');
       expect(result.total).toBe(1);

@@ -11,7 +11,6 @@ import { tap } from 'rxjs/operators';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Response } from 'express';
-import { Reflector } from '@nestjs/core';
 
 export const IDEMPOTENT_KEY = 'idempotent';
 
@@ -71,29 +70,31 @@ export class IdempotencyInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (result) => {
-        try {
-          const expiresAt = new Date();
-          expiresAt.setHours(expiresAt.getHours() + 24);
+      tap((result) => {
+        void (async () => {
+          try {
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
 
-          await this.prisma.idempotencyKey.upsert({
-            where: { key: `${tenantId}:${idempotencyKey}` },
-            update: {
-              statusCode: response.statusCode || HttpStatus.OK,
-              response: result || {},
-              expiresAt,
-            },
-            create: {
-              key: `${tenantId}:${idempotencyKey}`,
-              tenantId,
-              statusCode: response.statusCode || HttpStatus.OK,
-              response: result || {},
-              expiresAt,
-            },
-          });
-        } catch (error: any) {
-          this.logger.warn(`Idempotency save failed: ${error.message}`);
-        }
+            await this.prisma.idempotencyKey.upsert({
+              where: { key: `${tenantId}:${idempotencyKey}` },
+              update: {
+                statusCode: response.statusCode || HttpStatus.OK,
+                response: result || {},
+                expiresAt,
+              },
+              create: {
+                key: `${tenantId}:${idempotencyKey}`,
+                tenantId,
+                statusCode: response.statusCode || HttpStatus.OK,
+                response: result || {},
+                expiresAt,
+              },
+            });
+          } catch (error: any) {
+            this.logger.warn(`Idempotency save failed: ${error.message}`);
+          }
+        })();
       }),
     );
   }
