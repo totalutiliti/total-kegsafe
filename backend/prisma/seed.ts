@@ -126,6 +126,48 @@ const geofences = [
   },
 ];
 
+const suppliers = [
+  {
+    name: 'Vedações Brasil Ltda',
+    cnpj: '33444555000199',
+    supplyType: 'O-Rings e vedações industriais',
+    leadTimeDays: 7,
+    contactEmail: 'vendas@vedacoesbrasil.com.br',
+    contactPhone: '+5524999001122',
+    paymentTerms: '30 dias',
+  },
+  {
+    name: 'InoxParts Comércio',
+    cnpj: '44555666000177',
+    supplyType: 'Componentes em aço inox',
+    leadTimeDays: 14,
+    contactEmail: 'contato@inoxparts.com.br',
+    contactPhone: '+5524988112233',
+    paymentTerms: '28 dias',
+  },
+];
+
+const serviceProviders = [
+  {
+    name: 'MetalSolda Serviços Industriais',
+    specialty: 'Soldagem TIG/MIG em aço inox',
+    certifications: 'NR-13, ISO 9001',
+    hourlyRate: 120.0,
+    serviceRate: 350.0,
+    contactEmail: 'orcamento@metalsolda.com.br',
+    contactPhone: '+5524977001122',
+  },
+  {
+    name: 'HidroTest Engenharia',
+    specialty: 'Teste hidrostático e pneumático',
+    certifications: 'NR-13, ABNT NBR 13465',
+    hourlyRate: 150.0,
+    serviceRate: 500.0,
+    contactEmail: 'contato@hidrotest.eng.br',
+    contactPhone: '+5524966112233',
+  },
+];
+
 const clients = [
   {
     name: 'Bar do Zé',
@@ -264,7 +306,41 @@ async function main() {
     `✅ Clients: ${clientsCreated} created, ${clients.length - clientsCreated} already existed`,
   );
 
-  // 6. Criar 50 Barris + ComponentCycles (idempotente)
+  // 6. Criar Fornecedores (idempotente)
+  let suppliersCreated = 0;
+  for (const s of suppliers) {
+    const existing = await prisma.supplier.findFirst({
+      where: { cnpj: s.cnpj, tenantId: tenant.id },
+    });
+    if (!existing) {
+      await prisma.supplier.create({
+        data: { tenantId: tenant.id, ...s },
+      });
+      suppliersCreated++;
+    }
+  }
+  console.log(
+    `✅ Suppliers: ${suppliersCreated} created, ${suppliers.length - suppliersCreated} already existed`,
+  );
+
+  // 7. Criar Prestadores de Serviço (idempotente)
+  let providersCreated = 0;
+  for (const sp of serviceProviders) {
+    const existing = await prisma.serviceProvider.findFirst({
+      where: { name: sp.name, tenantId: tenant.id },
+    });
+    if (!existing) {
+      await prisma.serviceProvider.create({
+        data: { tenantId: tenant.id, ...sp },
+      });
+      providersCreated++;
+    }
+  }
+  console.log(
+    `✅ Service providers: ${providersCreated} created, ${serviceProviders.length - providersCreated} already existed`,
+  );
+
+  // 8. Criar 50 Barris + ComponentCycles (idempotente)
   const manufacturers = ['Franke', 'Portinox', 'Blefa'];
   let barrelsCreated = 0;
 
