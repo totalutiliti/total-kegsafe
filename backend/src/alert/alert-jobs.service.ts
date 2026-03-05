@@ -151,7 +151,8 @@ export class AlertJobsService {
 
       await this.processTenantsInParallel(tenants, async (tenant) => {
         try {
-          const thresholdDays = tenant.settings?.idleThresholdDays || 15;
+          const settings = tenant.settings as Record<string, unknown> | null;
+          const thresholdDays = (settings?.idleThresholdDays as number) || 15;
           const threshold = new Date(
             Date.now() - thresholdDays * 24 * 60 * 60 * 1000,
           );

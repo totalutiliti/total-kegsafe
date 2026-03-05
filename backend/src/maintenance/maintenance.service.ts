@@ -3,9 +3,14 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ComponentService } from '../component/component.service.js';
 import {
   MaintenanceOrderStatus,
+  MaintenanceType,
+  AlertPriority,
   BarrelStatus,
   TriageResult,
   ComponentAction,
+  DamageType,
+  AlertType,
+  Prisma,
 } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
 
@@ -22,7 +27,7 @@ export class MaintenanceService {
   ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
-    const where: any = {
+    const where: Prisma.MaintenanceOrderWhereInput = {
       tenantId,
       deletedAt: null,
       ...(query?.status ? { status: query.status } : {}),
@@ -55,7 +60,17 @@ export class MaintenanceService {
     return order;
   }
 
-  async createOrder(tenantId: string, data: any) {
+  async createOrder(
+    tenantId: string,
+    data: {
+      barrelId: string;
+      orderType: MaintenanceType;
+      priority?: AlertPriority;
+      description?: string;
+      assignedToId?: string;
+      providerId?: string;
+    },
+  ) {
     const orderNumber = `OS-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
 
     // Mudar status do barril para IN_MAINTENANCE
@@ -65,7 +80,16 @@ export class MaintenanceService {
     });
 
     return this.prisma.maintenanceOrder.create({
-      data: { tenantId, orderNumber, ...data },
+      data: {
+        tenantId,
+        orderNumber,
+        barrelId: data.barrelId,
+        orderType: data.orderType,
+        priority: data.priority,
+        description: data.description ?? '',
+        assignedToId: data.assignedToId,
+        providerId: data.providerId,
+      },
       include: { barrel: true },
     });
   }
@@ -100,7 +124,7 @@ export class MaintenanceService {
         barrelId: data.barrelId,
         userId,
         maintenanceOrderId: data.maintenanceOrderId,
-        maintenanceType: data.maintenanceType as any,
+        maintenanceType: data.maintenanceType as MaintenanceType,
         pressureTestOk: data.pressureTestOk,
         pressureTestValue: data.pressureTestValue,
         washCompleted: data.washCompleted,
@@ -165,10 +189,10 @@ export class MaintenanceService {
         resolvedAt: null,
         alertType: {
           in: [
-            'COMPONENT_END_OF_LIFE',
-            'MANDATORY_INSPECTION',
-            'DISPOSAL_SUGGESTED',
-          ] as any,
+            AlertType.COMPONENT_END_OF_LIFE,
+            AlertType.MANDATORY_INSPECTION,
+            AlertType.DISPOSAL_SUGGESTED,
+          ],
         },
       },
       data: { resolvedAt: new Date(), resolvedById: userId },
@@ -220,8 +244,8 @@ export class MaintenanceService {
       if (result === TriageResult.SENT_TO_MAINTENANCE) {
         await this.createOrder(tenantId, {
           barrelId: data.barrelId,
-          orderType: 'CORRECTIVE',
-          priority: 'HIGH',
+          orderType: MaintenanceType.CORRECTIVE,
+          priority: AlertPriority.HIGH,
           description: `Triagem: ${data.damageNotes || 'Avaria detectada'}`,
         });
       }
@@ -233,7 +257,7 @@ export class MaintenanceService {
         barrelId: data.barrelId,
         userId,
         intact: data.intact,
-        damageType: data.damageType as any,
+        damageType: data.damageType as DamageType,
         damageNotes: data.damageNotes,
         photoUrl: data.photoUrl,
         result,

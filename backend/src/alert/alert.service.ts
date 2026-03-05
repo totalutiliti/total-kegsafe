@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AlertType, AlertPriority } from '@prisma/client';
+import { AlertType, AlertPriority, Prisma } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
 
 const VALID_ALERT_TYPES = Object.values(AlertType);
@@ -36,7 +36,7 @@ export class AlertService {
         ? query.resolved === true || query.resolved === 'true'
         : undefined;
 
-    const where: any = {
+    const where: Prisma.AlertWhereInput = {
       tenantId,
       ...(query?.type ? { alertType: query.type as AlertType } : {}),
       ...(resolvedBool !== undefined
@@ -106,7 +106,7 @@ export class AlertService {
     priority: string;
     title: string;
     description: string;
-    metadata?: any;
+    metadata?: Prisma.InputJsonValue;
   }) {
     // Verificar se já existe alerta não resolvido do mesmo tipo para o barril
     const existing = await this.prisma.alert.findFirst({

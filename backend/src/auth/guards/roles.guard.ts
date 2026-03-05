@@ -4,6 +4,7 @@ import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { InsufficientRoleException } from '../../shared/exceptions/auth.exceptions.js';
+import type { AuthenticatedRequest } from '../../shared/types/authenticated-request.js';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,7 +28,8 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const { user } = request;
     if (!user) return false;
 
     const hasRole = requiredRoles.some((role) => user.role === role);

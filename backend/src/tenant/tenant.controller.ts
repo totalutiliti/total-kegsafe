@@ -19,7 +19,15 @@ export class TenantController {
 
   @Patch('current')
   @Roles(Role.ADMIN)
-  async updateCurrent(@TenantId() tenantId: string, @Body() data: any) {
+  async updateCurrent(
+    @TenantId() tenantId: string,
+    @Body()
+    data: {
+      name?: string;
+      settings?: Record<string, unknown>;
+      logoUrl?: string;
+    },
+  ) {
     return this.tenantService.update(tenantId, data);
   }
 }

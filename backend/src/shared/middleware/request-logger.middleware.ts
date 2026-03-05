@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ClsService } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
+import type { AuthenticatedRequest } from '../types/authenticated-request.js';
 
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
@@ -22,7 +23,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const duration = Date.now() - startTime;
       const { statusCode } = res;
-      const user = (req as any).user;
+      const authReq = req as Partial<AuthenticatedRequest>;
 
       const logData = {
         requestId,
@@ -30,8 +31,8 @@ export class RequestLoggerMiddleware implements NestMiddleware {
         path: originalUrl,
         statusCode,
         duration,
-        tenantId: user?.tenantId || '-',
-        userId: user?.id || '-',
+        tenantId: authReq.user?.tenantId || '-',
+        userId: authReq.user?.id || '-',
       };
 
       if (statusCode >= 500) {

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { HashingService } from '../shared/services/hashing.service.js';
@@ -80,14 +81,14 @@ export class UserService {
       }
     }
 
-    const data: any = { ...dto };
-    if (dto.password) {
-      data.passwordHash = await this.hashingService.hash(dto.password);
-      delete data.password;
+    const { password, ...updateFields } = dto;
+    const data: Record<string, unknown> = { ...updateFields };
+    if (password) {
+      data.passwordHash = await this.hashingService.hash(password);
     }
     return this.prisma.user.update({
       where: { id },
-      data,
+      data: data as Prisma.UserUpdateInput,
     });
   }
 

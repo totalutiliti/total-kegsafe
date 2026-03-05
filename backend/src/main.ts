@@ -4,6 +4,7 @@ import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { SloInterceptor } from './shared/slo/slo.interceptor.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,10 @@ async function bootstrap() {
       );
     }
   }
+
+  // SLO metrics interceptor — registered globally via main.ts (not APP_INTERCEPTOR)
+  const sloInterceptor = app.get(SloInterceptor);
+  app.useGlobalInterceptors(sloInterceptor);
 
   // API versioning — all routes under /api/v1/
   app.setGlobalPrefix('api/v1');
@@ -106,4 +111,4 @@ async function bootstrap() {
   logger.log(`KegSafe API running on http://localhost:${port}`);
   logger.log(`All routes available under /api/v1/`);
 }
-bootstrap();
+void bootstrap();

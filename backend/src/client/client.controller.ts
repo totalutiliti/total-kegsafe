@@ -55,7 +55,19 @@ export class ClientController {
     @TenantId() tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body()
+    data: {
+      name?: string;
+      tradeName?: string;
+      cnpj?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      connectorType?: string;
+      isActive?: boolean;
+    },
   ) {
     return this.clientService.update(tenantId, id, data, userId);
   }

@@ -13,8 +13,9 @@ import type { Request } from 'express';
  */
 function cookieThenBearerExtractor(req: Request): string | null {
   // 1. Try httpOnly cookie
-  if (req?.cookies?.accessToken) {
-    return req.cookies.accessToken;
+  const cookies = req?.cookies as Record<string, string> | undefined;
+  if (cookies?.accessToken) {
+    return cookies.accessToken;
   }
   // 2. Fallback to Bearer header (for API clients like Postman/Swagger)
   return ExtractJwt.fromAuthHeaderAsBearerToken()(req);

@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BarrelService } from './barrel.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ExcelService } from '../shared/services/excel.service';
+import { CreateBarrelDto } from './dto/create-barrel.dto';
+import { QuickRegisterDto } from './dto/quick-register.dto';
 import {
   BarrelNotFoundException,
   BarrelQrCodeExistsException,
@@ -11,13 +13,58 @@ import {
   ImportInProgressException,
 } from '../shared/exceptions/import.exceptions';
 
+// =============================================
+// Typed mock interfaces
+// =============================================
+
+interface MockBarrelDelegate {
+  findMany: jest.Mock;
+  findFirst: jest.Mock;
+  count: jest.Mock;
+  create: jest.Mock;
+  update: jest.Mock;
+  createMany: jest.Mock;
+}
+
+interface MockComponentCycleDelegate {
+  createMany: jest.Mock;
+}
+
+interface MockComponentConfigDelegate {
+  findMany: jest.Mock;
+}
+
+interface MockLogisticsEventDelegate {
+  findMany: jest.Mock;
+}
+
+interface MockTx {
+  barrel: MockBarrelDelegate;
+  componentCycle: MockComponentCycleDelegate;
+}
+
+interface MockPrisma {
+  barrel: MockBarrelDelegate;
+  componentCycle: MockComponentCycleDelegate;
+  componentConfig: MockComponentConfigDelegate;
+  logisticsEvent: MockLogisticsEventDelegate;
+  $queryRaw: jest.Mock;
+  $transaction: jest.Mock;
+}
+
+interface MockExcelService {
+  parseFile: jest.Mock;
+  generateTemplate: jest.Mock;
+  generateFromData: jest.Mock;
+}
+
 describe('BarrelService', () => {
   let service: BarrelService;
-  let prisma: any;
-  let excelService: any;
+  let prisma: MockPrisma;
+  let excelService: MockExcelService;
 
   /** Mock do objeto `tx` passado ao callback de $transaction */
-  let txMock: any;
+  let txMock: MockTx;
 
   const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -28,6 +75,8 @@ describe('BarrelService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         createMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
       },
       componentCycle: {
         createMany: jest.fn(),
@@ -41,6 +90,7 @@ describe('BarrelService', () => {
         count: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        createMany: jest.fn(),
       },
       componentCycle: {
         createMany: jest.fn(),
@@ -54,9 +104,12 @@ describe('BarrelService', () => {
       $queryRaw: jest.fn(),
       $transaction: jest.fn((cb: any) => {
         // Support both callback-style and array-style transactions
-        if (typeof cb === 'function') return cb(txMock);
+        if (typeof cb === 'function')
+          return (cb as (tx: MockTx) => unknown)(txMock);
         // For array-style $transaction (batchLinkQr uses this)
-        return Promise.all(cb.map((p: any) => p));
+        return Promise.all(
+          (cb as Promise<unknown>[]).map((p: Promise<unknown>) => p),
+        );
       }),
     };
 
@@ -168,14 +221,19 @@ describe('BarrelService', () => {
       await service.create(TENANT_ID, {
         qrCode: 'QR-TEST-001',
         capacityLiters: 50,
-      } as any);
+      } as CreateBarrelDto);
 
       // Deve usar $transaction para gerar internalCode
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
 
       // Deve usar createMany (1 query batch) em vez de 3 create individuais
       expect(prisma.componentCycle.createMany).toHaveBeenCalledTimes(1);
-      const callArgs = prisma.componentCycle.createMany.mock.calls[0][0];
+      const callArgs = (
+        prisma.componentCycle.createMany.mock.calls[0] as [
+          { data: unknown[]; skipDuplicates: boolean },
+        ]
+      )[0];
+
       expect(callArgs.data).toHaveLength(3);
       expect(callArgs.skipDuplicates).toBe(true);
     });
@@ -184,7 +242,7 @@ describe('BarrelService', () => {
       prisma.barrel.findFirst.mockResolvedValue({ id: 'existing' });
 
       await expect(
-        service.create(TENANT_ID, { qrCode: 'QR-EXISTS' } as any),
+        service.create(TENANT_ID, { qrCode: 'QR-EXISTS' } as CreateBarrelDto),
       ).rejects.toThrow(BarrelQrCodeExistsException);
     });
 
@@ -207,12 +265,15 @@ describe('BarrelService', () => {
 
       await service.create(TENANT_ID, {
         capacityLiters: 50,
-      } as any);
+      } as CreateBarrelDto);
 
       // Não deve verificar unicidade do qrCode quando é undefined
       expect(prisma.barrel.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ qrCode: null }),
+          data: expect.objectContaining({ qrCode: null }) as Record<
+            string,
+            unknown
+          >,
         }),
       );
     });
@@ -253,13 +314,17 @@ describe('BarrelService', () => {
     });
 
     it('deve fazer retry em erro de serialização (P2034)', async () => {
-      const serializationError: any = new Error('serialization failure');
+      const serializationError: Error & { code?: string } = new Error(
+        'serialization failure',
+      );
       serializationError.code = 'P2034';
 
       // Primeira chamada falha, segunda sucede
       prisma.$transaction
         .mockRejectedValueOnce(serializationError)
-        .mockImplementationOnce((cb: any) => cb(txMock));
+        .mockImplementationOnce((cb: any) =>
+          (cb as (tx: MockTx) => unknown)(txMock),
+        );
       txMock.barrel.findFirst.mockResolvedValue(null);
 
       const code = await service.generateInternalCode(TENANT_ID);
@@ -269,12 +334,16 @@ describe('BarrelService', () => {
     });
 
     it('deve fazer retry em erro de unique constraint (P2002)', async () => {
-      const uniqueError: any = new Error('unique constraint');
+      const uniqueError: Error & { code?: string } = new Error(
+        'unique constraint',
+      );
       uniqueError.code = 'P2002';
 
       prisma.$transaction
         .mockRejectedValueOnce(uniqueError)
-        .mockImplementationOnce((cb: any) => cb(txMock));
+        .mockImplementationOnce((cb: any) =>
+          (cb as (tx: MockTx) => unknown)(txMock),
+        );
       txMock.barrel.findFirst.mockResolvedValue({
         internalCode: 'KS-BAR-000000001',
       });
@@ -286,7 +355,9 @@ describe('BarrelService', () => {
     });
 
     it('deve lançar erro após esgotar MAX_RETRIES', async () => {
-      const serializationError: any = new Error('serialization failure');
+      const serializationError: Error & { code?: string } = new Error(
+        'serialization failure',
+      );
       serializationError.code = 'P2034';
 
       prisma.$transaction
@@ -335,12 +406,16 @@ describe('BarrelService', () => {
     });
 
     it('deve fazer retry em erro P2034', async () => {
-      const serializationError: any = new Error('serialization failure');
+      const serializationError: Error & { code?: string } = new Error(
+        'serialization failure',
+      );
       serializationError.code = 'P2034';
 
       prisma.$transaction
         .mockRejectedValueOnce(serializationError)
-        .mockImplementationOnce((cb: any) => cb(txMock));
+        .mockImplementationOnce((cb: any) =>
+          (cb as (tx: MockTx) => unknown)(txMock),
+        );
       txMock.barrel.findFirst.mockResolvedValue(null);
 
       const codes = await service.generateInternalCodes(TENANT_ID, 1);
@@ -363,7 +438,10 @@ describe('BarrelService', () => {
 
   describe('quickRegister', () => {
     it('deve delegar para create()', async () => {
-      const dto = { qrCode: 'QR-QUICK-001', capacityLiters: 50 } as any;
+      const dto: QuickRegisterDto = {
+        qrCode: 'QR-QUICK-001',
+        capacityLiters: 50,
+      };
 
       // Mock para create flow
       txMock.barrel.findFirst.mockResolvedValue(null);
@@ -423,10 +501,14 @@ describe('BarrelService', () => {
       const result = await service.generateImportTemplate();
 
       expect(excelService.generateTemplate).toHaveBeenCalledTimes(1);
-      const [columns, examples, instructions] =
-        excelService.generateTemplate.mock.calls[0];
-      expect(columns.map((c: any) => c.header)).toContain('qrCode');
-      expect(columns.map((c: any) => c.header)).toContain('capacidade');
+      const [columns, examples, instructions] = excelService.generateTemplate
+        .mock.calls[0] as [{ header: string }[], unknown[], unknown[]];
+      expect(columns.map((c: { header: string }) => c.header)).toContain(
+        'qrCode',
+      );
+      expect(columns.map((c: { header: string }) => c.header)).toContain(
+        'capacidade',
+      );
       expect(examples).toHaveLength(2);
       expect(instructions.length).toBeGreaterThan(0);
       expect(result).toBeInstanceOf(Buffer);
@@ -706,9 +788,13 @@ describe('BarrelService', () => {
       expect(result.totalPages).toBe(1);
 
       // Verificar que o where inclui qrCode: null
-      const whereArg = prisma.barrel.findMany.mock.calls[0][0].where;
-      expect(whereArg.qrCode).toBeNull();
-      expect(whereArg.deletedAt).toBeNull();
+      const whereArg = (
+        prisma.barrel.findMany.mock.calls[0] as [
+          { where: { qrCode: null; deletedAt: null } },
+        ]
+      )[0];
+      expect(whereArg.where.qrCode).toBeNull();
+      expect(whereArg.where.deletedAt).toBeNull();
     });
 
     it('deve respeitar paginação', async () => {
@@ -723,7 +809,9 @@ describe('BarrelService', () => {
       expect(result.page).toBe(3);
       expect(result.totalPages).toBe(5);
 
-      const callArgs = prisma.barrel.findMany.mock.calls[0][0];
+      const callArgs = (
+        prisma.barrel.findMany.mock.calls[0] as [{ skip: number; take: number }]
+      )[0];
       expect(callArgs.skip).toBe(20); // (3-1) * 10
       expect(callArgs.take).toBe(10);
     });
@@ -980,9 +1068,13 @@ describe('BarrelService', () => {
       expect(excelService.generateFromData).toHaveBeenCalledTimes(1);
 
       // Verificar que buscou apenas barris com qrCode null
-      const whereArg = prisma.barrel.findMany.mock.calls[0][0].where;
-      expect(whereArg.qrCode).toBeNull();
-      expect(whereArg.deletedAt).toBeNull();
+      const whereArg = (
+        prisma.barrel.findMany.mock.calls[0] as [
+          { where: { qrCode: null; deletedAt: null } },
+        ]
+      )[0];
+      expect(whereArg.where.qrCode).toBeNull();
+      expect(whereArg.where.deletedAt).toBeNull();
     });
   });
 });

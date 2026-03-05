@@ -19,7 +19,7 @@ export class ExcelService {
     _filename: string,
   ): Promise<Record<string, any>[]> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer as any);
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
     const sheet = workbook.worksheets[0];
     if (!sheet) return [];
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { HealthScore } from '@prisma/client';
+import { Criticality, HealthScore, Prisma } from '@prisma/client';
 import {
   ResourceNotFoundException,
   ResourceAlreadyExistsException,
@@ -48,11 +48,24 @@ export class ComponentService {
       );
 
     return this.prisma.componentConfig.create({
-      data: { tenantId, ...data } as any,
+      data: { tenantId, ...data } as Prisma.ComponentConfigUncheckedCreateInput,
     });
   }
 
-  async update(tenantId: string, id: string, data: any) {
+  async update(
+    tenantId: string,
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      maxCycles?: number;
+      maxDays?: number;
+      criticality?: Criticality;
+      alertThreshold?: number;
+      averageReplacementCost?: number;
+      isActive?: boolean;
+    },
+  ) {
     await this.findById(tenantId, id);
     return this.prisma.componentConfig.update({ where: { id }, data });
   }

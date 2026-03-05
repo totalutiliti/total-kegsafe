@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DisposalStatus, BarrelStatus } from '@prisma/client';
+import {
+  DisposalStatus,
+  DisposalDestination,
+  BarrelStatus,
+} from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
 import { BusinessException } from '../shared/exceptions/business.exception.js';
 
@@ -115,7 +119,7 @@ export class DisposalService {
       where: { id },
       data: {
         status: DisposalStatus.COMPLETED,
-        destination: data.destination as any,
+        destination: data.destination as DisposalDestination,
         scrapValue: data.scrapValue,
         notes: data.notes,
         completedAt: new Date(),
