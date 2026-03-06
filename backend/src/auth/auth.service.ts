@@ -9,6 +9,7 @@ import {
   TokenExpiredException,
   AccountDisabledException,
   AccountLockedException,
+  TenantSuspendedException,
 } from '../shared/exceptions/auth.exceptions.js';
 import { HashingService } from '../shared/services/hashing.service.js';
 
@@ -54,9 +55,9 @@ export class AuthService {
       throw new AccountDisabledException();
     }
 
-    // Verificar se tenant está ativo
-    if (!user.tenant.isActive) {
-      throw new AccountDisabledException();
+    // Verificar se tenant está ativo (SUPER_ADMIN bypassa esta verificação)
+    if (user.role !== 'SUPER_ADMIN' && !user.tenant.isActive) {
+      throw new TenantSuspendedException();
     }
 
     // Validar senha (com migração lazy de bcrypt → Argon2id)
@@ -136,6 +137,7 @@ export class AuthService {
         role: user.role,
         tenantId: user.tenantId,
         tenantName: user.tenant.name,
+        mustChangePassword: user.mustChangePassword,
       },
     };
   }
@@ -163,8 +165,13 @@ export class AuthService {
       include: { tenant: true },
     });
 
-    if (!user || !user.isActive || !user.tenant.isActive) {
+    if (!user || !user.isActive) {
       throw new AccountDisabledException();
+    }
+
+    // SUPER_ADMIN bypasses tenant.isActive check
+    if (user.role !== 'SUPER_ADMIN' && !user.tenant.isActive) {
+      throw new TenantSuspendedException();
     }
 
     // Revogar token antigo
@@ -207,6 +214,42 @@ export class AuthService {
     });
 
     return { message: 'Logged out successfully' };
+  }
+
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new InvalidCredentialsException();
+
+    // Verificar senha atual (suporta bcrypt legacy + Argon2id)
+    const isBcrypt =
+      user.passwordHash.startsWith('$2b$') ||
+      user.passwordHash.startsWith('$2a$');
+    let isValid: boolean;
+
+    if (isBcrypt) {
+      isValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    } else {
+      isValid = await this.hashingService.verify(
+        user.passwordHash,
+        oldPassword,
+      );
+    }
+
+    if (!isValid) throw new InvalidCredentialsException();
+
+    const newHash = await this.hashingService.hash(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash, mustChangePassword: false },
+    });
+
+    return { message: 'Password changed successfully' };
   }
 
   private async createRefreshToken(

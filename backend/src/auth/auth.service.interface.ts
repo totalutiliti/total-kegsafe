@@ -22,6 +22,7 @@ export interface IAuthService {
       role: string;
       tenantId: string;
       tenantName: string;
+      mustChangePassword: boolean;
     };
   }>;
 
@@ -32,4 +33,10 @@ export interface IAuthService {
   }>;
 
   logout(refreshToken: string): Promise<{ message: string }>;
+
+  changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }>;
 }
