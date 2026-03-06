@@ -8,6 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class DeliveryDto {
   @IsUUID()
@@ -36,6 +37,7 @@ export class DeliveryDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  @NoHtml()
   notes?: string;
 
   @IsOptional()

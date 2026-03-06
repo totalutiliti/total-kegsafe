@@ -7,11 +7,25 @@ export class SupplierService {
   constructor(private readonly prisma: PrismaService) {}
 
   // ---- Supplier ----
-  async findAllSuppliers(tenantId: string) {
-    return this.prisma.supplier.findMany({
-      where: { tenantId, isActive: true, deletedAt: null },
-      orderBy: { name: 'asc' },
-    });
+  async findAllSuppliers(
+    tenantId: string,
+    query?: { page?: number; limit?: number },
+  ) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const where = { tenantId, isActive: true, deletedAt: null };
+
+    const [items, total] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.supplier.count({ where }),
+    ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findSupplierById(tenantId: string, id: string) {
@@ -61,11 +75,25 @@ export class SupplierService {
   }
 
   // ---- ServiceProvider ----
-  async findAllProviders(tenantId: string) {
-    return this.prisma.serviceProvider.findMany({
-      where: { tenantId, isActive: true, deletedAt: null },
-      orderBy: { name: 'asc' },
-    });
+  async findAllProviders(
+    tenantId: string,
+    query?: { page?: number; limit?: number },
+  ) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const where = { tenantId, isActive: true, deletedAt: null };
+
+    const [items, total] = await Promise.all([
+      this.prisma.serviceProvider.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.serviceProvider.count({ where }),
+    ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findProviderById(tenantId: string, id: string) {

@@ -9,6 +9,7 @@ import {
   IsDateString,
 } from 'class-validator';
 import { ValveModel, BarrelMaterial } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 /**
  * DTO para cadastro rápido via scan de QR Code.
@@ -18,16 +19,19 @@ import { ValveModel, BarrelMaterial } from '@prisma/client';
 export class QuickRegisterDto {
   @IsString()
   @MaxLength(50)
+  @NoHtml()
   qrCode!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  @NoHtml()
   barcode?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
+  @NoHtml()
   manufacturer?: string;
 
   @IsOptional()

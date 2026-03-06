@@ -7,6 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { MaintenanceType, AlertPriority } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class CreateMaintenanceOrderDto {
   @IsUUID()
@@ -23,6 +24,7 @@ export class CreateMaintenanceOrderDto {
   @IsOptional()
   @IsString()
   @MaxLength(1000)
+  @NoHtml()
   description?: string;
 
   @IsOptional()

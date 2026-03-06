@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SupplierService } from './supplier.service.js';
@@ -14,6 +15,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { Role } from '@prisma/client';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto.js';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -23,8 +25,11 @@ export class SupplierController {
   // Suppliers
   @Get('suppliers')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async findAllSuppliers(@TenantId() tenantId: string) {
-    return this.supplierService.findAllSuppliers(tenantId);
+  async findAllSuppliers(
+    @TenantId() tenantId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.supplierService.findAllSuppliers(tenantId, query);
   }
 
   @Get('suppliers/:id')
@@ -83,8 +88,11 @@ export class SupplierController {
   // Service Providers
   @Get('service-providers')
   @Roles(Role.ADMIN, Role.MANAGER)
-  async findAllProviders(@TenantId() tenantId: string) {
-    return this.supplierService.findAllProviders(tenantId);
+  async findAllProviders(
+    @TenantId() tenantId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.supplierService.findAllProviders(tenantId, query);
   }
 
   @Get('service-providers/:id')
