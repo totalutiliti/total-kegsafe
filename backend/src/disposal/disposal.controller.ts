@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { DisposalService } from './disposal.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
@@ -8,6 +16,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Role } from '@prisma/client';
 import { CreateDisposalDto } from './dto/create-disposal.dto.js';
 import { CompleteDisposalDto } from './dto/complete-disposal.dto.js';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto.js';
 
 @Controller('disposals')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,8 +25,11 @@ export class DisposalController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
-  async findAll(@TenantId() tenantId: string) {
-    return this.disposalService.findAll(tenantId);
+  async findAll(
+    @TenantId() tenantId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.disposalService.findAll(tenantId, query);
   }
 
   @Get('suggestions')

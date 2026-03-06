@@ -1,21 +1,8 @@
-import { IsOptional, IsInt, Min, Max, IsString, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { BarrelStatus } from '@prisma/client';
+import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto.js';
 
-export class FindBarrelsQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number = 20;
-
+export class FindBarrelsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;

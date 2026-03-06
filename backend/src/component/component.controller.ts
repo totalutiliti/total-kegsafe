@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ComponentService } from './component.service.js';
@@ -14,6 +15,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { Criticality, Role } from '@prisma/client';
+import { PaginationQueryDto } from '../shared/dto/pagination-query.dto.js';
 
 @Controller('components')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,8 +24,11 @@ export class ComponentController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
-  async findAll(@TenantId() tenantId: string) {
-    return this.componentService.findAll(tenantId);
+  async findAll(
+    @TenantId() tenantId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.componentService.findAll(tenantId, query);
   }
 
   @Get(':id')

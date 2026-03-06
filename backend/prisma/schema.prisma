@@ -246,7 +246,11 @@ model Barrel {
   
   /// Data de fabricação (gravada no barril)
   manufactureDate DateTime?    @db.Date
-  
+
+  /// Condição do barril no momento do cadastro (novo ou usado)
+  /// Barris usados requerem manufactureDate e ciclos iniciais
+  condition       BarrelCondition @default(NEW)
+
   /// Custo de aquisição em R$ (para cálculo de TCO)
   acquisitionCost Decimal?     @db.Decimal(10, 2)
   
@@ -345,6 +349,12 @@ enum BarrelMaterial {
   INOX_304   // Aço inox 304 (padrão)
   INOX_316   // Aço inox 316 (maior resistência)
   PET_SLIM   // PET descartável (one-way)
+}
+
+/// Condição do barril no momento do cadastro
+enum BarrelCondition {
+  NEW    // Barril novo (0 ciclos prévios)
+  USED   // Barril usado (ciclos prévios conhecidos)
 }
 
 // ============================================================================

@@ -3,12 +3,13 @@ import {
   IsEnum,
   IsNumber,
   IsOptional,
+  IsInt,
   MaxLength,
   Min,
   Max,
   IsDateString,
 } from 'class-validator';
-import { ValveModel, BarrelMaterial } from '@prisma/client';
+import { ValveModel, BarrelMaterial, BarrelCondition } from '@prisma/client';
 
 export class CreateBarrelDto {
   @IsOptional()
@@ -53,4 +54,17 @@ export class CreateBarrelDto {
   @IsNumber()
   @Min(0)
   acquisitionCost?: number;
+
+  @IsOptional()
+  @IsEnum(BarrelCondition)
+  condition?: BarrelCondition;
+
+  @IsOptional()
+  @IsDateString()
+  manufactureDate?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  initialCycles?: number;
 }

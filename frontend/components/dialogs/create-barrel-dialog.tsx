@@ -10,22 +10,34 @@ import { Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
+const initialForm = {
+    qrCode: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50,
+    tareWeightKg: 13.2, material: 'INOX_304', acquisitionCost: 800,
+    condition: 'NEW' as 'NEW' | 'USED', manufactureDate: '', initialCycles: 0,
+};
+
 export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
-        qrCode: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50,
-        tareWeightKg: 13.2, material: 'INOX_304', acquisitionCost: 800,
-    });
+    const [form, setForm] = useState({ ...initialForm });
+
+    const isUsed = form.condition === 'USED';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/barrels', form);
+            const payload: Record<string, unknown> = { ...form };
+            if (!isUsed) {
+                delete payload.initialCycles;
+            }
+            if (!form.manufactureDate) {
+                delete payload.manufactureDate;
+            }
+            await api.post('/barrels', payload);
             toast.success('Barril criado com sucesso!');
             setOpen(false);
-            setForm({ qrCode: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50, tareWeightKg: 13.2, material: 'INOX_304', acquisitionCost: 800 });
+            setForm({ ...initialForm });
             onCreated?.();
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Erro ao criar barril');
@@ -99,6 +111,41 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
+                    {/* Condição e Data de Fabricação */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Condição</Label>
+                            <Select value={form.condition} onValueChange={v => setForm(f => ({ ...f, condition: v as 'NEW' | 'USED', ...(v === 'NEW' ? { initialCycles: 0, manufactureDate: '' } : {}) }))}>
+                                <SelectTrigger className="border-border bg-muted/50 text-foreground"><SelectValue /></SelectTrigger>
+                                <SelectContent className="border-border bg-card">
+                                    <SelectItem value="NEW">Novo</SelectItem>
+                                    <SelectItem value="USED">Usado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">
+                                Data de Fabricação {isUsed && <span className="text-red-400">*</span>}
+                            </Label>
+                            <Input type="date" required={isUsed} value={form.manufactureDate}
+                                onChange={e => setForm(f => ({ ...f, manufactureDate: e.target.value }))}
+                                className="border-border bg-muted/50 text-foreground" />
+                        </div>
+                    </div>
+                    {isUsed && (
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">
+                                Ciclos Aproximados <span className="text-red-400">*</span>
+                            </Label>
+                            <Input type="number" required min={0} value={form.initialCycles}
+                                onChange={e => setForm(f => ({ ...f, initialCycles: +e.target.value }))}
+                                placeholder="Ex: 150"
+                                className="border-border bg-muted/50 text-foreground" />
+                            <p className="text-xs text-muted-foreground">
+                                Todos os componentes receberão este número de ciclos iniciais
+                            </p>
+                        </div>
+                    )}
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">

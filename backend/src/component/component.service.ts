@@ -10,11 +10,23 @@ import {
 export class ComponentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string) {
-    return this.prisma.componentConfig.findMany({
-      where: { tenantId, isActive: true, deletedAt: null },
-      orderBy: { name: 'asc' },
-    });
+  async findAll(tenantId: string, query?: { page?: number; limit?: number }) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const skip = (page - 1) * limit;
+    const where = { tenantId, isActive: true, deletedAt: null };
+
+    const [items, total] = await Promise.all([
+      this.prisma.componentConfig.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.componentConfig.count({ where }),
+    ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(tenantId: string, id: string) {

@@ -12,12 +12,24 @@ import { BusinessException } from '../shared/exceptions/business.exception.js';
 export class DisposalService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string) {
-    return this.prisma.disposal.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-      include: { barrel: true },
-    });
+  async findAll(tenantId: string, query?: { page?: number; limit?: number }) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const skip = (page - 1) * limit;
+    const where = { tenantId };
+
+    const [items, total] = await Promise.all([
+      this.prisma.disposal.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { barrel: true },
+      }),
+      this.prisma.disposal.count({ where }),
+    ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(tenantId: string, id: string) {
