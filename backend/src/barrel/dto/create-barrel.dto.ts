@@ -10,21 +10,25 @@ import {
   IsDateString,
 } from 'class-validator';
 import { ValveModel, BarrelMaterial, BarrelCondition } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class CreateBarrelDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  @NoHtml()
   qrCode?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  @NoHtml()
   barcode?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
+  @NoHtml()
   manufacturer?: string;
 
   @IsOptional()

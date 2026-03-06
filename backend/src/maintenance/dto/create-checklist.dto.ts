@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MaintenanceType, ComponentAction } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class ChecklistItemDto {
   @IsUUID()
@@ -30,6 +31,7 @@ export class ChecklistItemDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  @NoHtml()
   notes?: string;
 }
 
@@ -61,6 +63,7 @@ export class CreateChecklistDto {
   @IsOptional()
   @IsString()
   @MaxLength(1000)
+  @NoHtml()
   generalNotes?: string;
 
   @IsOptional()

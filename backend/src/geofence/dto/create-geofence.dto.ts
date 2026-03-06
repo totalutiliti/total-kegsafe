@@ -10,11 +10,13 @@ import {
   Max,
 } from 'class-validator';
 import { GeofenceType } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class CreateGeofenceDto {
   @IsString()
   @MinLength(2)
   @MaxLength(150)
+  @NoHtml()
   name!: string;
 
   @IsEnum(GeofenceType)

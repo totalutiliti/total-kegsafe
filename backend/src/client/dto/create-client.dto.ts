@@ -10,15 +10,18 @@ import {
   Max,
 } from 'class-validator';
 import { IsCnpj } from '../../shared/validators/cnpj.validator.js';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class CreateClientDto {
   @IsString()
   @MaxLength(200)
+  @NoHtml()
   name!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(200)
+  @NoHtml()
   tradeName?: string;
 
   @IsOptional()
@@ -31,6 +34,7 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   @MaxLength(20)
+  @NoHtml()
   phone?: string;
 
   @IsOptional()
@@ -40,6 +44,7 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  @NoHtml()
   address?: string;
 
   @IsOptional()
@@ -57,5 +62,6 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  @NoHtml()
   connectorType?: string;
 }
