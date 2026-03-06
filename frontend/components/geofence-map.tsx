@@ -55,7 +55,7 @@ export default function GeofenceMap({ geofences }: GeofenceMapProps) {
         <MapContainer
             center={defaultCenter}
             zoom={8}
-            className="h-[400px] w-full rounded-lg border border-border z-0"
+            className="h-[calc(100vh-12rem)] w-full rounded-lg border border-border z-0"
             scrollWheelZoom
         >
             <TileLayer
