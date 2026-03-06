@@ -8,6 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class CollectionDto {
   @IsUUID()
@@ -32,6 +33,7 @@ export class CollectionDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  @NoHtml()
   notes?: string;
 
   @IsOptional()

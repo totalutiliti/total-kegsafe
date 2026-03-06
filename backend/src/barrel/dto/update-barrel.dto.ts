@@ -8,6 +8,7 @@ import {
   Max,
 } from 'class-validator';
 import { ValveModel, BarrelMaterial } from '@prisma/client';
+import { NoHtml } from '../../shared/validators/no-html.validator.js';
 
 export class UpdateBarrelDto {
   @IsNumber()
@@ -16,6 +17,7 @@ export class UpdateBarrelDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
+  @NoHtml()
   manufacturer?: string;
 
   @IsOptional()
