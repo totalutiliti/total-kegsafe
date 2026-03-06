@@ -17,20 +17,41 @@ export class UserService {
     private readonly hashingService: HashingService,
   ) {}
 
-  async findAll(tenantId: string) {
-    return this.prisma.user.findMany({
-      where: { tenantId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        phone: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-      },
-    });
+  async findAll(tenantId: string, page?: number, limit?: number) {
+    const where = { tenantId, deletedAt: null };
+    const select = {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      isActive: true,
+      lastLoginAt: true,
+      createdAt: true,
+    };
+
+    // If no pagination params, return paginated response with defaults
+    const p = page && page > 0 ? page : 1;
+    const l = limit && limit > 0 ? Math.min(limit, 100) : 20;
+
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select,
+        skip: (p - 1) * l,
+        take: l,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page: p,
+      limit: l,
+      totalPages: Math.ceil(total / l),
+    };
   }
 
   async findById(tenantId: string, id: string) {
