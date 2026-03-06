@@ -23,6 +23,7 @@ import { HealthModule } from './health/health.module.js';
 import { DegradationModule } from './shared/resilience/degradation.module.js';
 import { SloModule } from './shared/slo/slo.module.js';
 import { ChaosModule } from './shared/chaos/chaos.module.js';
+import { SuperAdminModule } from './super-admin/super-admin.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
@@ -58,6 +59,7 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
     DegradationModule,
     SloModule,
     ChaosModule,
+    SuperAdminModule,
   ],
   providers: [
     {

@@ -124,7 +124,11 @@ model User {
   
   /// Timestamp do bloqueio por tentativas falhas
   lockedUntil  DateTime? @db.Timestamptz(3)
-  
+
+  /// Força troca de senha no próximo login
+  /// true = senha temporária criada por Super Admin ou reset de senha
+  mustChangePassword Boolean @default(false)
+
   /// Data de criação
   createdAt    DateTime @default(now()) @db.Timestamptz(3)
   
@@ -146,6 +150,9 @@ model User {
   barrelsCreated    Barrel[]   @relation("BarrelCreatedBy")
   barrelsUpdated    Barrel[]   @relation("BarrelUpdatedBy")
 
+  // Audit de ações do super admin
+  superAdminAuditLogs SuperAdminAuditLog[]
+
   // Índices
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -161,6 +168,7 @@ enum Role {
   MAINTENANCE  // Técnico: manutenção, triagem, checklist
   MANAGER      // Gestor: dashboards, relatórios, aprovações, alertas
   ADMIN        // Administrador: configurações, usuários, integrações
+  SUPER_ADMIN  // Operador da plataforma: gestão cross-tenant, onboarding, suporte
 }
 
 /// Token de refresh para renovação de sessão
@@ -1268,6 +1276,52 @@ model AuditLog {
   @@index([tenantId, action])
   @@index([tenantId, userId, timestamp])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// SUPER ADMIN AUDIT
+// Log de ações cross-tenant realizadas pelo operador da plataforma
+// ============================================================================
+
+/// Audit log para ações do Super Admin (cross-tenant)
+/// Separado do AuditLog pois não requer tenantId obrigatório
+model SuperAdminAuditLog {
+  /// Identificador único
+  id             String   @id @default(uuid()) @db.Uuid
+
+  /// Super admin que executou a ação
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id])
+
+  /// Ação executada
+  /// Ex: "TENANT_CREATED", "TENANT_SUSPENDED", "USER_PASSWORD_RESET", "USER_UNLOCKED"
+  action         String   @db.VarChar(100)
+
+  /// Tipo da entidade afetada (Ex: "Tenant", "User")
+  entityType     String   @db.VarChar(50)
+
+  /// ID da entidade afetada
+  entityId       String   @db.VarChar(50)
+
+  /// Tenant alvo da ação (se aplicável)
+  targetTenantId String?  @db.Uuid
+
+  /// Detalhes adicionais da ação (JSON)
+  details        Json?
+
+  /// IP de origem da requisição
+  ipAddress      String?  @db.VarChar(45)
+
+  /// User-Agent do cliente
+  userAgent      String?  @db.VarChar(500)
+
+  /// Timestamp do evento
+  timestamp      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, timestamp])
+  @@index([action])
+  @@index([targetTenantId])
+  @@map("super_admin_audit_logs")
 }
 
 // ============================================================================

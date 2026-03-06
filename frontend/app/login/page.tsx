@@ -25,8 +25,12 @@ export default function LoginPage() {
         setIsLoading(true);
         try {
             await login(email, password);
-            const role = useAuthStore.getState().user?.role;
-            router.push(ROLE_HOME[role || ''] || '/barrels');
+            const user = useAuthStore.getState().user;
+            if (user?.mustChangePassword) {
+                router.push('/change-password');
+                return;
+            }
+            router.push(ROLE_HOME[user?.role || ''] || '/barrels');
         } catch (err: any) {
             const raw = err.response?.data?.message || '';
             const msg = raw === 'Invalid email or password'
