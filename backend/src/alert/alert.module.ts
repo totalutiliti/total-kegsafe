@@ -6,9 +6,9 @@ import { ComponentModule } from '../component/component.module.js';
 import { GeofenceModule } from '../geofence/geofence.module.js';
 
 @Module({
-    imports: [ComponentModule, GeofenceModule],
-    providers: [AlertService, AlertJobsService],
-    controllers: [AlertController],
-    exports: [AlertService],
+  imports: [ComponentModule, GeofenceModule],
+  providers: [AlertService, AlertJobsService],
+  controllers: [AlertController],
+  exports: [AlertService],
 })
-export class AlertModule { }
+export class AlertModule {}

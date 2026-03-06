@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3009';
 
 export const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: `${API_BASE_URL}/api/v1`,
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true, // Send httpOnly cookies automatically
 });
@@ -15,13 +15,13 @@ api.interceptors.response.use(
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
             // Don't retry auth endpoints — let the error propagate to the caller
-            if (originalRequest.url?.includes('/api/auth/login') || originalRequest.url?.includes('/api/auth/refresh')) {
+            if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
                 return Promise.reject(error);
             }
             originalRequest._retry = true;
             try {
                 // Refresh token is sent automatically via httpOnly cookie
-                await axios.post(`${API_BASE_URL}/api/auth/refresh`, {}, { withCredentials: true });
+                await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {}, { withCredentials: true });
                 return api(originalRequest);
             } catch {
                 // Refresh failed — redirect to login

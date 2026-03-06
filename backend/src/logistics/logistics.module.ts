@@ -6,9 +6,9 @@ import { ComponentModule } from '../component/component.module.js';
 import { GeofenceModule } from '../geofence/geofence.module.js';
 
 @Module({
-    imports: [BarrelModule, ComponentModule, GeofenceModule],
-    providers: [LogisticsService],
-    controllers: [LogisticsController],
-    exports: [LogisticsService],
+  imports: [BarrelModule, ComponentModule, GeofenceModule],
+  providers: [LogisticsService],
+  controllers: [LogisticsController],
+  exports: [LogisticsService],
 })
-export class LogisticsModule { }
+export class LogisticsModule {}

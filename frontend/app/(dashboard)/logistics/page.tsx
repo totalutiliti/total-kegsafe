@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Package, ArrowDown, ArrowUp, RotateCw, Factory } from 'lucide-react';
+import { Smartphone, Package, ArrowDown, ArrowUp, Factory, QrCode, MapPin, RefreshCw, History } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 
 export default function LogisticsPage() {
@@ -38,10 +38,33 @@ export default function LogisticsPage() {
                 </div>
 
                 <Card className="border-border bg-card/50">
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                        <Truck className="h-16 w-16 text-muted-foreground mb-4" />
-                        <p className="text-muted-foreground text-center">As operações logísticas são realizadas através do app mobile.<br />
-                            <span className="text-muted-foreground text-sm">Escaneie o QR Code do barril para iniciar uma operação.</span>
+                    <CardContent className="p-8">
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg mb-4">
+                                <Smartphone className="h-8 w-8 text-white" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground">Operações via App Mobile</h3>
+                            <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                                As operações de movimentação de barris (expedição, coleta, entrega e recebimento) são realizadas exclusivamente pelo aplicativo mobile KegSafe.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 max-w-lg mx-auto mb-8">
+                            {[
+                                { icon: QrCode, text: 'Leitura de QR Code / NFC dos barris' },
+                                { icon: MapPin, text: 'Registro de coleta e entrega com geolocalização' },
+                                { icon: RefreshCw, text: 'Atualização de status em tempo real' },
+                                { icon: History, text: 'Histórico de movimentações por barril' },
+                            ].map((feature, i) => (
+                                <div key={i} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                                    <feature.icon className="h-4 w-4 text-amber-400 shrink-0" />
+                                    <span className="text-sm text-muted-foreground">{feature.text}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground text-center">
+                            Para acesso ao aplicativo, entre em contato com o administrador do sistema.
                         </p>
                     </CardContent>
                 </Card>

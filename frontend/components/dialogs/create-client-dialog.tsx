@@ -21,7 +21,7 @@ export function CreateClientDialog({ onCreated }: { onCreated?: () => void }) {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/clients', {
+            await api.post('/clients', {
                 ...form,
                 latitude: form.latitude ? +form.latitude : undefined,
                 longitude: form.longitude ? +form.longitude : undefined,

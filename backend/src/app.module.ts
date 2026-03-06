@@ -1,7 +1,9 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TenantThrottlerGuard } from './shared/guards/tenant-throttler.guard.js';
+import { validateEnv } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -18,6 +20,9 @@ import { AlertModule } from './alert/alert.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { DisposalModule } from './disposal/disposal.module.js';
 import { HealthModule } from './health/health.module.js';
+import { DegradationModule } from './shared/resilience/degradation.module.js';
+import { SloModule } from './shared/slo/slo.module.js';
+import { ChaosModule } from './shared/chaos/chaos.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
@@ -26,7 +31,11 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      validate: validateEnv,
+    }),
     ScheduleModule.forRoot(),
     // Rate limiting — 100 requests per 60 seconds per IP (auth endpoints override with stricter limits)
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
@@ -46,6 +55,9 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
     DashboardModule,
     DisposalModule,
     HealthModule,
+    DegradationModule,
+    SloModule,
+    ChaosModule,
   ],
   providers: [
     {
@@ -59,7 +71,7 @@ import { RequestLoggerMiddleware } from './shared/middleware/request-logger.midd
     },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: TenantThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {

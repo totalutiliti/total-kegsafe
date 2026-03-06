@@ -39,3 +39,4 @@ build/
 audit_*.js
 audit_*.txt
 *.tmp
+.claude/settings.local.json

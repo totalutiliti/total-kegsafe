@@ -1,0 +1,74 @@
+# ============================================================================
+# KegSafe Tech — CI Pipeline (Lint, Test, Build)
+# Roda em PRs e pushes para branches de desenvolvimento
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint-test-build:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kegsafe_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kegsafe_test
+      JWT_SECRET: ci-test-secret-that-is-at-least-32-characters-long
+      JWT_EXPIRATION: 15m
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars
+      JWT_REFRESH_EXPIRATION: 7d
+      PEPPER_SECRET: ci-test-pepper-secret-minimum-32-characters
+      NODE_ENV: test
+      PORT: 3009
+      CORS_ORIGINS: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run Prisma migrations
+        run: npx prisma migrate deploy
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --passWithNoTests
+
+      - name: Integration Tests
+        run: npm run test:integration

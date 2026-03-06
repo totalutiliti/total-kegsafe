@@ -6,19 +6,28 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { Role } from '@prisma/client';
 
-@Controller('api/tenants')
+@Controller('tenants')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TenantController {
-    constructor(private readonly tenantService: TenantService) { }
+  constructor(private readonly tenantService: TenantService) {}
 
-    @Get('current')
-    async getCurrent(@TenantId() tenantId: string) {
-        return this.tenantService.findById(tenantId);
-    }
+  @Get('current')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async getCurrent(@TenantId() tenantId: string) {
+    return this.tenantService.findById(tenantId);
+  }
 
-    @Patch('current')
-    @Roles(Role.ADMIN)
-    async updateCurrent(@TenantId() tenantId: string, @Body() data: any) {
-        return this.tenantService.update(tenantId, data);
-    }
+  @Patch('current')
+  @Roles(Role.ADMIN)
+  async updateCurrent(
+    @TenantId() tenantId: string,
+    @Body()
+    data: {
+      name?: string;
+      settings?: Record<string, unknown>;
+      logoUrl?: string;
+    },
+  ) {
+    return this.tenantService.update(tenantId, data);
+  }
 }
