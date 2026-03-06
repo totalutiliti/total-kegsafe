@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service.js';
@@ -24,8 +25,16 @@ export class UserController {
 
   @Get()
   @Roles(Role.ADMIN)
-  async findAll(@TenantId() tenantId: string) {
-    return this.userService.findAll(tenantId);
+  async findAll(
+    @TenantId() tenantId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.userService.findAll(
+      tenantId,
+      page ? +page : undefined,
+      limit ? +limit : undefined,
+    );
   }
 
   @Get(':id')
