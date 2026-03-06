@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, CheckCircle2, Eye, Filter } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Eye, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RoleGuard } from '@/components/role-guard';
 import { toast } from 'sonner';
@@ -21,17 +21,23 @@ export default function AlertsPage() {
     const [alerts, setAlerts] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(true);
     const [resolved, setResolved] = useState<string>('false');
+    const limit = 20;
+    const totalPages = Math.ceil(total / limit);
 
     const fetchAlerts = async () => {
+        setLoading(true);
         try {
-            const params: any = { page, limit: 20 };
+            const params: any = { page, limit };
             if (resolved !== 'all') params.resolved = resolved === 'true';
             const { data } = await api.get('/alerts', { params });
             setAlerts(data.items);
             setTotal(data.total);
         } catch (error) {
             toast.error('Erro ao carregar alertas');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -59,7 +65,7 @@ export default function AlertsPage() {
                         <h1 className="text-2xl font-bold text-foreground">Alertas</h1>
                         <p className="text-sm text-muted-foreground mt-1">{total} alertas no total</p>
                     </div>
-                    <Select value={resolved} onValueChange={setResolved}>
+                    <Select value={resolved} onValueChange={(v) => { setResolved(v); setPage(1); }}>
                         <SelectTrigger className="w-44 border-border bg-muted/50 text-foreground">
                             <SelectValue />
                         </SelectTrigger>
@@ -71,55 +77,89 @@ export default function AlertsPage() {
                     </Select>
                 </div>
 
-                <div className="space-y-3">
-                    {alerts.length === 0 ? (
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="flex flex-col items-center justify-center py-12">
-                                <CheckCircle2 className="h-12 w-12 text-green-500/50 mb-3" />
-                                <p className="text-muted-foreground">Nenhum alerta pendente</p>
-                            </CardContent>
-                        </Card>
-                    ) : alerts.map((alert) => {
-                        const pc = priorityConfig[alert.priority] || priorityConfig.LOW;
-                        return (
-                            <Card key={alert.id} className="border-border bg-card/50 hover:border-accent transition-colors">
-                                <CardContent className="flex items-start gap-4 p-5">
-                                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${alert.priority === 'CRITICAL' ? 'bg-red-500/10' : 'bg-amber-500/10'}`}>
-                                        <AlertTriangle className={`h-5 w-5 ${alert.priority === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-sm font-medium text-foreground truncate">{alert.title}</h3>
-                                            <Badge variant="outline" className={`text-[10px] ${pc.color}`}>{pc.label}</Badge>
-                                            {alert.acknowledgedAt && !alert.resolvedAt && (
-                                                <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/20">Visto</Badge>
-                                            )}
-                                            {alert.resolvedAt && (
-                                                <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Resolvido</Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground line-clamp-1">{alert.description}</p>
-                                        {alert.barrel && (
-                                            <p className="text-xs text-muted-foreground mt-1">Barril: {alert.barrel.internalCode}</p>
-                                        )}
-                                    </div>
-                                    {!alert.resolvedAt && (
-                                        <div className="flex gap-2 flex-shrink-0">
-                                            {!alert.acknowledgedAt && (
-                                                <Button variant="outline" size="sm" onClick={() => handleAcknowledge(alert.id)} className="border-border text-foreground hover:border-blue-500 hover:text-blue-400">
-                                                    <Eye className="h-3.5 w-3.5 mr-1" /> Visto
-                                                </Button>
-                                            )}
-                                            <Button variant="outline" size="sm" onClick={() => handleResolve(alert.id)} className="border-border text-foreground hover:border-green-500 hover:text-green-400">
-                                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Resolver
-                                            </Button>
-                                        </div>
-                                    )}
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <p className="text-muted-foreground">Carregando...</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {alerts.length === 0 ? (
+                            <Card className="border-border bg-card/50">
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <CheckCircle2 className="h-12 w-12 text-green-500/50 mb-3" />
+                                    <p className="text-muted-foreground">Nenhum alerta pendente</p>
                                 </CardContent>
                             </Card>
-                        );
-                    })}
-                </div>
+                        ) : alerts.map((alert) => {
+                            const pc = priorityConfig[alert.priority] || priorityConfig.LOW;
+                            return (
+                                <Card key={alert.id} className="border-border bg-card/50 hover:border-accent transition-colors">
+                                    <CardContent className="flex items-start gap-4 p-5">
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${alert.priority === 'CRITICAL' ? 'bg-red-500/10' : 'bg-amber-500/10'}`}>
+                                            <AlertTriangle className={`h-5 w-5 ${alert.priority === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}`} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="text-sm font-medium text-foreground truncate">{alert.title}</h3>
+                                                <Badge variant="outline" className={`text-[10px] ${pc.color}`}>{pc.label}</Badge>
+                                                {alert.acknowledgedAt && !alert.resolvedAt && (
+                                                    <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/20">Visto</Badge>
+                                                )}
+                                                {alert.resolvedAt && (
+                                                    <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Resolvido</Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground line-clamp-1">{alert.description}</p>
+                                            {alert.barrel && (
+                                                <p className="text-xs text-muted-foreground mt-1">Barril: {alert.barrel.internalCode}</p>
+                                            )}
+                                        </div>
+                                        {!alert.resolvedAt && (
+                                            <div className="flex gap-2 flex-shrink-0">
+                                                {!alert.acknowledgedAt && (
+                                                    <Button variant="outline" size="sm" onClick={() => handleAcknowledge(alert.id)} className="border-border text-foreground hover:border-blue-500 hover:text-blue-400">
+                                                        <Eye className="h-3.5 w-3.5 mr-1" /> Visto
+                                                    </Button>
+                                                )}
+                                                <Button variant="outline" size="sm" onClick={() => handleResolve(alert.id)} className="border-border text-foreground hover:border-green-500 hover:text-green-400">
+                                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Resolver
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Página {page} de {totalPages}
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="border-border text-foreground hover:bg-accent"
+                            >
+                                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page >= totalPages}
+                                className="border-border text-foreground hover:bg-accent"
+                            >
+                                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </RoleGuard>
     );
