@@ -47,8 +47,8 @@ export default function BarrelDetailPage() {
         const load = async () => {
             try {
                 const [barrelRes, timelineRes] = await Promise.all([
-                    api.get(`/api/barrels/${params.id}`),
-                    api.get(`/api/barrels/${params.id}/timeline`),
+                    api.get(`/barrels/${params.id}`),
+                    api.get(`/barrels/${params.id}/timeline`),
                 ]);
                 setBarrel(barrelRes.data);
                 setTimeline(timelineRes.data || []);
@@ -92,6 +92,9 @@ export default function BarrelDetailPage() {
                     <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-bold text-foreground">{barrel.internalCode}</h1>
                         <Badge variant="outline" className={`${sc.color}`}>{sc.label}</Badge>
+                        {barrel.condition === 'USED' && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">Usado</Badge>
+                        )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-0.5">QR: {barrel.qrCode} • {barrel.manufacturer} • {barrel.capacityLiters}L</p>
                 </div>
@@ -124,6 +127,18 @@ export default function BarrelDetailPage() {
                     </CardContent>
                 </Card>
             </div>
+            {barrel.manufactureDate && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Card className="border-border bg-card/50">
+                        <CardContent className="p-4 text-center">
+                            <p className="text-2xl font-bold text-foreground">
+                                {new Date(barrel.manufactureDate).toLocaleDateString('pt-BR')}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">Data de Fabricação</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {/* Component Health Cards */}
             <div>

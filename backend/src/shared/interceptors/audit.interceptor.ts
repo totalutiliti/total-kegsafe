@@ -1,81 +1,99 @@
 import {
-    Injectable,
-    NestInterceptor,
-    ExecutionContext,
-    CallHandler,
-    Logger,
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
+import { Prisma } from '@prisma/client';
 
 export const AUDIT_KEY = 'audit';
 export interface AuditOptions {
-    action: string;
-    entityType: string;
-    getEntityId?: (req: any, result: any) => string;
+  action: string;
+  entityType: string;
+  getEntityId?: (req: Request, result: AuditResult) => string;
+}
+
+interface AuditResult {
+  id?: string;
+  [key: string]: unknown;
 }
 
 export const Audit = (options: AuditOptions) => {
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
-        Reflect.defineMetadata(AUDIT_KEY, options, descriptor.value);
-        return descriptor;
-    };
+  return (
+    _target: object,
+    _propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) => {
+    Reflect.defineMetadata(AUDIT_KEY, options, descriptor.value as object);
+    return descriptor;
+  };
 };
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-    private readonly logger = new Logger(AuditInterceptor.name);
+  private readonly logger = new Logger(AuditInterceptor.name);
 
-    constructor(
-        private readonly cls: ClsService,
-        private readonly prisma: PrismaService,
-        private readonly reflector: Reflector,
-    ) { }
+  constructor(
+    private readonly cls: ClsService,
+    private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
+  ) {}
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-        const request = context.switchToHttp().getRequest();
-        const handler = context.getHandler();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const handler = context.getHandler();
 
-        const auditOptions = Reflect.getMetadata(AUDIT_KEY, handler) as AuditOptions | undefined;
+    const auditOptions = Reflect.getMetadata(AUDIT_KEY, handler) as
+      | AuditOptions
+      | undefined;
 
-        if (!auditOptions) {
-            return next.handle();
-        }
-
-        const tenantId = this.cls.get('tenantId');
-        const userId = this.cls.get('userId');
-        const oldData = request.body;
-
-        return next.handle().pipe(
-            tap(async (result) => {
-                try {
-                    const entityId = auditOptions.getEntityId
-                        ? auditOptions.getEntityId(request, result)
-                        : result?.id || request.params?.id;
-
-                    await this.prisma.auditLog.create({
-                        data: {
-                            tenantId,
-                            userId,
-                            action: auditOptions.action,
-                            entityType: auditOptions.entityType,
-                            entityId: entityId?.toString() || 'unknown',
-                            oldData: request.method !== 'POST' ? oldData : null,
-                            newData: result,
-                            ipAddress: request.ip,
-                            userAgent: request.headers['user-agent'],
-                        },
-                    });
-                } catch (error: any) {
-                    this.logger.error('Audit log failed', {
-                        message: error?.message,
-                        stack: error?.stack,
-                    });
-                }
-            }),
-        );
+    if (!auditOptions) {
+      return next.handle();
     }
+
+    const tenantId: string = this.cls.get('tenantId');
+    const userId: string = this.cls.get('userId');
+    const oldData = request.body as Prisma.InputJsonValue;
+
+    return next.handle().pipe(
+      tap((result: unknown) => {
+        void (async () => {
+          try {
+            const auditResult = result as AuditResult | undefined;
+            const entityId = auditOptions.getEntityId
+              ? auditOptions.getEntityId(request, auditResult ?? {})
+              : auditResult?.id || request.params?.id;
+
+            await this.prisma.auditLog.create({
+              data: {
+                tenantId,
+                userId,
+                action: auditOptions.action,
+                entityType: auditOptions.entityType,
+                entityId: entityId?.toString() || 'unknown',
+                oldData: request.method !== 'POST' ? oldData : Prisma.JsonNull,
+                newData: auditResult as Prisma.InputJsonValue,
+                ipAddress: request.ip,
+                userAgent: request.headers['user-agent'],
+              },
+            });
+          } catch (error: unknown) {
+            const err =
+              error instanceof Error ? error : new Error(String(error));
+            this.logger.error('Audit log failed', {
+              message: err.message,
+              stack: err.stack,
+            });
+          }
+        })();
+      }),
+    );
+  }
 }

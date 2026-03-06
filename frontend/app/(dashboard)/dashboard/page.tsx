@@ -7,6 +7,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton';
 import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { RoleGuard } from '@/components/role-guard';
+import { useTheme } from '@/lib/theme-provider';
 import Link from 'next/link';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -20,10 +21,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-    const { data: fleetData, isLoading: loadingFleet } = useApiQuery(['dashboard', 'fleet'], '/api/dashboard/fleet-health');
-    const { data: costData } = useApiQuery(['dashboard', 'cost'], '/api/dashboard/cost-per-liter');
-    const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/api/dashboard/asset-turnover');
-    const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/api/alerts/counts');
+    const { theme } = useTheme();
+    const { data: fleetData, isLoading: loadingFleet } = useApiQuery(['dashboard', 'fleet'], '/dashboard/fleet-health');
+    const { data: costData } = useApiQuery(['dashboard', 'cost'], '/dashboard/cost-per-liter');
+    const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/dashboard/asset-turnover');
+    const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/alerts/counts');
+
+    // Theme-aware chart colors for axes
+    const axisStroke = theme === 'dark' ? '#3f3f46' : '#d4d4d8';
+    const axisTickFill = theme === 'dark' ? '#a1a1aa' : '#71717a';
 
     if (loadingFleet) {
         return <DashboardSkeleton />;
@@ -171,12 +177,12 @@ export default function DashboardPage() {
                             <div className="h-48">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={healthBarData} layout="vertical" margin={{ left: 10 }}>
-                                        <XAxis type="number" stroke="#52525b" tick={{ fill: '#71717a', fontSize: 12 }} />
-                                        <YAxis dataKey="name" type="category" stroke="#52525b" tick={{ fill: '#a1a1aa', fontSize: 12 }} width={70} />
+                                        <XAxis type="number" stroke={axisStroke} tick={{ fill: axisTickFill, fontSize: 12 }} />
+                                        <YAxis dataKey="name" type="category" stroke={axisStroke} tick={{ fill: axisTickFill, fontSize: 12 }} width={70} />
                                         <Tooltip
-                                            contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
-                                            labelStyle={{ color: '#e4e4e7' }}
-                                            itemStyle={{ color: '#a1a1aa' }}
+                                            contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                                            labelStyle={{ color: 'var(--foreground)' }}
+                                            itemStyle={{ color: 'var(--muted-foreground)' }}
                                         />
                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                             {healthBarData.map((entry, i) => (

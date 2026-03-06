@@ -3,8 +3,8 @@ import { TenantService } from './tenant.service.js';
 import { TenantController } from './tenant.controller.js';
 
 @Module({
-    providers: [TenantService],
-    controllers: [TenantController],
-    exports: [TenantService],
+  providers: [TenantService],
+  controllers: [TenantController],
+  exports: [TenantService],
 })
-export class TenantModule { }
+export class TenantModule {}

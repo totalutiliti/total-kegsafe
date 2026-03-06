@@ -36,7 +36,7 @@ const navigation = [
     { name: 'Alertas', href: '/alerts', icon: AlertTriangle, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },
     { name: 'Clientes', href: '/clients', icon: Building2, roles: ['ADMIN', 'MANAGER'] },
     { name: 'Geofences', href: '/geofences', icon: Map, roles: ['ADMIN', 'MANAGER'] },
-    { name: 'Descarte', href: '/disposal', icon: Trash2, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },
+    { name: 'Descarte', href: '/disposal', icon: Trash2, roles: ['ADMIN', 'MANAGER'] },
     { name: 'Relatórios', href: '/reports', icon: BarChart3, roles: ['ADMIN', 'MANAGER'] },
 ];
 

@@ -21,7 +21,7 @@ export function CreateGeofenceDialog({ onCreated }: { onCreated?: () => void }) 
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/api/geofences', {
+            await api.post('/geofences', {
                 ...form,
                 latitude: +form.latitude,
                 longitude: +form.longitude,
@@ -60,8 +60,8 @@ export function CreateGeofenceDialog({ onCreated }: { onCreated?: () => void }) 
                             <SelectTrigger className="border-border bg-muted/50 text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent className="border-border bg-card">
                                 <SelectItem value="FACTORY">Fábrica</SelectItem>
-                                <SelectItem value="WAREHOUSE">Armazém</SelectItem>
                                 <SelectItem value="CLIENT">Cliente</SelectItem>
+                                <SelectItem value="RESTRICTED">Zona Restrita</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
