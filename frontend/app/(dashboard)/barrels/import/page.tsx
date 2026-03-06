@@ -317,6 +317,15 @@ export default function ImportBarrelsPage() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                           Material
                         </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
+                          Condição
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
+                          Data Fab.
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
+                          Ciclos
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -336,6 +345,15 @@ export default function ImportBarrelsPage() {
                           </td>
                           <td className="px-3 py-2 text-foreground">
                             {row.material || "INOX_304"}
+                          </td>
+                          <td className="px-3 py-2 text-foreground">
+                            {row.condition === "USED" ? "Usado" : "Novo"}
+                          </td>
+                          <td className="px-3 py-2 text-foreground">
+                            {row.manufactureDate ? new Date(row.manufactureDate).toLocaleDateString("pt-BR") : "-"}
+                          </td>
+                          <td className="px-3 py-2 text-foreground">
+                            {row.initialCycles ?? "-"}
                           </td>
                         </tr>
                       ))}

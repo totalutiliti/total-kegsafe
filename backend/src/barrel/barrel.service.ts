@@ -1,10 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   BarrelStatus,
   BarrelMaterial,
+  BarrelCondition,
   ValveModel,
+  AlertType,
+  AlertPriority,
   Prisma,
 } from '@prisma/client';
 import { CreateBarrelDto } from './dto/create-barrel.dto.js';
@@ -12,6 +15,8 @@ import { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import { QuickRegisterDto } from './dto/quick-register.dto.js';
 import { LinkQrDto } from './dto/link-qr.dto.js';
 import { ExcelService } from '../shared/services/excel.service.js';
+import { AlertService } from '../alert/alert.service.js';
+import { ComponentService } from '../component/component.service.js';
 import {
   BarrelNotFoundException,
   BarrelQrCodeExistsException,
@@ -71,6 +76,19 @@ const IMPORT_COLUMNS = [
     width: 15,
     example: '800',
   },
+  { header: 'condicao', key: 'condicao', width: 12, example: 'NOVO' },
+  {
+    header: 'dataFabricacao',
+    key: 'dataFabricacao',
+    width: 18,
+    example: '2023-01-15',
+  },
+  {
+    header: 'ciclosAproximados',
+    key: 'ciclosAproximados',
+    width: 18,
+    example: '0',
+  },
 ];
 
 interface ImportSession {
@@ -94,6 +112,9 @@ export interface ValidatedRow {
   tareWeightKg?: number;
   material?: BarrelMaterial;
   acquisitionCost?: number;
+  condition?: BarrelCondition;
+  manufactureDate?: Date;
+  initialCycles?: number;
 }
 
 @Injectable()
@@ -106,6 +127,8 @@ export class BarrelService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly excelService: ExcelService,
+    private readonly alertService: AlertService,
+    private readonly componentService: ComponentService,
   ) {}
 
   /**
@@ -235,6 +258,25 @@ export class BarrelService {
   }
 
   async create(tenantId: string, dto: CreateBarrelDto) {
+    const condition = dto.condition ?? BarrelCondition.NEW;
+    const isUsed = condition === BarrelCondition.USED;
+
+    // Validação cruzada: barris usados exigem data de fabricação e ciclos
+    if (isUsed) {
+      if (!dto.manufactureDate) {
+        throw new BadRequestException(
+          'Data de fabricação é obrigatória para barris usados',
+        );
+      }
+      if (dto.initialCycles === undefined || dto.initialCycles === null) {
+        throw new BadRequestException(
+          'Ciclos aproximados é obrigatório para barris usados',
+        );
+      }
+    }
+
+    const initialCycles = isUsed ? (dto.initialCycles ?? 0) : 0;
+
     // Verificar unicidade do QR Code (apenas quando fornecido)
     if (dto.qrCode) {
       const existing = await this.prisma.barrel.findFirst({
@@ -261,28 +303,76 @@ export class BarrelService {
         tareWeightKg: dto.tareWeightKg,
         material: dto.material,
         purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : null,
+        manufactureDate: dto.manufactureDate
+          ? new Date(dto.manufactureDate)
+          : null,
+        condition,
+        totalCycles: initialCycles,
         acquisitionCost: dto.acquisitionCost,
         status: BarrelStatus.ACTIVE,
       },
     });
 
-    // Criar ComponentCycles em batch (1 query em vez de N sequenciais)
+    // Criar ComponentCycles em batch com cálculo de saúde
     const componentConfigs = await this.prisma.componentConfig.findMany({
       where: { tenantId, isActive: true, deletedAt: null },
     });
 
     if (componentConfigs.length > 0) {
-      await this.prisma.componentCycle.createMany({
-        data: componentConfigs.map((config) => ({
+      const serviceDate = dto.manufactureDate
+        ? new Date(dto.manufactureDate)
+        : new Date();
+
+      const cyclesData = componentConfigs.map((config) => {
+        const { healthScore, healthPercentage } =
+          this.componentService.calculateHealthScore(
+            initialCycles,
+            config.maxCycles,
+            serviceDate,
+            config.maxDays,
+          );
+        return {
           barrelId: barrel.id,
           componentConfigId: config.id,
-          cyclesSinceLastService: 0,
-          lastServiceDate: new Date(),
-          healthScore: 'GREEN' as const,
-          healthPercentage: 0,
-        })),
+          cyclesSinceLastService: initialCycles,
+          lastServiceDate: serviceDate,
+          healthScore,
+          healthPercentage,
+        };
+      });
+
+      await this.prisma.componentCycle.createMany({
+        data: cyclesData,
         skipDuplicates: true,
       });
+
+      // Alertas imediatos para componentes já acima de 80% (barris usados)
+      if (isUsed) {
+        const criticalCycles = cyclesData.filter(
+          (c) => c.healthPercentage >= 80,
+        );
+        for (const cycle of criticalCycles) {
+          const config = componentConfigs.find(
+            (cfg) => cfg.id === cycle.componentConfigId,
+          )!;
+          await this.alertService.createAlert({
+            tenantId,
+            barrelId: barrel.id,
+            type: AlertType.COMPONENT_END_OF_LIFE,
+            priority:
+              config.criticality === 'CRITICAL'
+                ? AlertPriority.HIGH
+                : AlertPriority.MEDIUM,
+            title: `Componente ${config.name} próximo do limite`,
+            description: `Componente com ${cycle.healthPercentage.toFixed(0)}% de uso no barril ${internalCode} (cadastro de barril usado)`,
+            metadata: {
+              componentName: config.name,
+              healthPercentage: cycle.healthPercentage,
+              registeredAsUsed: true,
+            },
+          });
+        }
+      }
     }
 
     return this.findById(tenantId, barrel.id);
@@ -499,6 +589,9 @@ export class BarrelService {
           pesoTara: 13.2,
           material: 'INOX_304',
           custoAquisicao: 800,
+          condicao: 'NOVO',
+          dataFabricacao: '',
+          ciclosAproximados: '',
         },
         {
           qrCode: 'QR-EXEMPLO-002',
@@ -508,6 +601,9 @@ export class BarrelService {
           pesoTara: 10.5,
           material: 'INOX_316',
           custoAquisicao: 950,
+          condicao: 'USADO',
+          dataFabricacao: '2023-06-15',
+          ciclosAproximados: 200,
         },
       ],
       [
@@ -516,6 +612,9 @@ export class BarrelService {
         'modeloValvula aceita: TYPE_S, TYPE_D, TYPE_A, TYPE_G, TYPE_M, OTHER',
         'material aceita: INOX_304, INOX_316, PET_SLIM',
         'capacidade aceita: valores entre 5 e 100 (litros)',
+        'condicao aceita: NOVO, USADO (padrão: NOVO)',
+        'dataFabricacao: obrigatória se condicao=USADO (formato: AAAA-MM-DD)',
+        'ciclosAproximados: obrigatório se condicao=USADO (inteiro >= 0)',
       ],
     );
   }
@@ -596,6 +695,74 @@ export class BarrelService {
         continue;
       }
 
+      // Parsear condição (NOVO/USADO)
+      const condicaoRaw = row['condicao']
+        ? String(row['condicao']).trim().toUpperCase()
+        : '';
+      let condition: BarrelCondition = BarrelCondition.NEW;
+      if (condicaoRaw === 'USADO' || condicaoRaw === 'USED') {
+        condition = BarrelCondition.USED;
+      } else if (
+        condicaoRaw !== '' &&
+        condicaoRaw !== 'NOVO' &&
+        condicaoRaw !== 'NEW'
+      ) {
+        errors.push({
+          row: rowNum,
+          field: 'condicao',
+          message: `Condição inválida: ${condicaoRaw}. Use NOVO ou USADO`,
+        });
+        continue;
+      }
+
+      // Parsear data de fabricação
+      let manufactureDate: Date | undefined;
+      if (row['dataFabricacao']) {
+        const d = new Date(String(row['dataFabricacao']));
+        if (isNaN(d.getTime())) {
+          errors.push({
+            row: rowNum,
+            field: 'dataFabricacao',
+            message: 'Data de fabricação inválida',
+          });
+          continue;
+        }
+        manufactureDate = d;
+      }
+      if (condition === BarrelCondition.USED && !manufactureDate) {
+        errors.push({
+          row: rowNum,
+          field: 'dataFabricacao',
+          message: 'Data de fabricação é obrigatória para barris usados',
+        });
+        continue;
+      }
+
+      // Parsear ciclos aproximados
+      let initialCycles: number | undefined;
+      if (row['ciclosAproximados']) {
+        initialCycles = parseInt(String(row['ciclosAproximados']), 10);
+        if (isNaN(initialCycles) || initialCycles < 0) {
+          errors.push({
+            row: rowNum,
+            field: 'ciclosAproximados',
+            message: 'Ciclos aproximados deve ser um número inteiro >= 0',
+          });
+          continue;
+        }
+      }
+      if (
+        condition === BarrelCondition.USED &&
+        (initialCycles === undefined || initialCycles === null)
+      ) {
+        errors.push({
+          row: rowNum,
+          field: 'ciclosAproximados',
+          message: 'Ciclos aproximados é obrigatório para barris usados',
+        });
+        continue;
+      }
+
       validRows.push({
         qrCode,
         manufacturer: row['fabricante']
@@ -608,6 +775,9 @@ export class BarrelService {
         acquisitionCost: row['custoAquisicao']
           ? Number(row['custoAquisicao'])
           : undefined,
+        condition,
+        manufactureDate,
+        initialCycles: initialCycles ?? 0,
       });
     }
 
@@ -735,39 +905,89 @@ export class BarrelService {
           tareWeightKg: row.tareWeightKg ?? null,
           material: row.material ?? 'INOX_304',
           acquisitionCost: row.acquisitionCost ?? null,
+          condition: row.condition ?? BarrelCondition.NEW,
+          manufactureDate: row.manufactureDate ?? null,
+          totalCycles: row.initialCycles ?? 0,
           status: BarrelStatus.ACTIVE,
         }));
+
+        // Mapear qrCode → row para lookup de ciclos
+        const rowByQr = new Map(chunk.map((r) => [r.qrCode, r]));
 
         await this.prisma.$transaction(
           async (tx) => {
             // Batch insert barris
             await tx.barrel.createMany({ data: barrelData });
 
-            // Buscar IDs dos barris criados
+            // Buscar IDs dos barris criados (com qrCode para mapear)
             const createdBarrels = await tx.barrel.findMany({
               where: {
                 tenantId,
                 qrCode: { in: barrelData.map((b) => b.qrCode) },
               },
-              select: { id: true },
+              select: { id: true, qrCode: true, internalCode: true },
             });
 
-            // Batch insert componentCycles
+            // Batch insert componentCycles com cálculo de saúde
             if (componentConfigs.length > 0 && createdBarrels.length > 0) {
-              const cyclesData = createdBarrels.flatMap((barrel) =>
-                componentConfigs.map((config) => ({
-                  barrelId: barrel.id,
-                  componentConfigId: config.id,
-                  cyclesSinceLastService: 0,
-                  lastServiceDate: new Date(),
-                  healthScore: 'GREEN' as const,
-                  healthPercentage: 0,
-                })),
-              );
+              const cyclesData = createdBarrels.flatMap((barrel) => {
+                const row = rowByQr.get(barrel.qrCode!);
+                const cycles = row?.initialCycles ?? 0;
+                const serviceDate = row?.manufactureDate ?? new Date();
+                return componentConfigs.map((config) => {
+                  const { healthScore, healthPercentage } =
+                    this.componentService.calculateHealthScore(
+                      cycles,
+                      config.maxCycles,
+                      serviceDate,
+                      config.maxDays,
+                    );
+                  return {
+                    barrelId: barrel.id,
+                    componentConfigId: config.id,
+                    cyclesSinceLastService: cycles,
+                    lastServiceDate: serviceDate,
+                    healthScore,
+                    healthPercentage,
+                  };
+                });
+              });
+
               await tx.componentCycle.createMany({
                 data: cyclesData,
                 skipDuplicates: true,
               });
+
+              // Alertas para componentes >= 80% (barris usados importados)
+              const alertsData = cyclesData
+                .filter((c) => c.healthPercentage >= 80)
+                .map((c) => {
+                  const config = componentConfigs.find(
+                    (cfg) => cfg.id === c.componentConfigId,
+                  )!;
+                  return {
+                    tenantId,
+                    barrelId: c.barrelId,
+                    alertType: AlertType.COMPONENT_END_OF_LIFE,
+                    priority:
+                      config.criticality === 'CRITICAL'
+                        ? AlertPriority.HIGH
+                        : AlertPriority.MEDIUM,
+                    title: `Componente ${config.name} próximo do limite`,
+                    description: `Componente com ${Math.round(c.healthPercentage)}% de uso (importação em massa)`,
+                    metadata: {
+                      componentName: config.name,
+                      healthPercentage: c.healthPercentage,
+                    } as Prisma.InputJsonValue,
+                  };
+                });
+
+              if (alertsData.length > 0) {
+                await tx.alert.createMany({
+                  data: alertsData,
+                  skipDuplicates: true,
+                });
+              }
             }
           },
           { timeout: 60000 },
