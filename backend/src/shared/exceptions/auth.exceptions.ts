@@ -66,3 +66,14 @@ export class TenantMismatchException extends KegSafeException {
     super('Resource belongs to different tenant');
   }
 }
+
+export class TenantSuspendedException extends KegSafeException {
+  readonly statusCode = 403;
+  readonly code = 'AUTH_TENANT_SUSPENDED';
+
+  constructor() {
+    super(
+      'Sua empresa está com acesso suspenso. Entre em contato com o suporte.',
+    );
+  }
+}

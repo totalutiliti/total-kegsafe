@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '@/lib/auth-store';
 
-type Role = 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE';
+type Role = 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE' | 'SUPER_ADMIN';
 
 interface ShowForRolesProps {
     roles: Role[];

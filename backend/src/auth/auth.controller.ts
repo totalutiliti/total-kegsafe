@@ -16,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import type { IAuthService } from './auth.service.interface.js';
 import { AUTH_SERVICE } from './auth.constants.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
@@ -113,7 +114,13 @@ export class AuthController {
   }
 
   @Post('logout')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
+  @Roles(
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.LOGISTICS,
+    Role.MAINTENANCE,
+    Role.SUPER_ADMIN,
+  )
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Revoke refresh token server-side
@@ -132,8 +139,34 @@ export class AuthController {
   }
 
   @Get('me')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS, Role.MAINTENANCE)
+  @Roles(
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.LOGISTICS,
+    Role.MAINTENANCE,
+    Role.SUPER_ADMIN,
+  )
   me(@CurrentUser() user: JwtUser) {
     return user;
+  }
+
+  @Post('change-password')
+  @Roles(
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.LOGISTICS,
+    Role.MAINTENANCE,
+    Role.SUPER_ADMIN,
+  )
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      user.id,
+      dto.oldPassword,
+      dto.newPassword,
+    );
   }
 }

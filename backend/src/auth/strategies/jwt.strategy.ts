@@ -50,7 +50,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       include: { tenant: true },
     });
 
-    if (!user || !user.tenant.isActive) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    // SUPER_ADMIN bypasses tenant.isActive check (system tenant must always work)
+    if (user.role !== 'SUPER_ADMIN' && !user.tenant.isActive) {
       throw new UnauthorizedException('Invalid token');
     }
 

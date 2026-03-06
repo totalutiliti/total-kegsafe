@@ -59,6 +59,12 @@ export class UserController {
     return this.userService.update(tenantId, id, dto);
   }
 
+  @Post(':id/unlock')
+  @Roles(Role.ADMIN)
+  async unlockAccount(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.userService.unlockAccount(tenantId, id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   async delete(@TenantId() tenantId: string, @Param('id') id: string) {

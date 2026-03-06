@@ -198,6 +198,51 @@ const clients = [
 async function main() {
   console.log('🌱 Starting seed...');
 
+  // 0. Criar System Tenant + Super Admin (idempotente)
+  let systemTenant = await prisma.tenant.findFirst({
+    where: { slug: 'kegsafe-system' },
+  });
+  if (!systemTenant) {
+    systemTenant = await prisma.tenant.create({
+      data: {
+        name: 'KegSafe System',
+        cnpj: '00000000000191',
+        slug: 'kegsafe-system',
+        settings: {},
+      },
+    });
+    console.log('✅ System tenant created:', systemTenant.name);
+  } else {
+    console.log('⏭️ System tenant already exists:', systemTenant.name);
+  }
+
+  // Criar super admin padrão
+  const superAdminEmail = 'superadmin@kegsafe.com.br';
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { email: superAdminEmail, tenantId: systemTenant.id },
+  });
+  if (!existingSuperAdmin) {
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    if (!superAdminPassword && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'SUPER_ADMIN_PASSWORD é obrigatório em produção. Defina a variável de ambiente.',
+      );
+    }
+    await prisma.user.create({
+      data: {
+        tenantId: systemTenant.id,
+        name: 'Super Administrador',
+        email: superAdminEmail,
+        role: Role.SUPER_ADMIN,
+        passwordHash: await hashPassword(superAdminPassword || 'SuperAdmin@123'),
+        mustChangePassword: true,
+      },
+    });
+    console.log('✅ Super admin created:', superAdminEmail);
+  } else {
+    console.log('⏭️ Super admin already exists:', superAdminEmail);
+  }
+
   // 1. Criar Tenant (idempotente)
   let tenant = await prisma.tenant.findFirst({
     where: { cnpj: '12345678000190' },

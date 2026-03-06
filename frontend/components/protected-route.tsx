@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+    const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
     const router = useRouter();
 
     useEffect(() => {
@@ -17,6 +17,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
             router.push('/login');
         }
     }, [isLoading, isAuthenticated, router]);
+
+    // Forçar troca de senha antes de qualquer ação
+    useEffect(() => {
+        if (!isLoading && isAuthenticated && user?.mustChangePassword) {
+            router.push('/change-password');
+        }
+    }, [isLoading, isAuthenticated, user?.mustChangePassword, router]);
 
     if (isLoading) {
         return (

@@ -6,6 +6,7 @@ export const ROLE_HOME: Record<string, string> = {
     MANAGER: '/dashboard',
     LOGISTICS: '/barrels',
     MAINTENANCE: '/barrels',
+    SUPER_ADMIN: '/superadmin',
 };
 
 interface User {
@@ -13,7 +14,8 @@ interface User {
     tenantId: string;
     email: string;
     name: string;
-    role: 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE';
+    role: 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE' | 'SUPER_ADMIN';
+    mustChangePassword?: boolean;
 }
 
 interface AuthState {

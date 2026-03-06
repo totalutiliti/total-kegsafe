@@ -28,6 +28,8 @@ export class UserService {
       isActive: true,
       lastLoginAt: true,
       createdAt: true,
+      failedLoginAttempts: true,
+      lockedUntil: true,
     };
 
     // If no pagination params, return paginated response with defaults
@@ -111,6 +113,28 @@ export class UserService {
       where: { id },
       data: data as Prisma.UserUpdateInput,
     });
+  }
+
+  async unlockAccount(tenantId: string, id: string) {
+    const user = await this.findById(tenantId, id);
+
+    if (!user.lockedUntil && user.failedLoginAttempts === 0) {
+      throw new BusinessException(
+        'ACCOUNT_NOT_LOCKED',
+        'This account is not locked',
+        400,
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+
+    return { message: 'Account unlocked successfully' };
   }
 
   async delete(tenantId: string, id: string) {

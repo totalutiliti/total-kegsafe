@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-type Role = 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE';
+type Role = 'ADMIN' | 'MANAGER' | 'LOGISTICS' | 'MAINTENANCE' | 'SUPER_ADMIN';
 
 interface RoleGuardProps {
     allowedRoles: Role[];
