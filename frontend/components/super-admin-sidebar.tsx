@@ -17,6 +17,7 @@ import {
     Sun,
     Menu,
     X,
+    BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +29,7 @@ const navigation = [
     { name: 'Lotes de Barris', href: '/superadmin/barrel-batches', icon: Package },
     { name: 'Transferências', href: '/superadmin/barrel-transfer', icon: ArrowRightLeft },
     { name: 'Auditoria', href: '/superadmin/audit', icon: Shield },
+    { name: 'Manual', href: '/superadmin/manual', icon: BookOpen },
 ];
 
 export function SuperAdminSidebar() {
