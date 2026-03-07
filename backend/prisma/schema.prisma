@@ -51,7 +51,7 @@ model Tenant {
   isActive  Boolean  @default(true)
   
   /// Configurações específicas do tenant (JSON)
-  /// Exemplo: { "idleThresholdDays": 15, "autoTriageEnabled": true }
+  /// Exemplo: { "idleThresholdDays": 15, "autoTriageEnabled": true, "maintenanceBlockMode": "ADVISORY", "expectedBarrelLifeYears": 20 }
   settings  Json?    @default("{}")
   
   /// Data de criação do registro
@@ -73,6 +73,9 @@ model Tenant {
   componentConfigs   ComponentConfig[]
   alerts             Alert[]
   auditLogs          AuditLog[]
+  ownershipFrom      OwnershipHistory[] @relation("OwnershipFrom")
+  ownershipTo        OwnershipHistory[] @relation("OwnershipTo")
+  barrelBatches      BarrelBatch[]
 
   @@map("tenants")
 }
@@ -229,9 +232,13 @@ model Barrel {
   /// Escaneado pelo app mobile para identificação
   qrCode          String?      @db.VarChar(50)
   
+  /// Número do chassi gravado fisicamente no corpo do barril
+  /// Identificação secundária imutável (junto com QR Code)
+  chassisNumber   String?      @db.VarChar(50)
+
   /// Código de barras adicional (opcional, backup)
   barcode         String?      @db.VarChar(50)
-  
+
   /// Fabricante do barril (ex: Franke, Portinox, Blefa)
   manufacturer    String?      @db.VarChar(100)
   
@@ -308,17 +315,19 @@ model Barrel {
   updatedBy       User?        @relation("BarrelUpdatedBy", fields: [updatedById], references: [id])
 
   // Relacionamentos
-  componentCycles   ComponentCycle[]
-  logisticsEvents   LogisticsEvent[]
-  maintenanceLogs   MaintenanceLog[]
-  maintenanceOrders MaintenanceOrder[]
-  alerts            Alert[]
-  disposals         Disposal[]
-  triages           Triage[]
+  componentCycles    ComponentCycle[]
+  logisticsEvents    LogisticsEvent[]
+  maintenanceLogs    MaintenanceLog[]
+  maintenanceOrders  MaintenanceOrder[]
+  alerts             Alert[]
+  disposals          Disposal[]
+  triages            Triage[]
+  ownershipHistory   OwnershipHistory[]
 
   // Índices otimizados para queries frequentes
   @@unique([tenantId, internalCode])
   @@unique([tenantId, qrCode])
+  @@unique([tenantId, chassisNumber])
   @@index([tenantId, status])                           // Listagem por status
   @@index([tenantId, lastEventAt])                      // Ordenação temporal
   @@index([tenantId, status, lastEventAt])              // Filtro + ordenação
@@ -333,6 +342,7 @@ model Barrel {
 
 /// Status do barril no ciclo de vida
 enum BarrelStatus {
+  PRE_REGISTERED  // Código gerado em lote, aguardando ativação por scan
   ACTIVE          // Na fábrica, disponível para expedição
   IN_TRANSIT      // Em trânsito (expedido ou coletado)
   AT_CLIENT       // Entregue no cliente (PDV)
@@ -885,14 +895,17 @@ model Alert {
 
 /// Tipos de alerta suportados pelo sistema
 enum AlertType {
-  COMPONENT_END_OF_LIFE   // Componente próximo do fim da vida útil
-  MANDATORY_INSPECTION    // Inspeção obrigatória (componente crítico vencido)
-  IDLE_AT_CLIENT          // Barril ocioso no cliente > 15 dias
-  IDLE_AT_FACTORY         // Barril ocioso na fábrica > 7 dias
-  GEOFENCE_VIOLATION      // Barril fora de zona conhecida
-  AFTER_HOURS_MOVEMENT    // Movimentação fora do horário comercial
-  SUPPLIER_SLA_BREACH     // Prestador não atendeu SLA
-  DISPOSAL_SUGGESTED      // TCO alto, sugestão de descarte
+  COMPONENT_END_OF_LIFE           // Componente próximo do fim da vida útil
+  MANDATORY_INSPECTION            // Inspeção obrigatória (componente crítico vencido)
+  IDLE_AT_CLIENT                  // Barril ocioso no cliente > 15 dias
+  IDLE_AT_FACTORY                 // Barril ocioso na fábrica > 7 dias
+  GEOFENCE_VIOLATION              // Barril fora de zona conhecida
+  AFTER_HOURS_MOVEMENT            // Movimentação fora do horário comercial
+  SUPPLIER_SLA_BREACH             // Prestador não atendeu SLA
+  DISPOSAL_SUGGESTED              // TCO alto, sugestão de descarte
+  CLIENT_DEACTIVATED_WITH_BARRELS // Cliente inativado com barris pendentes
+  MAINTENANCE_DUE_ON_RETURN       // Manutenção pendente ao retornar ao pátio
+  PREMATURE_DISPOSAL              // Descarte prematuro (< 70% da vida útil)
 }
 
 /// Prioridade do alerta para ordenação e notificação
@@ -1017,7 +1030,10 @@ model Disposal {
   
   /// Notas adicionais
   notes           String?           @db.VarChar(1000)
-  
+
+  /// URL da foto do barril danificado (Azure Blob Storage ou local)
+  photoUrl        String?           @db.VarChar(500)
+
   /// Data/hora da aprovação
   approvedAt      DateTime?         @db.Timestamptz(3)
   
@@ -1353,4 +1369,128 @@ model IdempotencyKey {
   @@index([tenantId])
   @@index([expiresAt])
   @@map("idempotency_keys")
+}
+
+// ============================================================================
+// SEQUÊNCIA GLOBAL DE CÓDIGOS
+// Contador atômico para geração de códigos KS-BAR-NNNNNNNNN únicos globalmente
+// ============================================================================
+
+/// Sequência global para geração de códigos de barril
+/// Um único registro com o último número utilizado
+model BarrelSequence {
+  /// Chave fixa "global" — sempre um único registro
+  key         String   @id @default("global") @db.VarChar(20)
+
+  /// Último número sequencial utilizado
+  /// Próximo código será KS-BAR-{lastNumber + 1 padded to 9}
+  lastNumber  Int      @default(0)
+
+  /// Última atualização (para auditoria)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("barrel_sequences")
+}
+
+// ============================================================================
+// HISTÓRICO DE PROPRIEDADE
+// Rastreamento de transferências de barris entre tenants
+// ============================================================================
+
+/// Registro de transferência de propriedade de um barril entre tenants
+/// Criado quando um barril é transferido via endpoint de transfer
+model OwnershipHistory {
+  /// Identificador único do registro
+  id            String   @id @default(uuid()) @db.Uuid
+
+  /// Barril transferido
+  barrelId      String   @db.Uuid
+  barrel        Barrel   @relation(fields: [barrelId], references: [id], onDelete: Cascade)
+
+  /// Tenant de origem (quem cedeu o barril)
+  fromTenantId  String   @db.Uuid
+  fromTenant    Tenant   @relation("OwnershipFrom", fields: [fromTenantId], references: [id])
+
+  /// Tenant de destino (quem recebeu o barril)
+  toTenantId    String   @db.Uuid
+  toTenant      Tenant   @relation("OwnershipTo", fields: [toTenantId], references: [id])
+
+  /// Data/hora da transferência
+  transferredAt DateTime @default(now()) @db.Timestamptz(3)
+
+  /// Observações sobre a transferência
+  notes         String?  @db.VarChar(500)
+
+  @@index([barrelId])
+  @@index([fromTenantId])
+  @@index([toTenantId])
+  @@index([transferredAt])
+  @@map("ownership_history")
+}
+
+// ============================================================================
+// LOTES DE BARRIS
+// Rastreamento de lotes gerados para gravação a laser
+// ============================================================================
+
+/// Lote de códigos de barril gerados para gravação a laser
+/// Cada lote contém uma faixa sequencial de códigos KS-BAR-NNNNNNNNN
+model BarrelBatch {
+  /// Identificador único do lote
+  id            String   @id @default(uuid()) @db.Uuid
+
+  /// Tenant vinculado ao lote (opcional — pode ser gerado sem vínculo)
+  tenantId      String?  @db.Uuid
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id])
+
+  /// Primeiro código do lote (ex: KS-BAR-000010001)
+  codeStart     String   @db.VarChar(20)
+
+  /// Último código do lote (ex: KS-BAR-000020000)
+  codeEnd       String   @db.VarChar(20)
+
+  /// Quantidade de códigos no lote
+  quantity      Int
+
+  /// Número de vezes que o lote foi impresso/exportado
+  printCount    Int      @default(0)
+
+  /// ID do usuário que criou o lote
+  createdById   String   @db.Uuid
+
+  /// Data de criação
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  /// Data da última atualização
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  // Relacionamentos
+  prints        BarrelBatchPrint[]
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("barrel_batches")
+}
+
+/// Registro de impressão/download de um lote de códigos
+/// Mantém auditoria completa de cada vez que o lote foi impresso
+model BarrelBatchPrint {
+  /// Identificador único da impressão
+  id            String   @id @default(uuid()) @db.Uuid
+
+  /// Lote que foi impresso
+  batchId       String   @db.Uuid
+  batch         BarrelBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  /// ID do usuário que realizou a impressão
+  printedById   String   @db.Uuid
+
+  /// Data/hora da impressão
+  printedAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  /// Motivo da impressão (obrigatório para reimpressões)
+  reason        String?  @db.VarChar(500)
+
+  @@index([batchId])
+  @@map("barrel_batch_prints")
 }

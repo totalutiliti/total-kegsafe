@@ -4,6 +4,7 @@ import type { IBarrelService } from '../barrel/barrel.service.interface.js';
 import { BARREL_SERVICE } from '../barrel/barrel.constants.js';
 import { ComponentService } from '../component/component.service.js';
 import { GeofenceService } from '../geofence/geofence.service.js';
+import { MaintenanceService } from '../maintenance/maintenance.service.js';
 import {
   BarrelStatus,
   LogisticsAction,
@@ -26,6 +27,7 @@ export class LogisticsService {
     @Inject(BARREL_SERVICE) private readonly barrelService: IBarrelService,
     private readonly componentService: ComponentService,
     private readonly geofenceService: GeofenceService,
+    private readonly maintenanceService: MaintenanceService,
   ) {}
 
   /**
@@ -275,6 +277,12 @@ export class LogisticsService {
 
     // Recalcular health scores
     await this.componentService.recalculateBarrelHealth(data.barrelId);
+
+    // Trigger: check if maintenance is due on return
+    await this.maintenanceService.checkMaintenanceDueOnReturn(
+      tenantId,
+      data.barrelId,
+    );
 
     return event;
   }

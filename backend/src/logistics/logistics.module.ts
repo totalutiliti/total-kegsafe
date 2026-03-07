@@ -4,9 +4,10 @@ import { LogisticsController } from './logistics.controller.js';
 import { BarrelModule } from '../barrel/barrel.module.js';
 import { ComponentModule } from '../component/component.module.js';
 import { GeofenceModule } from '../geofence/geofence.module.js';
+import { MaintenanceModule } from '../maintenance/maintenance.module.js';
 
 @Module({
-  imports: [BarrelModule, ComponentModule, GeofenceModule],
+  imports: [BarrelModule, ComponentModule, GeofenceModule, MaintenanceModule],
   providers: [LogisticsService],
   controllers: [LogisticsController],
   exports: [LogisticsService],

@@ -84,7 +84,47 @@ export class ComponentService {
 
   async delete(tenantId: string, id: string) {
     await this.findById(tenantId, id);
-    return this.prisma.componentConfig.delete({ where: { id } });
+    return this.prisma.componentConfig.update({
+      where: { id },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+  }
+
+  async deactivate(tenantId: string, id: string) {
+    await this.findById(tenantId, id);
+    return this.prisma.componentConfig.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  /**
+   * Retorna os componentes de um barril com remainingCycles calculado
+   */
+  async getBarrelComponents(barrelId: string) {
+    const cycles = await this.prisma.componentCycle.findMany({
+      where: { barrelId },
+      include: { componentConfig: true },
+    });
+
+    return cycles.map((cycle) => ({
+      id: cycle.id,
+      componentConfigId: cycle.componentConfigId,
+      name: cycle.componentConfig.name,
+      description: cycle.componentConfig.description,
+      criticality: cycle.componentConfig.criticality,
+      maxCycles: cycle.componentConfig.maxCycles,
+      maxDays: cycle.componentConfig.maxDays,
+      cyclesSinceLastService: cycle.cyclesSinceLastService,
+      lastServiceDate: cycle.lastServiceDate,
+      healthScore: cycle.healthScore,
+      healthPercentage: cycle.healthPercentage,
+      remainingCycles: Math.max(
+        0,
+        cycle.componentConfig.maxCycles - cycle.cyclesSinceLastService,
+      ),
+      isActive: cycle.componentConfig.isActive,
+    }));
   }
 
   /**
@@ -121,7 +161,11 @@ export class ComponentService {
 
     return {
       healthScore,
-      healthPercentage: Math.round(healthPercentage * 100) / 100,
+      // Cap at 999.99 to fit Decimal(5,2) column — very old barrels can exceed 100% by far
+      healthPercentage: Math.min(
+        999.99,
+        Math.round(healthPercentage * 100) / 100,
+      ),
     };
   }
 

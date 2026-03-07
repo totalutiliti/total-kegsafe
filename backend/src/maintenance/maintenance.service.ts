@@ -10,6 +10,7 @@ import {
   ComponentAction,
   DamageType,
   AlertType,
+  HealthScore,
   Prisma,
 } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
@@ -263,5 +264,106 @@ export class MaintenanceService {
         result,
       },
     });
+  }
+
+  /**
+   * Calendário de manutenções — ordens agrupadas por data
+   */
+  async getCalendar(tenantId: string, query?: { from?: string; to?: string }) {
+    const from = query?.from
+      ? new Date(query.from)
+      : new Date(new Date().setDate(new Date().getDate() - 30));
+    const to = query?.to
+      ? new Date(query.to)
+      : new Date(new Date().setDate(new Date().getDate() + 60));
+
+    const orders = await this.prisma.maintenanceOrder.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        createdAt: { gte: from, lte: to },
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        barrel: {
+          select: { id: true, internalCode: true, chassisNumber: true },
+        },
+        provider: { select: { id: true, name: true } },
+      },
+    });
+
+    // Group by date (YYYY-MM-DD)
+    const calendar: Record<string, typeof orders> = {};
+    for (const order of orders) {
+      const dateKey = order.createdAt.toISOString().slice(0, 10);
+      if (!calendar[dateKey]) calendar[dateKey] = [];
+      calendar[dateKey].push(order);
+    }
+
+    return calendar;
+  }
+
+  /**
+   * Check if a barrel needs maintenance on reception.
+   * Creates MAINTENANCE_DUE_ON_RETURN alert if any component has YELLOW/RED health.
+   * If maintenanceBlockMode is MANDATORY, auto-creates a maintenance order.
+   */
+  async checkMaintenanceDueOnReturn(tenantId: string, barrelId: string) {
+    // Fetch components with health issues
+    const components = await this.prisma.componentCycle.findMany({
+      where: {
+        barrelId,
+        healthScore: { in: [HealthScore.YELLOW, HealthScore.RED] },
+      },
+      include: { componentConfig: true },
+    });
+
+    if (components.length === 0) return null;
+
+    // Get tenant settings for maintenanceBlockMode
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const settings = (tenant?.settings as Record<string, unknown>) || {};
+    const blockMode = (settings.maintenanceBlockMode as string) || 'ADVISORY';
+
+    const componentNames = components.map((c) => c.componentConfig.name);
+    const hasRed = components.some((c) => c.healthScore === HealthScore.RED);
+
+    // Create alert
+    await this.prisma.alert.create({
+      data: {
+        tenantId,
+        barrelId,
+        alertType: AlertType.MAINTENANCE_DUE_ON_RETURN,
+        priority: hasRed ? AlertPriority.HIGH : AlertPriority.MEDIUM,
+        title: `Manutenção necessária ao retornar barril`,
+        description: `Componentes com atenção: ${componentNames.join(', ')}`,
+        metadata: {
+          components: components.map((c) => ({
+            name: c.componentConfig.name,
+            healthScore: c.healthScore,
+            cyclesSinceLastService: c.cyclesSinceLastService,
+            maxCycles: c.componentConfig.maxCycles,
+          })),
+          blockMode,
+        },
+      },
+    });
+
+    // If MANDATORY and any RED component, auto-create maintenance order
+    if (blockMode === 'MANDATORY' && hasRed) {
+      await this.createOrder(tenantId, {
+        barrelId,
+        orderType: MaintenanceType.PREVENTIVE,
+        priority: AlertPriority.HIGH,
+        description: `Manutenção obrigatória: componentes em estado crítico (${componentNames.join(', ')})`,
+      });
+
+      return { maintenanceRequired: true, autoOrderCreated: true };
+    }
+
+    return { maintenanceRequired: true, autoOrderCreated: false };
   }
 }

@@ -40,7 +40,7 @@ export function CreateUserDialog({ onCreated }: { onCreated?: () => void }) {
                     <Plus className="mr-2 h-4 w-4" /> Novo Usuário
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
                 </DialogHeader>

@@ -11,9 +11,9 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 const initialForm = {
-    qrCode: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50,
+    qrCode: '', chassisNumber: '', manufacturer: '', valveModel: 'TYPE_S', capacityLiters: 50,
     tareWeightKg: 13.2, material: 'INOX_304', acquisitionCost: 800,
-    condition: 'NEW' as 'NEW' | 'USED', manufactureDate: '', initialCycles: 0,
+    condition: 'NEW' as 'NEW' | 'USED', manufactureDate: '', initialCycles: '' as string | number,
 };
 
 export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
@@ -30,9 +30,14 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
             const payload: Record<string, unknown> = { ...form };
             if (!isUsed) {
                 delete payload.initialCycles;
+            } else {
+                payload.initialCycles = form.initialCycles === '' ? 0 : Number(form.initialCycles);
             }
             if (!form.manufactureDate) {
                 delete payload.manufactureDate;
+            }
+            if (!form.chassisNumber) {
+                delete payload.chassisNumber;
             }
             await api.post('/barrels', payload);
             toast.success('Barril criado com sucesso!');
@@ -53,7 +58,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                     <Plus className="mr-2 h-4 w-4" /> Novo Barril
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-border bg-background text-foreground sm:max-w-lg">
+            <DialogContent className="border-border bg-background text-foreground sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Barril</DialogTitle>
                 </DialogHeader>
@@ -62,6 +67,11 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                         <Label className="text-muted-foreground">QR Code</Label>
                         <Input required value={form.qrCode} onChange={e => setForm(f => ({ ...f, qrCode: e.target.value }))}
                             placeholder="Ex: QR-000051" className="border-border bg-muted/50 text-foreground" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-muted-foreground">Número do Chassi</Label>
+                        <Input value={form.chassisNumber} onChange={e => setForm(f => ({ ...f, chassisNumber: e.target.value }))}
+                            placeholder="Ex: CH-000001" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -115,7 +125,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className="text-muted-foreground">Condição</Label>
-                            <Select value={form.condition} onValueChange={v => setForm(f => ({ ...f, condition: v as 'NEW' | 'USED', ...(v === 'NEW' ? { initialCycles: 0, manufactureDate: '' } : {}) }))}>
+                            <Select value={form.condition} onValueChange={v => setForm(f => ({ ...f, condition: v as 'NEW' | 'USED', ...(v === 'NEW' ? { initialCycles: '', manufactureDate: '' } : {}) }))}>
                                 <SelectTrigger className="border-border bg-muted/50 text-foreground"><SelectValue /></SelectTrigger>
                                 <SelectContent className="border-border bg-card">
                                     <SelectItem value="NEW">Novo</SelectItem>
@@ -138,7 +148,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                                 Ciclos Aproximados <span className="text-red-400">*</span>
                             </Label>
                             <Input type="number" required min={0} value={form.initialCycles}
-                                onChange={e => setForm(f => ({ ...f, initialCycles: +e.target.value }))}
+                                onChange={e => setForm(f => ({ ...f, initialCycles: e.target.value === '' ? '' : +e.target.value }))}
                                 placeholder="Ex: 150"
                                 className="border-border bg-muted/50 text-foreground" />
                             <p className="text-xs text-muted-foreground">

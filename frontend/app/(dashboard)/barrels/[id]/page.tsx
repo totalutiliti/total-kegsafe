@@ -3,17 +3,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/lib/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     ArrowLeft, Package, Wrench, Calendar, MapPin, Truck, Factory,
     ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Clock,
+    ArrowRightLeft, Building2, User,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
+    PRE_REGISTERED: { label: 'Pré-Registrado', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
     ACTIVE: { label: 'Ativo', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
     IN_TRANSIT: { label: 'Em Trânsito', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     AT_CLIENT: { label: 'No Cliente', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
@@ -36,22 +56,49 @@ const timelineIcons: Record<string, { icon: typeof Truck; color: string }> = {
     RECEPTION: { icon: Factory, color: 'text-green-400 bg-green-500/10' },
 };
 
+interface OwnershipRecord {
+    id: string;
+    fromTenant: { id: string; name: string };
+    toTenant: { id: string; name: string };
+    transferredAt: string;
+    notes?: string;
+}
+
+interface TenantOption {
+    id: string;
+    name: string;
+}
+
 export default function BarrelDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuthStore();
     const [barrel, setBarrel] = useState<any>(null);
     const [timeline, setTimeline] = useState<any[]>([]);
+    const [ownershipHistory, setOwnershipHistory] = useState<OwnershipRecord[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Transfer modal state
+    const [transferOpen, setTransferOpen] = useState(false);
+    const [transferring, setTransferring] = useState(false);
+    const [tenants, setTenants] = useState<TenantOption[]>([]);
+    const [toTenantId, setToTenantId] = useState('');
+    const [transferNotes, setTransferNotes] = useState('');
+
+    const canTransfer = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
     useEffect(() => {
         const load = async () => {
             try {
-                const [barrelRes, timelineRes] = await Promise.all([
+                const requests = [
                     api.get(`/barrels/${params.id}`),
                     api.get(`/barrels/${params.id}/timeline`),
-                ]);
-                setBarrel(barrelRes.data);
-                setTimeline(timelineRes.data || []);
+                    api.get(`/barrels/${params.id}/ownership-history`).catch(() => ({ data: { data: [] } })),
+                ];
+                const [barrelRes, timelineRes, ownershipRes] = await Promise.all(requests);
+                setBarrel((barrelRes as any).data);
+                setTimeline((timelineRes as any).data || []);
+                setOwnershipHistory((ownershipRes as any).data?.data || []);
             } catch (error) {
                 toast.error('Erro ao carregar barril');
             } finally {
@@ -60,6 +107,51 @@ export default function BarrelDetailPage() {
         };
         if (params.id) load();
     }, [params.id]);
+
+    // Load tenants for transfer modal (try super-admin endpoint, fallback gracefully)
+    const openTransferModal = async () => {
+        setTransferOpen(true);
+        if (tenants.length === 0) {
+            try {
+                const { data } = await api.get('/super-admin/tenants', {
+                    params: { limit: 100 },
+                });
+                setTenants(
+                    data.items
+                        .map((t: any) => ({ id: t.id, name: t.name }))
+                        .filter((t: TenantOption) => t.id !== user?.tenantId),
+                );
+            } catch {
+                // Not a super admin — tenants won't load, user can paste tenant ID
+            }
+        }
+    };
+
+    const handleTransfer = async () => {
+        if (!toTenantId) return;
+        setTransferring(true);
+        try {
+            await api.post(`/barrels/${params.id}/transfer`, {
+                toTenantId,
+                notes: transferNotes || undefined,
+            });
+            toast.success('Barril transferido com sucesso');
+            setTransferOpen(false);
+            setToTenantId('');
+            setTransferNotes('');
+            // Reload barrel data
+            const [barrelRes, ownershipRes] = await Promise.all([
+                api.get(`/barrels/${params.id}`).catch(() => null),
+                api.get(`/barrels/${params.id}/ownership-history`).catch(() => ({ data: { data: [] } })),
+            ]);
+            if (barrelRes) setBarrel(barrelRes.data);
+            setOwnershipHistory((ownershipRes as any).data?.data || []);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Erro na transferência');
+        } finally {
+            setTransferring(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -89,15 +181,29 @@ export default function BarrelDetailPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl font-bold text-foreground">{barrel.internalCode}</h1>
                         <Badge variant="outline" className={`${sc.color}`}>{sc.label}</Badge>
                         {barrel.condition === 'USED' && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">Usado</Badge>
                         )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">QR: {barrel.qrCode} • {barrel.manufacturer} • {barrel.capacityLiters}L</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        QR: {barrel.qrCode} • {barrel.manufacturer} • {barrel.capacityLiters}L
+                        {barrel.chassisNumber && <> • Chassi: {barrel.chassisNumber}</>}
+                    </p>
                 </div>
+                {canTransfer && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={openTransferModal}
+                        className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shrink-0"
+                    >
+                        <ArrowRightLeft className="mr-2 h-4 w-4" />
+                        Transferir
+                    </Button>
+                )}
             </div>
 
             {/* Info Cards Row */}
@@ -241,6 +347,120 @@ export default function BarrelDetailPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Ownership History */}
+            {ownershipHistory.length > 0 && (
+                <div>
+                    <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-indigo-400" /> Histórico de Propriedade
+                    </h2>
+                    <Card className="border-border bg-card/50">
+                        <CardContent className="p-5">
+                            <div className="relative">
+                                {/* Vertical line */}
+                                <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+                                <div className="space-y-4">
+                                    {ownershipHistory.map((record, i) => (
+                                        <div key={record.id} className="relative flex items-start gap-4 pl-1">
+                                            <div className="relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-indigo-400 bg-indigo-500/10">
+                                                <ArrowRightLeft className="h-4 w-4" />
+                                            </div>
+                                            <div className="flex-1 min-w-0 pt-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <Badge variant="outline" className="text-xs bg-red-500/10 text-red-400 border-red-500/20">
+                                                        {record.fromTenant.name}
+                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground">→</span>
+                                                    <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/20">
+                                                        {record.toTenant.name}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {new Date(record.transferredAt).toLocaleDateString('pt-BR')}{' '}
+                                                        {new Date(record.transferredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                                {record.notes && (
+                                                    <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Transfer Dialog */}
+            <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+                <DialogContent className="border-border bg-card">
+                    <DialogHeader>
+                        <DialogTitle className="text-foreground">
+                            Transferir Propriedade
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+                            <p className="text-sm text-amber-400">
+                                O barril será transferido permanentemente para outro cliente.
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-foreground">Transferir para</Label>
+                            {tenants.length > 0 ? (
+                                <Select value={toTenantId} onValueChange={setToTenantId}>
+                                    <SelectTrigger className="border-border bg-muted/50 text-foreground">
+                                        <SelectValue placeholder="Selecione o tenant destino" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-border bg-card">
+                                        {tenants.map((t) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                {t.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <Input
+                                    value={toTenantId}
+                                    onChange={(e) => setToTenantId(e.target.value)}
+                                    placeholder="ID do tenant destino (UUID)"
+                                    className="border-border bg-muted/50 text-foreground font-mono text-sm"
+                                />
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-foreground">Observações (opcional)</Label>
+                            <Textarea
+                                value={transferNotes}
+                                onChange={(e) => setTransferNotes(e.target.value)}
+                                placeholder="Motivo da transferência..."
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setTransferOpen(false)}
+                            className="border-border text-foreground"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleTransfer}
+                            disabled={!toTenantId || transferring}
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
+                        >
+                            {transferring ? 'Transferindo...' : 'Confirmar Transferência'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

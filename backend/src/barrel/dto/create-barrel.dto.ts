@@ -8,6 +8,7 @@ import {
   Min,
   Max,
   IsDateString,
+  Matches,
 } from 'class-validator';
 import { ValveModel, BarrelMaterial, BarrelCondition } from '@prisma/client';
 import { NoHtml } from '../../shared/validators/no-html.validator.js';
@@ -18,6 +19,15 @@ export class CreateBarrelDto {
   @MaxLength(50)
   @NoHtml()
   qrCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Matches(/^[A-Za-z0-9-]+$/, {
+    message: 'chassisNumber deve ser alfanumérico',
+  })
+  @NoHtml()
+  chassisNumber?: string;
 
   @IsOptional()
   @IsString()

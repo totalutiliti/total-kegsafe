@@ -28,6 +28,16 @@ export class MaintenanceController {
     private readonly maintenanceService: IMaintenanceService,
   ) {}
 
+  @Get('calendar')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  async getCalendar(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.maintenanceService.getCalendar(tenantId, { from, to });
+  }
+
   @Get('orders')
   @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
   async findAllOrders(

@@ -45,6 +45,10 @@ import { ShowForRoles } from "@/components/show-for-roles";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
+  PRE_REGISTERED: {
+    label: "Pré-Registrado",
+    color: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  },
   ACTIVE: {
     label: "Ativo",
     color: "bg-green-500/10 text-green-400 border-green-500/20",
@@ -143,7 +147,7 @@ export default function BarrelsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Barris</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -228,8 +232,8 @@ export default function BarrelsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por código ou QR..."
@@ -240,7 +244,7 @@ export default function BarrelsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44 border-border bg-muted/50 text-foreground">
+          <SelectTrigger className="w-full sm:w-44 border-border bg-muted/50 text-foreground">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent className="border-border bg-card">
@@ -265,6 +269,9 @@ export default function BarrelsPage() {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   QR Code
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase hidden lg:table-cell">
+                  Chassi
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Capacidade
@@ -324,6 +331,9 @@ export default function BarrelsPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground font-mono hidden lg:table-cell">
+                        {barrel.chassisNumber || '—'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-foreground">
                         {barrel.capacityLiters}L
                       </td>
@@ -351,8 +361,8 @@ export default function BarrelsPage() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between border-t border-border px-4 py-3 gap-2">
+            <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               Página {page} de {totalPages}
             </p>
             <div className="flex gap-2">

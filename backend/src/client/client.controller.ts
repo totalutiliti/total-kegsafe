@@ -72,6 +72,18 @@ export class ClientController {
     return this.clientService.update(tenantId, id, data, userId);
   }
 
+  @Patch(':id/deactivate')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async deactivate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.clientService.deactivate(tenantId, id);
+  }
+
+  @Patch(':id/activate')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async activate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.clientService.activate(tenantId, id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   async delete(@TenantId() tenantId: string, @Param('id') id: string) {

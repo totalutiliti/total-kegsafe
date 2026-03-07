@@ -64,7 +64,7 @@ export function ResetPasswordDialog({
                     Reset Senha
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Resetar Senha — {userName}</DialogTitle>
                 </DialogHeader>

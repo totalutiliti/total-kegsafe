@@ -69,7 +69,7 @@ export function CreateTenantAdminDialog({
                     Adicionar Admin
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Criar Admin — {tenantName}</DialogTitle>
                 </DialogHeader>
