@@ -29,11 +29,13 @@ export class UserController {
     @TenantId() tenantId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('isActive') isActive?: string,
   ) {
     return this.userService.findAll(
       tenantId,
       page ? +page : undefined,
       limit ? +limit : undefined,
+      isActive !== undefined ? isActive === 'true' : undefined,
     );
   }
 

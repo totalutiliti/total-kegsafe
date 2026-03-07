@@ -17,8 +17,16 @@ export class UserService {
     private readonly hashingService: HashingService,
   ) {}
 
-  async findAll(tenantId: string, page?: number, limit?: number) {
-    const where = { tenantId, deletedAt: null };
+  async findAll(
+    tenantId: string,
+    page?: number,
+    limit?: number,
+    isActive?: boolean,
+  ) {
+    const where: Record<string, unknown> = { tenantId, deletedAt: null };
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
     const select = {
       id: true,
       name: true,
