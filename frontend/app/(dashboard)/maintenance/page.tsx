@@ -136,7 +136,7 @@ export default function MaintenancePage() {
             setSearchingBarrels(true);
             try {
                 const { data } = await api.get('/barrels', { params: { search: barrelSearch, limit: 8 } });
-                setBarrelResults(data.items || []);
+                setBarrelResults((data.items || []).filter((b: any) => b.status !== 'DISPOSED' && b.status !== 'LOST'));
             } catch { setBarrelResults([]); }
             finally { setSearchingBarrels(false); }
         }, 300);
