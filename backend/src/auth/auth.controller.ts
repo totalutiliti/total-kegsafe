@@ -20,6 +20,7 @@ import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
+import { SkipAudit } from '../shared/interceptors/audit.interceptor.js';
 import { Role } from '@prisma/client';
 import type { JwtUser } from '../shared/types/authenticated-request.js';
 
@@ -30,6 +31,7 @@ const COOKIE_OPTIONS_BASE = {
 
 @ApiTags('Auth')
 @Controller('auth')
+@SkipAudit()
 export class AuthController {
   constructor(
     @Inject(AUTH_SERVICE) private readonly authService: IAuthService,

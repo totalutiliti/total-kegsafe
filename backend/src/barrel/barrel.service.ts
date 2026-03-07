@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  UnprocessableEntityException,
+  ConflictException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -14,6 +20,9 @@ import { CreateBarrelDto } from './dto/create-barrel.dto.js';
 import { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import { QuickRegisterDto } from './dto/quick-register.dto.js';
 import { LinkQrDto } from './dto/link-qr.dto.js';
+import { ScanBarrelDto } from './dto/scan-barrel.dto.js';
+import { GenerateBatchDto } from './dto/generate-batch.dto.js';
+import { TransferBarrelDto } from './dto/transfer-barrel.dto.js';
 import { ExcelService } from '../shared/services/excel.service.js';
 import { AlertService } from '../alert/alert.service.js';
 import { ComponentService } from '../component/component.service.js';
@@ -30,6 +39,7 @@ import { OptimisticLockException } from '../shared/exceptions/resource.exception
 
 // Transições de status válidas conforme RULES.md
 const VALID_TRANSITIONS: Record<string, string[]> = {
+  PRE_REGISTERED: ['ACTIVE'],
   ACTIVE: ['IN_TRANSIT', 'IN_MAINTENANCE', 'BLOCKED', 'DISPOSED'],
   IN_TRANSIT: ['AT_CLIENT', 'ACTIVE'],
   AT_CLIENT: ['IN_TRANSIT', 'BLOCKED'],
@@ -55,6 +65,12 @@ const IMPORT_CHUNK_SIZE = 500;
 /** Colunas do template de importação */
 const IMPORT_COLUMNS = [
   { header: 'qrCode', key: 'qrCode', width: 20, example: 'QR-001' },
+  {
+    header: 'numeroChassi',
+    key: 'numeroChassi',
+    width: 20,
+    example: 'CH-000001',
+  },
   { header: 'fabricante', key: 'fabricante', width: 20, example: 'Franke' },
   {
     header: 'modeloValvula',
@@ -106,6 +122,7 @@ interface ImportSession {
 
 export interface ValidatedRow {
   qrCode: string;
+  chassisNumber?: string;
   manufacturer?: string;
   valveModel?: ValveModel;
   capacityLiters: number;
@@ -287,6 +304,18 @@ export class BarrelService {
       }
     }
 
+    // Verificar unicidade do Chassi (apenas quando fornecido)
+    if (dto.chassisNumber) {
+      const existing = await this.prisma.barrel.findFirst({
+        where: { chassisNumber: dto.chassisNumber, tenantId },
+      });
+      if (existing) {
+        throw new ConflictException(
+          `Já existe um barril com o chassi ${dto.chassisNumber}`,
+        );
+      }
+    }
+
     // Gerar código interno com retry (protege contra race condition)
     const internalCode = await this.generateInternalCode(tenantId);
 
@@ -296,6 +325,7 @@ export class BarrelService {
         tenantId,
         internalCode,
         qrCode: dto.qrCode ?? null,
+        chassisNumber: dto.chassisNumber ?? null,
         barcode: dto.barcode,
         manufacturer: dto.manufacturer,
         valveModel: dto.valveModel,
@@ -332,6 +362,7 @@ export class BarrelService {
             config.maxDays,
           );
         return {
+          id: randomUUID(),
           barrelId: barrel.id,
           componentConfigId: config.id,
           cyclesSinceLastService: initialCycles,
@@ -438,10 +469,30 @@ export class BarrelService {
     throw new Error('Failed to generate internalCode after max retries');
   }
 
+  /** Campos imutáveis — só podem ser alterados por ADMIN com flag IMMUTABLE_OVERRIDE */
+  private static readonly IMMUTABLE_FIELDS = [
+    'chassisNumber',
+    'manufactureDate',
+    'capacityLiters',
+    'material',
+    'tareWeightKg',
+  ] as const;
+
   async update(tenantId: string, id: string, dto: UpdateBarrelDto) {
     await this.findById(tenantId, id);
 
+    // Verificar campos imutáveis
     const { version, ...updateData } = dto;
+    const attempted = Object.keys(updateData);
+    const violatedFields = attempted.filter((field) =>
+      (BarrelService.IMMUTABLE_FIELDS as readonly string[]).includes(field),
+    );
+
+    if (violatedFields.length > 0) {
+      throw new UnprocessableEntityException(
+        `Os campos [${violatedFields.join(', ')}] são imutáveis e não podem ser alterados. Apenas ADMIN pode solicitar uma exceção.`,
+      );
+    }
 
     try {
       return await this.prisma.barrel.update({
@@ -583,6 +634,7 @@ export class BarrelService {
       [
         {
           qrCode: 'QR-EXEMPLO-001',
+          numeroChassi: 'CH-000001',
           fabricante: 'Franke',
           modeloValvula: 'TYPE_S',
           capacidade: 50,
@@ -595,6 +647,7 @@ export class BarrelService {
         },
         {
           qrCode: 'QR-EXEMPLO-002',
+          numeroChassi: '',
           fabricante: 'Portinox',
           modeloValvula: 'TYPE_D',
           capacidade: 30,
@@ -609,6 +662,7 @@ export class BarrelService {
       [
         'Preencha cada linha com os dados de um barril.',
         'O campo qrCode é obrigatório e deve ser único.',
+        'numeroChassi: número do chassi do barril (opcional, deve ser único se informado)',
         'modeloValvula aceita: TYPE_S, TYPE_D, TYPE_A, TYPE_G, TYPE_M, OTHER',
         'material aceita: INOX_304, INOX_316, PET_SLIM',
         'capacidade aceita: valores entre 5 e 100 (litros)',
@@ -631,6 +685,7 @@ export class BarrelService {
 
     const validValveModels = new Set(Object.values(ValveModel));
     const validMaterials = new Set(Object.values(BarrelMaterial));
+    const seenChassisNumbers = new Set<string>();
 
     for (let i = 0; i < rawRows.length; i++) {
       const row = rawRows[i];
@@ -647,7 +702,7 @@ export class BarrelService {
         continue;
       }
 
-      // Duplicata interna
+      // Duplicata interna de QR code
       if (seenQrCodes.has(qrCode)) {
         errors.push({
           row: rowNum,
@@ -658,6 +713,23 @@ export class BarrelService {
         continue;
       }
       seenQrCodes.add(qrCode);
+
+      // Parsear chassi (opcional)
+      const chassisNumber = row['numeroChassi']
+        ? String(row['numeroChassi']).trim()
+        : undefined;
+      if (chassisNumber) {
+        if (seenChassisNumbers.has(chassisNumber)) {
+          errors.push({
+            row: rowNum,
+            field: 'numeroChassi',
+            message: `Número de chassi duplicado no arquivo: ${chassisNumber}`,
+          });
+          duplicateRows++;
+          continue;
+        }
+        seenChassisNumbers.add(chassisNumber);
+      }
 
       // capacidade obrigatória
       const capacityLiters = Number(row['capacidade']);
@@ -765,6 +837,7 @@ export class BarrelService {
 
       validRows.push({
         qrCode,
+        chassisNumber,
         manufacturer: row['fabricante']
           ? String(row['fabricante']).trim()
           : undefined,
@@ -781,26 +854,60 @@ export class BarrelService {
       });
     }
 
-    // Verificar QR codes existentes no banco em batch
+    // Verificar QR codes e chassis existentes no banco em batch
     if (validRows.length > 0) {
-      const existingBarrels = await this.prisma.barrel.findMany({
-        where: {
-          tenantId,
-          qrCode: { in: validRows.map((r) => r.qrCode) },
-          deletedAt: null,
-        },
-        select: { qrCode: true },
-      });
+      const qrCodesToCheck = validRows.map((r) => r.qrCode);
+      const chassisToCheck = validRows
+        .filter((r) => r.chassisNumber)
+        .map((r) => r.chassisNumber!);
 
-      const existingQrCodes = new Set(existingBarrels.map((b) => b.qrCode));
+      const [existingByQr, existingByChassis] = await Promise.all([
+        this.prisma.barrel.findMany({
+          where: {
+            tenantId,
+            qrCode: { in: qrCodesToCheck },
+            deletedAt: null,
+          },
+          select: { qrCode: true, internalCode: true },
+        }),
+        chassisToCheck.length > 0
+          ? this.prisma.barrel.findMany({
+              where: {
+                tenantId,
+                chassisNumber: { in: chassisToCheck },
+                deletedAt: null,
+              },
+              select: { chassisNumber: true, internalCode: true },
+            })
+          : ([] as { chassisNumber: string | null; internalCode: string }[]),
+      ]);
+
+      const existingQrCodes = new Set(existingByQr.map((b) => b.qrCode));
+      const existingChassis = new Set(
+        existingByChassis.map((b) => b.chassisNumber),
+      );
       const remainingValid: ValidatedRow[] = [];
 
       for (const row of validRows) {
         if (existingQrCodes.has(row.qrCode)) {
+          const existing = existingByQr.find((b) => b.qrCode === row.qrCode);
           errors.push({
             row: 0,
             field: 'qrCode',
-            message: `QR Code já existe no sistema: ${row.qrCode}`,
+            message: `QR Code já existe no sistema: ${row.qrCode} (barril ${existing?.internalCode ?? '?'})`,
+          });
+          duplicateRows++;
+        } else if (
+          row.chassisNumber &&
+          existingChassis.has(row.chassisNumber)
+        ) {
+          const existing = existingByChassis.find(
+            (b) => b.chassisNumber === row.chassisNumber,
+          );
+          errors.push({
+            row: 0,
+            field: 'numeroChassi',
+            message: `Chassi já existe no sistema: ${row.chassisNumber} (barril ${existing?.internalCode ?? '?'})`,
           });
           duplicateRows++;
         } else {
@@ -894,11 +1001,13 @@ export class BarrelService {
         // Gerar internalCodes em batch (1 serializable tx)
         const codes = await this.generateInternalCodes(tenantId, chunk.length);
 
-        // Preparar dados de barris
+        // Preparar dados de barris (id gerado explicitamente — createMany não usa @default(uuid()))
         const barrelData = chunk.map((row, i) => ({
+          id: randomUUID(),
           tenantId,
           internalCode: codes[i],
           qrCode: row.qrCode,
+          chassisNumber: row.chassisNumber ?? null,
           manufacturer: row.manufacturer ?? null,
           valveModel: row.valveModel ?? null,
           capacityLiters: row.capacityLiters,
@@ -919,19 +1028,11 @@ export class BarrelService {
             // Batch insert barris
             await tx.barrel.createMany({ data: barrelData });
 
-            // Buscar IDs dos barris criados (com qrCode para mapear)
-            const createdBarrels = await tx.barrel.findMany({
-              where: {
-                tenantId,
-                qrCode: { in: barrelData.map((b) => b.qrCode) },
-              },
-              select: { id: true, qrCode: true, internalCode: true },
-            });
-
             // Batch insert componentCycles com cálculo de saúde
-            if (componentConfigs.length > 0 && createdBarrels.length > 0) {
-              const cyclesData = createdBarrels.flatMap((barrel) => {
-                const row = rowByQr.get(barrel.qrCode!);
+            // (usa IDs gerados no barrelData — sem necessidade de findMany extra)
+            if (componentConfigs.length > 0 && barrelData.length > 0) {
+              const cyclesData = barrelData.flatMap((barrel) => {
+                const row = rowByQr.get(barrel.qrCode);
                 const cycles = row?.initialCycles ?? 0;
                 const serviceDate = row?.manufactureDate ?? new Date();
                 return componentConfigs.map((config) => {
@@ -943,6 +1044,7 @@ export class BarrelService {
                       config.maxDays,
                     );
                   return {
+                    id: randomUUID(),
                     barrelId: barrel.id,
                     componentConfigId: config.id,
                     cyclesSinceLastService: cycles,
@@ -966,6 +1068,7 @@ export class BarrelService {
                     (cfg) => cfg.id === c.componentConfigId,
                   )!;
                   return {
+                    id: randomUUID(),
                     tenantId,
                     barrelId: c.barrelId,
                     alertType: AlertType.COMPONENT_END_OF_LIFE,
@@ -1257,5 +1360,306 @@ export class BarrelService {
       barrels as Record<string, any>[],
       'Barris sem QR',
     );
+  }
+
+  // =========================================================================
+  // QR Code como Fonte da Verdade
+  // =========================================================================
+
+  /**
+   * Normaliza código escaneado para formato canônico KS-BAR-NNNNNNNNN.
+   * Aceita tanto KS-NNNNNNNNN quanto KS-BAR-NNNNNNNNN.
+   */
+  private normalizeCode(code: string): string {
+    if (code.startsWith('KS-BAR-')) return code;
+    // KS-000000001 → KS-BAR-000000001
+    return code.replace(/^KS-/, 'KS-BAR-');
+  }
+
+  /**
+   * Scan-or-Create: busca barril pelo código escaneado ou cria um novo.
+   *
+   * Fluxo:
+   * 1. Valida formato do código (KS-BAR-NNNNNNNNN ou KS-NNNNNNNNN)
+   * 2. Normaliza para KS-BAR-NNNNNNNNN
+   * 3. Busca no banco (cross-tenant pelo internalCode)
+   * 4. Se encontrado com mesmo tenant → retorna
+   * 5. Se encontrado com outro tenant → erro (deve usar transfer)
+   * 6. Se PRE_REGISTERED → ativa no tenant que escaneou
+   * 7. Se não encontrado → cria novo com dados mínimos
+   */
+  async scanOrCreate(
+    tenantId: string,
+    dto: ScanBarrelDto,
+  ): Promise<{ barrel: unknown; action: 'found' | 'activated' | 'created' }> {
+    const code = this.normalizeCode(dto.code);
+
+    // Busca cross-tenant pelo internalCode
+    const existing = await this.prisma.barrel.findFirst({
+      where: { internalCode: code, deletedAt: null },
+      include: BARREL_INCLUDE,
+    });
+
+    if (existing) {
+      // Barril PRE_REGISTERED → ativar no tenant que escaneou
+      if (existing.status === BarrelStatus.PRE_REGISTERED) {
+        const activated = await this.prisma.barrel.update({
+          where: { id: existing.id },
+          data: {
+            tenantId,
+            status: BarrelStatus.ACTIVE,
+            qrCode: code,
+            version: { increment: 1 },
+          },
+          include: BARREL_INCLUDE,
+        });
+
+        // Criar ComponentCycles para o novo tenant
+        const componentConfigs = await this.prisma.componentConfig.findMany({
+          where: { tenantId, isActive: true, deletedAt: null },
+        });
+        if (componentConfigs.length > 0) {
+          const serviceDate = new Date();
+          const cyclesData = componentConfigs.map((config) => {
+            const { healthScore, healthPercentage } =
+              this.componentService.calculateHealthScore(
+                0,
+                config.maxCycles,
+                serviceDate,
+                config.maxDays,
+              );
+            return {
+              id: randomUUID(),
+              barrelId: activated.id,
+              componentConfigId: config.id,
+              cyclesSinceLastService: 0,
+              lastServiceDate: serviceDate,
+              healthScore,
+              healthPercentage,
+            };
+          });
+          await this.prisma.componentCycle.createMany({
+            data: cyclesData,
+            skipDuplicates: true,
+          });
+        }
+
+        return { barrel: activated, action: 'activated' };
+      }
+
+      // Mesmo tenant → retorna normalmente
+      if (existing.tenantId === tenantId) {
+        return { barrel: existing, action: 'found' };
+      }
+
+      // Outro tenant → erro
+      throw new BadRequestException(
+        'Este barril pertence a outra cervejaria. Use a funcionalidade de transferência.',
+      );
+    }
+
+    // Não encontrado → criar novo barril com dados mínimos
+    const barrel = await this.prisma.barrel.create({
+      data: {
+        tenantId,
+        internalCode: code,
+        qrCode: code,
+        capacityLiters: 50,
+        material: BarrelMaterial.INOX_304,
+        condition: BarrelCondition.NEW,
+        status: BarrelStatus.ACTIVE,
+      },
+      include: BARREL_INCLUDE,
+    });
+
+    // Criar ComponentCycles
+    const componentConfigs = await this.prisma.componentConfig.findMany({
+      where: { tenantId, isActive: true, deletedAt: null },
+    });
+    if (componentConfigs.length > 0) {
+      const serviceDate = new Date();
+      const cyclesData = componentConfigs.map((config) => {
+        const { healthScore, healthPercentage } =
+          this.componentService.calculateHealthScore(
+            0,
+            config.maxCycles,
+            serviceDate,
+            config.maxDays,
+          );
+        return {
+          id: randomUUID(),
+          barrelId: barrel.id,
+          componentConfigId: config.id,
+          cyclesSinceLastService: 0,
+          lastServiceDate: serviceDate,
+          healthScore,
+          healthPercentage,
+        };
+      });
+      await this.prisma.componentCycle.createMany({
+        data: cyclesData,
+        skipDuplicates: true,
+      });
+    }
+
+    return { barrel, action: 'created' };
+  }
+
+  /**
+   * Gera códigos em lote para gravação a laser.
+   * Cria registros PRE_REGISTERED com códigos sequenciais globais.
+   * Usa BarrelSequence para garantir unicidade global.
+   * Cria BarrelBatch para rastreamento do lote.
+   */
+  async generateBatch(
+    tenantId: string,
+    dto: GenerateBatchDto,
+    actorId?: string,
+  ): Promise<{
+    batchId: string;
+    codes: string[];
+    range: { start: string; end: string };
+    quantity: number;
+    tenant: string | null;
+  }> {
+    const { quantity } = dto;
+    // Se o DTO especifica um tenantId (super admin), usar esse; senão usar o do caller
+    const targetTenantId = dto.tenantId ?? tenantId;
+
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        // Atualizar sequência global atomicamente
+        const seq = await tx.barrelSequence.upsert({
+          where: { key: 'global' },
+          create: { key: 'global', lastNumber: quantity },
+          update: { lastNumber: { increment: quantity } },
+        });
+
+        const startNumber = seq.lastNumber - quantity + 1;
+
+        // Gerar códigos
+        const codes: string[] = [];
+        for (let i = 0; i < quantity; i++) {
+          codes.push(`KS-BAR-${String(startNumber + i).padStart(9, '0')}`);
+        }
+
+        const codeStart = codes[0];
+        const codeEnd = codes[codes.length - 1];
+
+        // Criar barris PRE_REGISTERED em lotes de 1000 (PostgreSQL limit)
+        const chunkSize = 1000;
+        for (let i = 0; i < codes.length; i += chunkSize) {
+          const chunk = codes.slice(i, i + chunkSize);
+          await tx.barrel.createMany({
+            data: chunk.map((code) => ({
+              id: randomUUID(),
+              tenantId: targetTenantId,
+              internalCode: code,
+              qrCode: code,
+              capacityLiters: 50,
+              material: BarrelMaterial.INOX_304,
+              condition: BarrelCondition.NEW,
+              status: BarrelStatus.PRE_REGISTERED,
+            })),
+          });
+        }
+
+        // Criar registro de lote
+        const batch = await tx.barrelBatch.create({
+          data: {
+            tenantId: dto.tenantId ?? null,
+            codeStart,
+            codeEnd,
+            quantity,
+            createdById: actorId ?? tenantId,
+          },
+          include: { tenant: { select: { name: true } } },
+        });
+
+        return {
+          batchId: batch.id,
+          codes,
+          range: { start: codeStart, end: codeEnd },
+          quantity,
+          tenant: batch.tenant?.name ?? null,
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 60000,
+      },
+    );
+
+    return result;
+  }
+
+  /**
+   * Transfere um barril para outro tenant.
+   * Cria registro de OwnershipHistory e atualiza o tenantId do barril.
+   */
+  async transferBarrel(
+    tenantId: string,
+    barrelId: string,
+    dto: TransferBarrelDto,
+  ): Promise<unknown> {
+    await this.findById(tenantId, barrelId);
+
+    if (dto.toTenantId === tenantId) {
+      throw new BadRequestException(
+        'Não é possível transferir o barril para o mesmo tenant',
+      );
+    }
+
+    // Verificar que o tenant destino existe
+    const targetTenant = await this.prisma.tenant.findUnique({
+      where: { id: dto.toTenantId },
+    });
+    if (!targetTenant) {
+      throw new BadRequestException('Tenant de destino não encontrado');
+    }
+
+    // Executar transferência em transação
+    const [updatedBarrel] = await this.prisma.$transaction([
+      // Atualizar o tenant do barril
+      this.prisma.barrel.update({
+        where: { id: barrelId },
+        data: {
+          tenantId: dto.toTenantId,
+          status: BarrelStatus.ACTIVE,
+          version: { increment: 1 },
+        },
+        include: BARREL_INCLUDE,
+      }),
+      // Registrar histórico de propriedade
+      this.prisma.ownershipHistory.create({
+        data: {
+          barrelId,
+          fromTenantId: tenantId,
+          toTenantId: dto.toTenantId,
+          notes: dto.notes,
+        },
+      }),
+    ]);
+
+    return updatedBarrel;
+  }
+
+  /**
+   * Retorna o histórico de propriedade de um barril.
+   */
+  async getOwnershipHistory(tenantId: string, barrelId: string) {
+    // Verificar que o barril existe e pertence ao tenant
+    await this.findById(tenantId, barrelId);
+
+    const history = await this.prisma.ownershipHistory.findMany({
+      where: { barrelId },
+      orderBy: { transferredAt: 'desc' },
+      include: {
+        fromTenant: { select: { id: true, name: true } },
+        toTenant: { select: { id: true, name: true } },
+      },
+    });
+
+    return { data: history };
   }
 }

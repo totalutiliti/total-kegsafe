@@ -10,6 +10,8 @@ import {
     Building2,
     Plus,
     Shield,
+    Package,
+    ArrowRightLeft,
     LogOut,
     Moon,
     Sun,
@@ -23,6 +25,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 const navigation = [
     { name: 'Tenants', href: '/superadmin', icon: Building2 },
     { name: 'Novo Tenant', href: '/superadmin/tenants/new', icon: Plus },
+    { name: 'Lotes de Barris', href: '/superadmin/barrel-batches', icon: Package },
+    { name: 'Transferências', href: '/superadmin/barrel-transfer', icon: ArrowRightLeft },
     { name: 'Auditoria', href: '/superadmin/audit', icon: Shield },
 ];
 

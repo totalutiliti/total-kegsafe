@@ -6,10 +6,11 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
   Req,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
@@ -126,6 +127,84 @@ export class SuperAdminController {
     return this.superAdminService.unlockUser(
       userId,
       user.id,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  // ── Barrel Batches ──────────────────────────────────────
+
+  @Get('batches')
+  async listBatches(
+    @Query() query: PaginationQueryDto & { tenantId?: string },
+  ) {
+    return this.superAdminService.listBatches(query);
+  }
+
+  @Get('batches/stats')
+  async getBatchStats() {
+    return this.superAdminService.getBatchStats();
+  }
+
+  @Post('batches/:batchId/print')
+  async printBatch(
+    @Param('batchId') batchId: string,
+    @Body() body: { reason?: string },
+    @CurrentUser() user: JwtUser,
+    @Req() req: Request,
+  ) {
+    return this.superAdminService.printBatch(
+      batchId,
+      user.id,
+      body.reason,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Get('batches/:batchId/export')
+  async exportBatch(
+    @Param('batchId') batchId: string,
+    @CurrentUser() user: JwtUser,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const { csv, printResult } = await this.superAdminService.exportBatch(
+      batchId,
+      user.id,
+      req.ip,
+      req.headers['user-agent'],
+    );
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=lote-${batchId}.csv`,
+    );
+    res.setHeader('X-Print-Count', String(printResult.printCount));
+    if (printResult.warning) {
+      res.setHeader('X-Print-Warning', printResult.warning);
+    }
+    res.send(csv);
+  }
+
+  // ── Barrel Transfers ──────────────────────────────────────
+
+  @Get('barrels/:barrelId/ownership-history')
+  async getOwnershipHistory(@Param('barrelId') barrelId: string) {
+    return this.superAdminService.getOwnershipHistory(barrelId);
+  }
+
+  @Post('barrels/transfer-batch')
+  async transferBatch(
+    @Body() body: { barrelIds: string[]; toTenantId: string; notes?: string },
+    @CurrentUser() user: JwtUser,
+    @Req() req: Request,
+  ) {
+    return this.superAdminService.transferBatch(
+      body.barrelIds,
+      body.toTenantId,
+      user.id,
+      body.notes,
       req.ip,
       req.headers['user-agent'],
     );

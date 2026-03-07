@@ -29,11 +29,13 @@ export class UserController {
     @TenantId() tenantId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('isActive') isActive?: string,
   ) {
     return this.userService.findAll(
       tenantId,
       page ? +page : undefined,
       limit ? +limit : undefined,
+      isActive !== undefined ? isActive === 'true' : undefined,
     );
   }
 
@@ -63,6 +65,18 @@ export class UserController {
   @Roles(Role.ADMIN)
   async unlockAccount(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.userService.unlockAccount(tenantId, id);
+  }
+
+  @Patch(':id/deactivate')
+  @Roles(Role.ADMIN)
+  async deactivate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.userService.deactivate(tenantId, id);
+  }
+
+  @Patch(':id/activate')
+  @Roles(Role.ADMIN)
+  async activate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.userService.activate(tenantId, id);
   }
 
   @Delete(':id')

@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body suppressHydrationWarning className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProvider>
           <ReactQueryProvider>
             <TooltipProvider delayDuration={300}>

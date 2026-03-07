@@ -44,7 +44,7 @@ export function CreateClientDialog({ onCreated }: { onCreated?: () => void }) {
                     <Plus className="mr-2 h-4 w-4" /> Novo Cliente
                 </Button>
             </DialogTrigger>
-            <DialogContent className="border-border bg-background text-foreground sm:max-w-lg">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
                 </DialogHeader>

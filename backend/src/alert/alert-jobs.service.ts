@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AlertService } from './alert.service.js';
 import { ComponentService } from '../component/component.service.js';
@@ -96,6 +97,7 @@ export class AlertJobsService {
 
           await this.prisma.alert.createMany({
             data: cyclesNeedingAlert.map((cycle) => ({
+              id: randomUUID(),
               tenantId: tenant.id,
               barrelId: cycle.barrelId,
               alertType: AlertType.COMPONENT_END_OF_LIFE,
@@ -180,6 +182,7 @@ export class AlertJobsService {
 
           await this.prisma.alert.createMany({
             data: idleBarrels.map((barrel) => ({
+              id: randomUUID(),
               tenantId: tenant.id,
               barrelId: barrel.id,
               alertType: AlertType.IDLE_AT_CLIENT,
@@ -258,6 +261,7 @@ export class AlertJobsService {
 
           await this.prisma.alert.createMany({
             data: overdueOrders.map((order) => ({
+              id: randomUUID(),
               tenantId: tenant.id,
               barrelId: order.barrelId,
               alertType: AlertType.MANDATORY_INSPECTION,
@@ -332,6 +336,7 @@ export class AlertJobsService {
 
           await this.prisma.alert.createMany({
             data: lostBarrels.map((barrel) => ({
+              id: randomUUID(),
               tenantId: tenant.id,
               barrelId: barrel.id,
               alertType: AlertType.DISPOSAL_SUGGESTED,
@@ -409,6 +414,7 @@ export class AlertJobsService {
           );
 
           const alertsToCreate: Array<{
+            id: string;
             tenantId: string;
             barrelId: string;
             alertType: AlertType;
@@ -431,6 +437,7 @@ export class AlertJobsService {
 
             if (distance > geofence.radiusMeters) {
               alertsToCreate.push({
+                id: randomUUID(),
                 tenantId: tenant.id,
                 barrelId: event.barrelId,
                 alertType: AlertType.GEOFENCE_VIOLATION,

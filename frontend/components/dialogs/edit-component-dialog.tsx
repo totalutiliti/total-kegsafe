@@ -1,52 +1,79 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
-export function CreateComponentDialog({ onCreated }: { onCreated?: () => void }) {
-    const [open, setOpen] = useState(false);
+interface ComponentData {
+    id: string;
+    name: string;
+    description?: string;
+    maxCycles: number;
+    maxDays: number;
+    criticality: string;
+    alertThreshold: number | string;
+    averageReplacementCost?: number | string | null;
+}
+
+interface EditComponentDialogProps {
+    component: ComponentData | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onUpdated?: () => void;
+}
+
+export function EditComponentDialog({ component, open, onOpenChange, onUpdated }: EditComponentDialogProps) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
         name: '', description: '', maxCycles: 100, maxDays: 365,
         criticality: 'MEDIUM', alertThreshold: 80, averageReplacementCost: 0,
     });
 
+    useEffect(() => {
+        if (component) {
+            setForm({
+                name: component.name,
+                description: component.description || '',
+                maxCycles: component.maxCycles,
+                maxDays: component.maxDays,
+                criticality: component.criticality,
+                alertThreshold: Number(component.alertThreshold) > 1
+                    ? Number(component.alertThreshold)
+                    : Math.round(Number(component.alertThreshold) * 100),
+                averageReplacementCost: component.averageReplacementCost ? Number(component.averageReplacementCost) : 0,
+            });
+        }
+    }, [component]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!component) return;
         setLoading(true);
         try {
-            await api.post('/components', {
+            await api.patch(`/components/${component.id}`, {
                 ...form,
                 averageReplacementCost: form.averageReplacementCost || undefined,
             });
-            toast.success('Componente criado com sucesso!');
-            setOpen(false);
-            setForm({ name: '', description: '', maxCycles: 100, maxDays: 365, criticality: 'MEDIUM', alertThreshold: 80, averageReplacementCost: 0 });
-            onCreated?.();
+            toast.success('Componente atualizado com sucesso!');
+            onOpenChange(false);
+            onUpdated?.();
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Erro ao criar componente');
+            toast.error(error.response?.data?.message || 'Erro ao atualizar componente');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20">
-                    <Plus className="mr-2 h-4 w-4" /> Novo Componente
-                </Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Cadastrar Novo Componente</DialogTitle>
+                    <DialogTitle>Editar Componente</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                     <div className="space-y-2">
@@ -96,9 +123,9 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
                             placeholder="0.00" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                            {loading ? 'Salvando...' : 'Criar Componente'}
+                            {loading ? 'Salvando...' : 'Salvar Alterações'}
                         </Button>
                     </div>
                 </form>

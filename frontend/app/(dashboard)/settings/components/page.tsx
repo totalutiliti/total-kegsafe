@@ -5,9 +5,10 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { CreateComponentDialog } from '@/components/dialogs/create-component-dialog';
+import { EditComponentDialog } from '@/components/dialogs/edit-component-dialog';
 import { toast } from 'sonner';
 
 const criticalityConfig: Record<string, { label: string; color: string }> = {
@@ -22,6 +23,7 @@ export default function ComponentsPage() {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [editComponent, setEditComponent] = useState<any | null>(null);
     const limit = 20;
     const totalPages = Math.ceil(total / limit);
 
@@ -43,7 +45,7 @@ export default function ComponentsPage() {
     return (
         <RoleGuard allowedRoles={['ADMIN']}>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Componentes</h1>
                         <p className="text-sm text-muted-foreground mt-1">{total} componentes configurados</p>
@@ -67,11 +69,14 @@ export default function ComponentsPage() {
                         {components.map((comp) => {
                             const cc = criticalityConfig[comp.criticality] || criticalityConfig.MEDIUM;
                             return (
-                                <Card key={comp.id} className="border-border bg-card/50">
+                                <Card key={comp.id} className="border-border bg-card/50 group cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => setEditComponent(comp)}>
                                     <CardContent className="p-5">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-foreground">{comp.name}</h3>
-                                            <Badge variant="outline" className={`text-[10px] ${cc.color}`}>{cc.label}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <Badge variant="outline" className={`text-[10px] ${cc.color}`}>{cc.label}</Badge>
+                                            </div>
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-4">{comp.description || 'Sem descrição'}</p>
                                         <div className="grid grid-cols-2 gap-3">
@@ -95,8 +100,8 @@ export default function ComponentsPage() {
                 )}
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                             Página {page} de {totalPages}
                         </p>
                         <div className="flex gap-2">
@@ -107,7 +112,7 @@ export default function ComponentsPage() {
                                 disabled={page === 1}
                                 className="border-border text-foreground hover:bg-accent"
                             >
-                                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                                <ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline ml-1">Anterior</span>
                             </Button>
                             <Button
                                 variant="outline"
@@ -116,11 +121,17 @@ export default function ComponentsPage() {
                                 disabled={page >= totalPages}
                                 className="border-border text-foreground hover:bg-accent"
                             >
-                                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                                <span className="hidden sm:inline mr-1">Próximo</span><ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
                 )}
+                <EditComponentDialog
+                    component={editComponent}
+                    open={!!editComponent}
+                    onOpenChange={(open) => { if (!open) setEditComponent(null); }}
+                    onUpdated={fetchComponents}
+                />
             </div>
         </RoleGuard>
     );
