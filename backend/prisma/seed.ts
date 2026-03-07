@@ -5,6 +5,13 @@ import {
   GeofenceType,
   BarrelStatus,
   HealthScore,
+  MaintenanceType,
+  MaintenanceOrderStatus,
+  AlertPriority,
+  AlertType,
+  LogisticsAction,
+  DisposalStatus,
+  DisposalDestination,
 } from '@prisma/client';
 import * as argon2 from 'argon2';
 import 'dotenv/config';
@@ -55,6 +62,42 @@ const users = [
     email: 'manutencao@petropolis.com.br',
     role: Role.MAINTENANCE,
     password: 'Manutencao@123',
+  },
+  {
+    name: 'Carlos Motorista',
+    email: 'carlos@petropolis.com.br',
+    role: Role.LOGISTICS,
+    password: 'Carlos@123',
+  },
+  {
+    name: 'Ana Supervisora',
+    email: 'ana@petropolis.com.br',
+    role: Role.MANAGER,
+    password: 'Ana@12345',
+  },
+  {
+    name: 'Pedro Técnico',
+    email: 'pedro@petropolis.com.br',
+    role: Role.MAINTENANCE,
+    password: 'Pedro@123',
+  },
+  {
+    name: 'Fernanda Operadora',
+    email: 'fernanda@petropolis.com.br',
+    role: Role.LOGISTICS,
+    password: 'Fernanda@123',
+  },
+  {
+    name: 'Ricardo Gestor',
+    email: 'ricardo@petropolis.com.br',
+    role: Role.MANAGER,
+    password: 'Ricardo@123',
+  },
+  {
+    name: 'Juliana Técnica',
+    email: 'juliana@petropolis.com.br',
+    role: Role.MAINTENANCE,
+    password: 'Juliana@123',
   },
 ];
 
@@ -193,6 +236,22 @@ const clients = [
     longitude: -46.645,
     connectorType: 'TYPE_D',
   },
+  {
+    name: 'Pizzaria Bella Napoli',
+    tradeName: 'Bella Napoli',
+    cnpj: '66777888000122',
+    latitude: -23.555,
+    longitude: -46.66,
+    connectorType: 'TYPE_S',
+  },
+  {
+    name: 'Empório do Chopp',
+    tradeName: 'Empório do Chopp',
+    cnpj: '77888999000133',
+    latitude: -23.543,
+    longitude: -46.638,
+    connectorType: 'TYPE_S',
+  },
 ];
 
 async function main() {
@@ -253,7 +312,12 @@ async function main() {
         name: 'Cervejaria Petrópolis',
         cnpj: '12345678000190',
         slug: 'petropolis',
-        settings: { idleThresholdDays: 15, autoTriageEnabled: true },
+        settings: {
+          idleThresholdDays: 15,
+          autoTriageEnabled: true,
+          maintenanceBlockMode: 'ADVISORY',
+          expectedBarrelLifeYears: 20,
+        },
       },
     });
     console.log('✅ Tenant created:', tenant.name);
@@ -387,30 +451,45 @@ async function main() {
 
   // 8. Criar 50 Barris + ComponentCycles (idempotente)
   const manufacturers = ['Franke', 'Portinox', 'Blefa'];
+  const barrelStatuses: BarrelStatus[] = [
+    BarrelStatus.ACTIVE, BarrelStatus.ACTIVE, BarrelStatus.ACTIVE,
+    BarrelStatus.IN_TRANSIT, BarrelStatus.AT_CLIENT, BarrelStatus.AT_CLIENT,
+    BarrelStatus.IN_MAINTENANCE, BarrelStatus.BLOCKED,
+  ];
   let barrelsCreated = 0;
+  const createdBarrelIds: string[] = [];
 
   for (let i = 0; i < 50; i++) {
     const internalCode = `KS-BAR-${String(i + 1).padStart(9, '0')}`;
     const existing = await prisma.barrel.findFirst({
       where: { internalCode, tenantId: tenant.id },
     });
-    if (existing) continue;
+    if (existing) {
+      createdBarrelIds.push(existing.id);
+      continue;
+    }
 
     const totalCycles = Math.floor(Math.random() * 30);
+    const status = barrelStatuses[i % barrelStatuses.length];
+    const manufactureDate = new Date(
+      Date.now() - (2 + Math.random() * 8) * 365.25 * 24 * 60 * 60 * 1000,
+    );
 
     const barrel = await prisma.barrel.create({
       data: {
         tenantId: tenant.id,
         internalCode,
         qrCode: `KS-QR-${String(i + 1).padStart(9, '0')}`,
+        chassisNumber: `CH-${String(i + 1).padStart(6, '0')}`,
         manufacturer: manufacturers[i % 3],
         valveModel: 'TYPE_S',
         capacityLiters: [30, 50][i % 2],
         tareWeightKg: [9.5, 13.2][i % 2],
         material: 'INOX_304',
         acquisitionCost: [650, 800][i % 2],
-        status: BarrelStatus.ACTIVE,
+        status,
         totalCycles,
+        manufactureDate,
       },
     });
 
@@ -438,11 +517,221 @@ async function main() {
         },
       });
     }
+    createdBarrelIds.push(barrel.id);
     barrelsCreated++;
   }
   console.log(
     `✅ Barrels: ${barrelsCreated} created, ${50 - barrelsCreated} already existed`,
   );
+
+  // 9. Criar Eventos Logísticos (100+)
+  const allUsers = await prisma.user.findMany({
+    where: { tenantId: tenant.id },
+    select: { id: true },
+  });
+  const allClients = await prisma.client.findMany({
+    where: { tenantId: tenant.id },
+    select: { id: true },
+  });
+
+  const existingLogisticsEvents = await prisma.logisticsEvent.count({
+    where: { tenantId: tenant.id },
+  });
+
+  if (existingLogisticsEvents < 50) {
+    const actions = [LogisticsAction.EXPEDITION, LogisticsAction.DELIVERY, LogisticsAction.COLLECTION, LogisticsAction.RECEPTION];
+    let logEventsCreated = 0;
+
+    for (let i = 0; i < 120; i++) {
+      const barrelId = createdBarrelIds[i % createdBarrelIds.length];
+      const userId = allUsers[i % allUsers.length].id;
+      const action = actions[i % actions.length];
+      const daysAgo = Math.floor(Math.random() * 90);
+
+      await prisma.logisticsEvent.create({
+        data: {
+          tenantId: tenant.id,
+          barrelId,
+          userId,
+          actionType: action,
+          latitude: -23.55 + (Math.random() - 0.5) * 0.05,
+          longitude: -46.64 + (Math.random() - 0.5) * 0.05,
+          gpsAccuracy: 5 + Math.random() * 20,
+          clientId: action === LogisticsAction.DELIVERY || action === LogisticsAction.COLLECTION
+            ? allClients[i % allClients.length].id
+            : null,
+          previousStatus: BarrelStatus.ACTIVE,
+          inferredZone: action === LogisticsAction.EXPEDITION || action === LogisticsAction.RECEPTION ? GeofenceType.FACTORY : GeofenceType.CLIENT,
+          timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+        },
+      });
+      logEventsCreated++;
+    }
+    console.log(`✅ Logistics events: ${logEventsCreated} created`);
+  } else {
+    console.log('⏭️ Logistics events already seeded');
+  }
+
+  // 10. Criar Ordens de Manutenção (30+)
+  const existingOrders = await prisma.maintenanceOrder.count({
+    where: { tenantId: tenant.id },
+  });
+
+  if (existingOrders < 10) {
+    const maintenanceTypes = [MaintenanceType.PREVENTIVE, MaintenanceType.CORRECTIVE, MaintenanceType.PREDICTIVE];
+    const orderStatuses = [MaintenanceOrderStatus.COMPLETED, MaintenanceOrderStatus.COMPLETED, MaintenanceOrderStatus.IN_PROGRESS, MaintenanceOrderStatus.PENDING];
+    let ordersCreated = 0;
+
+    for (let i = 0; i < 35; i++) {
+      const barrelId = createdBarrelIds[i % createdBarrelIds.length];
+      const daysAgo = Math.floor(Math.random() * 60);
+      const orderStatus = orderStatuses[i % orderStatuses.length];
+
+      await prisma.maintenanceOrder.create({
+        data: {
+          tenantId: tenant.id,
+          orderNumber: `OS-SEED-${String(i + 1).padStart(4, '0')}`,
+          barrelId,
+          orderType: maintenanceTypes[i % maintenanceTypes.length],
+          status: orderStatus,
+          priority: [AlertPriority.LOW, AlertPriority.MEDIUM, AlertPriority.HIGH][i % 3],
+          description: `Manutenção de rotina - barril #${i + 1}`,
+          estimatedCost: 100 + Math.random() * 400,
+          actualCost: orderStatus === MaintenanceOrderStatus.COMPLETED ? 80 + Math.random() * 350 : null,
+          completedAt: orderStatus === MaintenanceOrderStatus.COMPLETED
+            ? new Date(Date.now() - (daysAgo - 2) * 24 * 60 * 60 * 1000)
+            : null,
+          createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+        },
+      });
+      ordersCreated++;
+    }
+    console.log(`✅ Maintenance orders: ${ordersCreated} created`);
+  } else {
+    console.log('⏭️ Maintenance orders already seeded');
+  }
+
+  // 11. Criar 8 Disposals (cenários variados com alertas)
+  const existingDisposals = await prisma.disposal.count({
+    where: { tenantId: tenant.id },
+  });
+
+  if (existingDisposals < 4) {
+    const adminUser = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, role: Role.ADMIN },
+    });
+    const managerUser = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, role: Role.MANAGER },
+    });
+
+    if (adminUser && managerUser) {
+      const disposalScenarios = [
+        { status: DisposalStatus.COMPLETED, destination: DisposalDestination.SCRAP_SALE, reason: 'Corrosão avançada no corpo do barril. Impossível recuperar.' },
+        { status: DisposalStatus.COMPLETED, destination: DisposalDestination.RECYCLING, reason: 'Válvula principal danificada irreversivelmente após acidente logístico.' },
+        { status: DisposalStatus.COMPLETED, destination: DisposalDestination.DONATION, reason: 'Barril antigo fora de padrão. Doado para projeto social de cerveja artesanal.' },
+        { status: DisposalStatus.APPROVED, destination: null, reason: 'TCO acumulado excede 80% do custo de reposição. Aguardando destinação.' },
+        { status: DisposalStatus.PENDING_APPROVAL, destination: null, reason: 'Deformação estrutural no chimb após queda. Avaliação técnica recomenda descarte.' },
+        { status: DisposalStatus.PENDING_APPROVAL, destination: null, reason: 'Barril com vazamento persistente após 3 tentativas de reparo.' },
+        { status: DisposalStatus.REJECTED, destination: null, reason: 'Solicitação de descarte preventivo. Rejeitado — barril ainda em boas condições.' },
+        { status: DisposalStatus.COMPLETED, destination: DisposalDestination.SCRAP_SALE, reason: 'Barril com menos de 5 anos. Descarte prematuro por avaria severa.' },
+      ];
+
+      let disposalsCreated = 0;
+      for (let i = 0; i < disposalScenarios.length; i++) {
+        const scenario = disposalScenarios[i];
+        const barrelId = createdBarrelIds[42 + i]; // Use barrels 43-50
+        if (!barrelId) continue;
+
+        const daysAgo = 5 + i * 7;
+        const disposal = await prisma.disposal.create({
+          data: {
+            tenantId: tenant.id,
+            barrelId,
+            requestedById: adminUser.id,
+            reason: scenario.reason,
+            status: scenario.status,
+            tcoAccumulated: 200 + Math.random() * 600,
+            replacementCost: [650, 800][i % 2],
+            destination: scenario.destination,
+            scrapValue: scenario.destination === DisposalDestination.SCRAP_SALE ? 50 + Math.random() * 100 : null,
+            approvedById: scenario.status !== DisposalStatus.PENDING_APPROVAL ? managerUser.id : null,
+            approvedAt: scenario.status !== DisposalStatus.PENDING_APPROVAL
+              ? new Date(Date.now() - (daysAgo - 1) * 24 * 60 * 60 * 1000)
+              : null,
+            completedAt: scenario.status === DisposalStatus.COMPLETED
+              ? new Date(Date.now() - (daysAgo - 2) * 24 * 60 * 60 * 1000)
+              : null,
+            createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+          },
+        });
+
+        // Mark barrel as DISPOSED for completed disposals
+        if (scenario.status === DisposalStatus.COMPLETED) {
+          await prisma.barrel.update({
+            where: { id: barrelId },
+            data: { status: BarrelStatus.DISPOSED },
+          });
+        }
+
+        // Create PREMATURE_DISPOSAL alert for last scenario (young barrel)
+        if (i === 7) {
+          await prisma.alert.create({
+            data: {
+              tenantId: tenant.id,
+              barrelId,
+              alertType: AlertType.PREMATURE_DISPOSAL,
+              priority: AlertPriority.HIGH,
+              title: `Descarte prematuro: barril KS-BAR-${String(43 + i).padStart(9, '0')}`,
+              description: 'Barril com apenas 25% da vida útil esperada (5 de 20 anos)',
+              metadata: { lifePercentage: 25, ageYears: 5, expectedLifeYears: 20 },
+            },
+          });
+        }
+
+        disposalsCreated++;
+      }
+      console.log(`✅ Disposals: ${disposalsCreated} created`);
+    }
+  } else {
+    console.log('⏭️ Disposals already seeded');
+  }
+
+  // 12. Criar Alertas variados
+  const existingAlerts = await prisma.alert.count({
+    where: { tenantId: tenant.id },
+  });
+
+  if (existingAlerts < 5) {
+    const alertScenarios = [
+      { type: AlertType.COMPONENT_END_OF_LIFE, priority: AlertPriority.HIGH, title: 'Componente em fim de vida útil', resolved: false },
+      { type: AlertType.MANDATORY_INSPECTION, priority: AlertPriority.MEDIUM, title: 'Inspeção obrigatória pendente', resolved: false },
+      { type: AlertType.IDLE_AT_CLIENT, priority: AlertPriority.LOW, title: 'Barril ocioso há mais de 15 dias', resolved: true },
+      { type: AlertType.DISPOSAL_SUGGESTED, priority: AlertPriority.MEDIUM, title: 'TCO elevado — descarte sugerido', resolved: false },
+      { type: AlertType.CLIENT_DEACTIVATED_WITH_BARRELS, priority: AlertPriority.HIGH, title: 'Cliente inativado com barris pendentes', resolved: false },
+      { type: AlertType.MAINTENANCE_DUE_ON_RETURN, priority: AlertPriority.MEDIUM, title: 'Manutenção necessária ao retornar barril', resolved: false },
+    ];
+
+    let alertsCreated = 0;
+    for (let i = 0; i < alertScenarios.length; i++) {
+      const scenario = alertScenarios[i];
+      await prisma.alert.create({
+        data: {
+          tenantId: tenant.id,
+          barrelId: createdBarrelIds[i],
+          alertType: scenario.type,
+          priority: scenario.priority,
+          title: scenario.title,
+          description: `Alerta de demonstração: ${scenario.title}`,
+          resolvedAt: scenario.resolved ? new Date() : null,
+          createdAt: new Date(Date.now() - (i + 1) * 3 * 24 * 60 * 60 * 1000),
+        },
+      });
+      alertsCreated++;
+    }
+    console.log(`✅ Alerts: ${alertsCreated} created`);
+  } else {
+    console.log('⏭️ Alerts already seeded');
+  }
 
   console.log('🎉 Seed completed successfully!');
 }
