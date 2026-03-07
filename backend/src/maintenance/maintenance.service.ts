@@ -14,6 +14,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
+import { BusinessException } from '../shared/exceptions/business.exception.js';
 
 @Injectable()
 export class MaintenanceService {
@@ -73,6 +74,22 @@ export class MaintenanceService {
       scheduledDate?: string;
     },
   ) {
+    const barrel = await this.prisma.barrel.findFirst({
+      where: { id: data.barrelId, tenantId, deletedAt: null },
+    });
+    if (!barrel) {
+      throw new ResourceNotFoundException('Barrel', data.barrelId);
+    }
+    if (
+      barrel.status === BarrelStatus.DISPOSED ||
+      barrel.status === BarrelStatus.LOST
+    ) {
+      throw new BusinessException(
+        'BARREL_UNAVAILABLE',
+        'Não é possível criar OS para barril descartado ou extraviado',
+      );
+    }
+
     const orderNumber = `OS-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
 
     const scheduled = data.scheduledDate ? new Date(data.scheduledDate) : null;
