@@ -85,7 +85,17 @@ export default function BarrelDetailPage() {
     const [toTenantId, setToTenantId] = useState('');
     const [transferNotes, setTransferNotes] = useState('');
 
+    // Maintenance modal state
+    const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+    const [maintenanceSubmitting, setMaintenanceSubmitting] = useState(false);
+    const [maintenanceType, setMaintenanceType] = useState('PREVENTIVE');
+    const [maintenancePriority, setMaintenancePriority] = useState('MEDIUM');
+    const [maintenanceDescription, setMaintenanceDescription] = useState('');
+    const [maintenanceScheduledDate, setMaintenanceScheduledDate] = useState('');
+
     const canTransfer = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canSendToMaintenance = (barrel?.status === 'ACTIVE' || barrel?.status === 'BLOCKED') &&
+        (user?.role === 'ADMIN' || user?.role === 'MAINTENANCE' || user?.role === 'MANAGER');
 
     useEffect(() => {
         const load = async () => {
@@ -153,6 +163,31 @@ export default function BarrelDetailPage() {
         }
     };
 
+    const handleSendToMaintenance = async () => {
+        setMaintenanceSubmitting(true);
+        try {
+            await api.post('/maintenance/orders', {
+                barrelId: params.id,
+                orderType: maintenanceType,
+                priority: maintenancePriority,
+                description: maintenanceDescription || undefined,
+                scheduledDate: maintenanceScheduledDate || undefined,
+            });
+            const isScheduled = maintenanceScheduledDate && new Date(maintenanceScheduledDate).getTime() > Date.now() + 60 * 60 * 1000;
+            toast.success(isScheduled ? 'Manutenção agendada com sucesso' : 'Barril enviado para manutenção');
+            setMaintenanceOpen(false);
+            setMaintenanceType('PREVENTIVE');
+            setMaintenancePriority('MEDIUM');
+            setMaintenanceDescription('');
+            setMaintenanceScheduledDate('');
+            // Reload barrel data
+            const { data } = await api.get(`/barrels/${params.id}`);
+            setBarrel(data);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Erro ao enviar para manutenção');
+        } finally { setMaintenanceSubmitting(false); }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-24">
@@ -193,17 +228,30 @@ export default function BarrelDetailPage() {
                         {barrel.chassisNumber && <> • Chassi: {barrel.chassisNumber}</>}
                     </p>
                 </div>
-                {canTransfer && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={openTransferModal}
-                        className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 shrink-0"
-                    >
-                        <ArrowRightLeft className="mr-2 h-4 w-4" />
-                        Transferir
-                    </Button>
-                )}
+                <div className="flex gap-2 shrink-0">
+                    {canSendToMaintenance && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMaintenanceOpen(true)}
+                            className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                        >
+                            <Wrench className="mr-2 h-4 w-4" />
+                            Manutenção
+                        </Button>
+                    )}
+                    {canTransfer && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openTransferModal}
+                            className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                        >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Transferir
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Info Cards Row */}
@@ -393,6 +441,87 @@ export default function BarrelDetailPage() {
                     </Card>
                 </div>
             )}
+
+            {/* Maintenance Dialog */}
+            <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
+                <DialogContent className="border-border bg-card max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-foreground">Enviar para Manutenção</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                            <Wrench className="h-4 w-4 text-amber-400 shrink-0" />
+                            <p className="text-sm text-amber-400">
+                                O barril <span className="font-medium">{barrel?.internalCode}</span> será enviado para manutenção e uma OS será criada.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label className="text-foreground">Tipo</Label>
+                                <Select value={maintenanceType} onValueChange={setMaintenanceType}>
+                                    <SelectTrigger className="border-border bg-muted/50 text-foreground">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-border bg-card">
+                                        <SelectItem value="PREVENTIVE">Preventiva</SelectItem>
+                                        <SelectItem value="CORRECTIVE">Corretiva</SelectItem>
+                                        <SelectItem value="PREDICTIVE">Preditiva</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-foreground">Prioridade</Label>
+                                <Select value={maintenancePriority} onValueChange={setMaintenancePriority}>
+                                    <SelectTrigger className="border-border bg-muted/50 text-foreground">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-border bg-card">
+                                        <SelectItem value="LOW">Baixa</SelectItem>
+                                        <SelectItem value="MEDIUM">Média</SelectItem>
+                                        <SelectItem value="HIGH">Alta</SelectItem>
+                                        <SelectItem value="CRITICAL">Crítica</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-foreground">Agendar para (opcional)</Label>
+                            <Input
+                                type="datetime-local"
+                                value={maintenanceScheduledDate}
+                                onChange={(e) => setMaintenanceScheduledDate(e.target.value)}
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                            {maintenanceScheduledDate && new Date(maintenanceScheduledDate).getTime() > Date.now() + 60 * 60 * 1000 && (
+                                <p className="text-[11px] text-blue-400">
+                                    O barril continuará operando até a data agendada.
+                                </p>
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-foreground">Descrição (opcional)</Label>
+                            <Textarea
+                                value={maintenanceDescription}
+                                onChange={(e) => setMaintenanceDescription(e.target.value)}
+                                placeholder="Descreva o motivo da manutenção..."
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMaintenanceOpen(false)} className="border-border text-foreground">
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleSendToMaintenance}
+                            disabled={maintenanceSubmitting}
+                            className="bg-gradient-to-r from-amber-500 to-orange-600 text-white"
+                        >
+                            {maintenanceSubmitting ? 'Enviando...' : 'Enviar para Manutenção'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Transfer Dialog */}
             <Dialog open={transferOpen} onOpenChange={setTransferOpen}>

@@ -38,6 +38,7 @@ export interface IMaintenanceService {
       description?: string;
       assignedToId?: string;
       providerId?: string;
+      scheduledDate?: string;
     },
   ): Promise<unknown>;
 

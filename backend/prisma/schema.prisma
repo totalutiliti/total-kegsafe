@@ -627,13 +627,17 @@ model MaintenanceOrder {
   
   /// Data/hora de conclusão
   completedAt     DateTime?          @db.Timestamptz(3)
-  
+
+  /// Data agendada para a manutenção (se null, execução imediata)
+  /// Quando preenchida, o barril NÃO muda de status até a data chegar
+  scheduledDate   DateTime?          @db.Timestamptz(3)
+
   /// Data de criação
   createdAt       DateTime           @default(now()) @db.Timestamptz(3)
-  
+
   /// Data da última atualização
   updatedAt       DateTime           @updatedAt @db.Timestamptz(3)
-  
+
   /// Soft delete
   deletedAt       DateTime?          @db.Timestamptz(3)
 
@@ -645,6 +649,7 @@ model MaintenanceOrder {
   @@index([tenantId, priority, status])
   @@index([tenantId, assignedToId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, scheduledDate])
   @@index([orderNumber])
   @@map("maintenance_orders")
 }

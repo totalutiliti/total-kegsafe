@@ -200,36 +200,46 @@ export default function DashboardPage() {
                 {/* Operational Big Numbers */}
                 {bigNumbers && (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="p-4 text-center">
-                                <p className="text-2xl font-bold text-foreground">{bigNumbers.openMaintenanceOrders || 0}</p>
-                                <p className="text-[11px] text-muted-foreground">OS Abertas</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="p-4 text-center">
-                                <p className="text-2xl font-bold text-foreground">{bigNumbers.pendingDisposals || 0}</p>
-                                <p className="text-[11px] text-muted-foreground">Descartes Pendentes</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="p-4 text-center">
-                                <p className="text-2xl font-bold text-red-400">{bigNumbers.redComponents || 0}</p>
-                                <p className="text-[11px] text-muted-foreground">Componentes Críticos</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="p-4 text-center">
-                                <p className="text-2xl font-bold text-foreground">{bigNumbers.totalCycles || 0}</p>
-                                <p className="text-[11px] text-muted-foreground">Ciclos Totais</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-border bg-card/50">
-                            <CardContent className="p-4 text-center">
-                                <p className="text-2xl font-bold text-foreground">{bigNumbers.unresolvedAlerts || 0}</p>
-                                <p className="text-[11px] text-muted-foreground">Alertas Não Resolvidos</p>
-                            </CardContent>
-                        </Card>
+                        <Link href="/maintenance">
+                            <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-amber-500/40 hover:bg-card/80">
+                                <CardContent className="p-4 text-center">
+                                    <p className="text-2xl font-bold text-foreground">{bigNumbers.openMaintenanceOrders || 0}</p>
+                                    <p className="text-[11px] text-muted-foreground">OS Abertas</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                        <Link href="/disposal">
+                            <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-zinc-500/40 hover:bg-card/80">
+                                <CardContent className="p-4 text-center">
+                                    <p className="text-2xl font-bold text-foreground">{bigNumbers.pendingDisposals || 0}</p>
+                                    <p className="text-[11px] text-muted-foreground">Descartes Pendentes</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                        <Link href="/settings/components">
+                            <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-red-500/40 hover:bg-card/80">
+                                <CardContent className="p-4 text-center">
+                                    <p className="text-2xl font-bold text-red-400">{bigNumbers.redComponents || 0}</p>
+                                    <p className="text-[11px] text-muted-foreground">Componentes Críticos</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                        <Link href="/reports">
+                            <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-blue-500/40 hover:bg-card/80">
+                                <CardContent className="p-4 text-center">
+                                    <p className="text-2xl font-bold text-foreground">{bigNumbers.totalCycles || 0}</p>
+                                    <p className="text-[11px] text-muted-foreground">Ciclos Totais</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                        <Link href="/alerts">
+                            <Card className="border-border bg-card/50 cursor-pointer transition-colors hover:border-red-500/40 hover:bg-card/80">
+                                <CardContent className="p-4 text-center">
+                                    <p className="text-2xl font-bold text-foreground">{bigNumbers.unresolvedAlerts || 0}</p>
+                                    <p className="text-[11px] text-muted-foreground">Alertas Não Resolvidos</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     </div>
                 )}
 
