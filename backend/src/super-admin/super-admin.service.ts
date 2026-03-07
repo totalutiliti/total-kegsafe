@@ -6,7 +6,7 @@ import {
   ResourceAlreadyExistsException,
 } from '../shared/exceptions/resource.exceptions.js';
 import { BusinessException } from '../shared/exceptions/business.exception.js';
-import { Role, Prisma } from '@prisma/client';
+import { Role, BarrelStatus, Prisma } from '@prisma/client';
 import type { CreateTenantDto } from './dto/create-tenant.dto.js';
 import type { CreateTenantAdminDto } from './dto/create-tenant-admin.dto.js';
 import type { UpdateTenantStatusDto } from './dto/update-tenant-status.dto.js';
@@ -384,6 +384,292 @@ export class SuperAdminService {
     ]);
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  // ── Barrel Batches ─────────────────────────────────────────
+
+  async listBatches(query: {
+    page?: number;
+    limit?: number;
+    tenantId?: string;
+  }) {
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+    const where: Prisma.BarrelBatchWhereInput = {};
+
+    if (query.tenantId) {
+      where.tenantId = query.tenantId;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.barrelBatch.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          tenant: { select: { id: true, name: true } },
+          prints: {
+            orderBy: { printedAt: 'desc' },
+            select: {
+              id: true,
+              printedById: true,
+              printedAt: true,
+              reason: true,
+            },
+          },
+        },
+      }),
+      this.prisma.barrelBatch.count({ where }),
+    ]);
+
+    // Buscar nomes dos usuários referenciados
+    const userIds = new Set<string>();
+    for (const batch of items) {
+      userIds.add(batch.createdById);
+      for (const print of batch.prints) {
+        userIds.add(print.printedById);
+      }
+    }
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: [...userIds] } },
+      select: { id: true, name: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u.name]));
+
+    return {
+      items: items.map((b) => ({
+        id: b.id,
+        codeStart: b.codeStart,
+        codeEnd: b.codeEnd,
+        quantity: b.quantity,
+        tenant: b.tenant,
+        printCount: b.printCount,
+        createdBy: userMap.get(b.createdById) ?? b.createdById,
+        createdAt: b.createdAt,
+        prints: b.prints.map((p) => ({
+          id: p.id,
+          printedBy: userMap.get(p.printedById) ?? p.printedById,
+          printedAt: p.printedAt,
+          reason: p.reason,
+        })),
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async printBatch(
+    batchId: string,
+    actorId: string,
+    reason?: string,
+    ip?: string,
+    ua?: string,
+  ) {
+    const batch = await this.prisma.barrelBatch.findUnique({
+      where: { id: batchId },
+    });
+    if (!batch) {
+      throw new ResourceNotFoundException('BarrelBatch', batchId);
+    }
+
+    // Registrar impressão e incrementar contador
+    const [updatedBatch] = await this.prisma.$transaction([
+      this.prisma.barrelBatch.update({
+        where: { id: batchId },
+        data: { printCount: { increment: 1 } },
+      }),
+      this.prisma.barrelBatchPrint.create({
+        data: {
+          batchId,
+          printedById: actorId,
+          reason:
+            reason ||
+            (batch.printCount === 0 ? 'Primeira impressão' : undefined),
+        },
+      }),
+    ]);
+
+    await this.logAction(
+      actorId,
+      batch.printCount >= 1 ? 'BATCH_REPRINTED' : 'BATCH_PRINTED',
+      'BarrelBatch',
+      batchId,
+      batch.tenantId,
+      { printCount: updatedBatch.printCount, reason },
+      ip,
+      ua,
+    );
+
+    return {
+      printCount: updatedBatch.printCount,
+      warning:
+        updatedBatch.printCount > 1
+          ? 'ATENÇÃO: Este lote já foi impresso anteriormente.'
+          : undefined,
+    };
+  }
+
+  async exportBatch(
+    batchId: string,
+    actorId: string,
+    ip?: string,
+    ua?: string,
+  ): Promise<{
+    csv: string;
+    printResult: { printCount: number; warning?: string };
+  }> {
+    const batch = await this.prisma.barrelBatch.findUnique({
+      where: { id: batchId },
+    });
+    if (!batch) {
+      throw new ResourceNotFoundException('BarrelBatch', batchId);
+    }
+
+    // Gerar CSV dos códigos do lote
+    const startNum = parseInt(batch.codeStart.replace('KS-BAR-', ''), 10);
+    const codes: string[] = [];
+    for (let i = 0; i < batch.quantity; i++) {
+      codes.push(`KS-BAR-${String(startNum + i).padStart(9, '0')}`);
+    }
+    const csv = ['code', ...codes].join('\n');
+
+    // Registrar como impressão automaticamente
+    const printResult = await this.printBatch(
+      batchId,
+      actorId,
+      'Export CSV para gravação a laser',
+      ip,
+      ua,
+    );
+
+    return { csv, printResult };
+  }
+
+  async getBatchStats() {
+    const [totalBarrels, preRegisteredCount, activeCount, pendingBatches] =
+      await Promise.all([
+        // Total de barris gerados (todos os lotes)
+        this.prisma.barrel.count({
+          where: { deletedAt: null },
+        }),
+        // Total PRE_REGISTERED
+        this.prisma.barrel.count({
+          where: { status: BarrelStatus.PRE_REGISTERED, deletedAt: null },
+        }),
+        // Total ACTIVE
+        this.prisma.barrel.count({
+          where: { status: BarrelStatus.ACTIVE, deletedAt: null },
+        }),
+        // Lotes com printCount = 0
+        this.prisma.barrelBatch.count({
+          where: { printCount: 0 },
+        }),
+      ]);
+
+    return {
+      totalBarrels,
+      preRegisteredCount,
+      activeCount,
+      pendingBatches,
+    };
+  }
+
+  // ── Barrel Transfers ──────────────────────────────────────
+
+  async getOwnershipHistory(barrelId: string) {
+    const history = await this.prisma.ownershipHistory.findMany({
+      where: { barrelId },
+      orderBy: { transferredAt: 'desc' },
+      include: {
+        fromTenant: { select: { id: true, name: true } },
+        toTenant: { select: { id: true, name: true } },
+      },
+    });
+
+    return { data: history };
+  }
+
+  async transferBatch(
+    barrelIds: string[],
+    toTenantId: string,
+    actorId: string,
+    notes?: string,
+    ip?: string,
+    ua?: string,
+  ) {
+    // Verificar tenant destino
+    const targetTenant = await this.prisma.tenant.findUnique({
+      where: { id: toTenantId },
+    });
+    if (!targetTenant) {
+      throw new ResourceNotFoundException('Tenant', toTenantId);
+    }
+
+    // Buscar barris
+    const barrels = await this.prisma.barrel.findMany({
+      where: { id: { in: barrelIds }, deletedAt: null },
+      select: { id: true, tenantId: true, internalCode: true },
+    });
+
+    if (barrels.length !== barrelIds.length) {
+      throw new BusinessException(
+        'BARRELS_NOT_FOUND',
+        `Apenas ${barrels.length} de ${barrelIds.length} barris foram encontrados`,
+        400,
+      );
+    }
+
+    // Verificar que nenhum barril já pertence ao destino
+    const alreadyOwned = barrels.filter((b) => b.tenantId === toTenantId);
+    if (alreadyOwned.length > 0) {
+      throw new BusinessException(
+        'BARRELS_ALREADY_OWNED',
+        `${alreadyOwned.length} barris já pertencem ao tenant destino`,
+        400,
+      );
+    }
+
+    // Transferir todos em uma transação
+    await this.prisma.$transaction([
+      // Atualizar tenantId de todos
+      this.prisma.barrel.updateMany({
+        where: { id: { in: barrelIds } },
+        data: { tenantId: toTenantId },
+      }),
+      // Criar registros de ownership history
+      this.prisma.ownershipHistory.createMany({
+        data: barrels.map((b) => ({
+          barrelId: b.id,
+          fromTenantId: b.tenantId,
+          toTenantId,
+          notes,
+        })),
+      }),
+    ]);
+
+    await this.logAction(
+      actorId,
+      'BARRELS_TRANSFERRED',
+      'Barrel',
+      barrelIds.join(','),
+      toTenantId,
+      {
+        count: barrelIds.length,
+        toTenantId,
+        toTenantName: targetTenant.name,
+        notes,
+      },
+      ip,
+      ua,
+    );
+
+    return {
+      transferred: barrelIds.length,
+      toTenant: { id: targetTenant.id, name: targetTenant.name },
+    };
   }
 
   // ── Private ──────────────────────────────────────────────

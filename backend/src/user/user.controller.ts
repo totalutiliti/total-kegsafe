@@ -65,6 +65,18 @@ export class UserController {
     return this.userService.unlockAccount(tenantId, id);
   }
 
+  @Patch(':id/deactivate')
+  @Roles(Role.ADMIN)
+  async deactivate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.userService.deactivate(tenantId, id);
+  }
+
+  @Patch(':id/activate')
+  @Roles(Role.ADMIN)
+  async activate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.userService.activate(tenantId, id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   async delete(@TenantId() tenantId: string, @Param('id') id: string) {
