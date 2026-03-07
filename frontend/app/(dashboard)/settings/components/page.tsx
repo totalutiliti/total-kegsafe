@@ -5,9 +5,10 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { CreateComponentDialog } from '@/components/dialogs/create-component-dialog';
+import { EditComponentDialog } from '@/components/dialogs/edit-component-dialog';
 import { toast } from 'sonner';
 
 const criticalityConfig: Record<string, { label: string; color: string }> = {
@@ -22,6 +23,7 @@ export default function ComponentsPage() {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [editComponent, setEditComponent] = useState<any | null>(null);
     const limit = 20;
     const totalPages = Math.ceil(total / limit);
 
@@ -67,11 +69,14 @@ export default function ComponentsPage() {
                         {components.map((comp) => {
                             const cc = criticalityConfig[comp.criticality] || criticalityConfig.MEDIUM;
                             return (
-                                <Card key={comp.id} className="border-border bg-card/50">
+                                <Card key={comp.id} className="border-border bg-card/50 group cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => setEditComponent(comp)}>
                                     <CardContent className="p-5">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-foreground">{comp.name}</h3>
-                                            <Badge variant="outline" className={`text-[10px] ${cc.color}`}>{cc.label}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <Badge variant="outline" className={`text-[10px] ${cc.color}`}>{cc.label}</Badge>
+                                            </div>
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-4">{comp.description || 'Sem descrição'}</p>
                                         <div className="grid grid-cols-2 gap-3">
@@ -121,6 +126,12 @@ export default function ComponentsPage() {
                         </div>
                     </div>
                 )}
+                <EditComponentDialog
+                    component={editComponent}
+                    open={!!editComponent}
+                    onOpenChange={(open) => { if (!open) setEditComponent(null); }}
+                    onUpdated={fetchComponents}
+                />
             </div>
         </RoleGuard>
     );
