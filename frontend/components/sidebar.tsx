@@ -23,6 +23,7 @@ import {
     Sun,
     Menu,
     X,
+    BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -43,6 +44,7 @@ const navigation = [
 const settingsNav = [
     { name: 'Usuários', href: '/settings/users', icon: Users, roles: ['ADMIN'] },
     { name: 'Componentes', href: '/settings/components', icon: Settings, roles: ['ADMIN'] },
+    { name: 'Manual', href: '/manual', icon: BookOpen, roles: ['ADMIN', 'MANAGER', 'LOGISTICS', 'MAINTENANCE'] },
 ];
 
 export function Sidebar() {
