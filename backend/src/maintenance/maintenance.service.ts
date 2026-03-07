@@ -70,15 +70,23 @@ export class MaintenanceService {
       description?: string;
       assignedToId?: string;
       providerId?: string;
+      scheduledDate?: string;
     },
   ) {
     const orderNumber = `OS-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
 
-    // Mudar status do barril para IN_MAINTENANCE
-    await this.prisma.barrel.update({
-      where: { id: data.barrelId },
-      data: { status: BarrelStatus.IN_MAINTENANCE },
-    });
+    const scheduled = data.scheduledDate ? new Date(data.scheduledDate) : null;
+    const isFutureSchedule =
+      scheduled && scheduled.getTime() > Date.now() + 60 * 60 * 1000; // >1h no futuro
+
+    // Se agendada para o futuro, NÃO mudar status do barril agora
+    // Caso contrário, mudar imediatamente para IN_MAINTENANCE
+    if (!isFutureSchedule) {
+      await this.prisma.barrel.update({
+        where: { id: data.barrelId },
+        data: { status: BarrelStatus.IN_MAINTENANCE },
+      });
+    }
 
     return this.prisma.maintenanceOrder.create({
       data: {
@@ -90,6 +98,11 @@ export class MaintenanceService {
         description: data.description ?? '',
         assignedToId: data.assignedToId,
         providerId: data.providerId,
+        scheduledDate: scheduled,
+        // OS agendadas iniciam como PENDING; status muda pelo cron
+        status: isFutureSchedule
+          ? MaintenanceOrderStatus.PENDING
+          : MaintenanceOrderStatus.PENDING,
       },
       include: { barrel: true },
     });
@@ -268,6 +281,7 @@ export class MaintenanceService {
 
   /**
    * Calendário de manutenções — ordens agrupadas por data
+   * Usa scheduledDate quando disponível, senão createdAt
    */
   async getCalendar(tenantId: string, query?: { from?: string; to?: string }) {
     const from = query?.from
@@ -281,7 +295,10 @@ export class MaintenanceService {
       where: {
         tenantId,
         deletedAt: null,
-        createdAt: { gte: from, lte: to },
+        OR: [
+          { scheduledDate: { gte: from, lte: to } },
+          { scheduledDate: null, createdAt: { gte: from, lte: to } },
+        ],
       },
       orderBy: { createdAt: 'asc' },
       include: {
@@ -292,15 +309,44 @@ export class MaintenanceService {
       },
     });
 
-    // Group by date (YYYY-MM-DD)
+    // Group by scheduledDate (preferred) or createdAt
     const calendar: Record<string, typeof orders> = {};
     for (const order of orders) {
-      const dateKey = order.createdAt.toISOString().slice(0, 10);
+      const refDate = order.scheduledDate ?? order.createdAt;
+      const dateKey = refDate.toISOString().slice(0, 10);
       if (!calendar[dateKey]) calendar[dateKey] = [];
       calendar[dateKey].push(order);
     }
 
     return calendar;
+  }
+
+  /**
+   * Ativa OS agendadas cuja data chegou.
+   * Muda o barril para IN_MAINTENANCE.
+   * Chamado pelo cron job diário.
+   */
+  async activateScheduledOrders(): Promise<number> {
+    const now = new Date();
+
+    // Buscar OS pendentes com scheduledDate <= agora
+    const orders = await this.prisma.maintenanceOrder.findMany({
+      where: {
+        scheduledDate: { lte: now },
+        status: MaintenanceOrderStatus.PENDING,
+        deletedAt: null,
+      },
+      select: { id: true, barrelId: true },
+    });
+
+    for (const order of orders) {
+      await this.prisma.barrel.update({
+        where: { id: order.barrelId },
+        data: { status: BarrelStatus.IN_MAINTENANCE },
+      });
+    }
+
+    return orders.length;
   }
 
   /**
