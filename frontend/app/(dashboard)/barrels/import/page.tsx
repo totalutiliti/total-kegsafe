@@ -309,6 +309,9 @@ export default function ImportBarrelsPage() {
                           QR Code
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
+                          Chassi
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                           Fabricante
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
@@ -336,6 +339,9 @@ export default function ImportBarrelsPage() {
                         >
                           <td className="px-3 py-2 text-foreground font-mono">
                             {row.qrCode}
+                          </td>
+                          <td className="px-3 py-2 text-foreground font-mono">
+                            {row.chassisNumber || "-"}
                           </td>
                           <td className="px-3 py-2 text-foreground">
                             {row.manufacturer || "-"}
@@ -440,9 +446,13 @@ export default function ImportBarrelsPage() {
         <Card className="border-border bg-card/50">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
+              {progress.processed > 0 ? (
+                <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
+              ) : (
+                <XCircle className="h-12 w-12 text-red-400 mx-auto" />
+              )}
               <p className="text-xl font-bold text-foreground">
-                Importação concluída
+                {progress.processed > 0 ? 'Importação concluída' : 'Importação falhou'}
               </p>
               <div className="flex justify-center gap-6">
                 <div>
@@ -460,6 +470,20 @@ export default function ImportBarrelsPage() {
                   </div>
                 )}
               </div>
+              {progress.errors && progress.errors.length > 0 && (
+                <div className="mt-4 text-left max-w-lg mx-auto">
+                  <p className="text-sm font-medium text-red-400 mb-2">
+                    Erros durante a importação:
+                  </p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto bg-muted/30 rounded-lg p-3">
+                    {progress.errors.map((err: any, i: number) => (
+                      <p key={i} className="text-xs text-red-400 font-mono">
+                        {err.message}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-3 justify-center pt-4">
                 <Button
                   variant="outline"

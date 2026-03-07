@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { HashingService } from '../shared/services/hashing.service.js';
 import {
@@ -642,6 +643,7 @@ export class SuperAdminService {
       // Criar registros de ownership history
       this.prisma.ownershipHistory.createMany({
         data: barrels.map((b) => ({
+          id: randomUUID(),
           barrelId: b.id,
           fromTenantId: b.tenantId,
           toTenantId,

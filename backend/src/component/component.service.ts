@@ -161,7 +161,11 @@ export class ComponentService {
 
     return {
       healthScore,
-      healthPercentage: Math.round(healthPercentage * 100) / 100,
+      // Cap at 999.99 to fit Decimal(5,2) column — very old barrels can exceed 100% by far
+      healthPercentage: Math.min(
+        999.99,
+        Math.round(healthPercentage * 100) / 100,
+      ),
     };
   }
 
