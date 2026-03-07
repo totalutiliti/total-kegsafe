@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import {
   DisposalStatus,
   DisposalDestination,
+  DisposalReason,
   BarrelStatus,
   AlertType,
   AlertPriority,
@@ -116,6 +117,7 @@ export class DisposalService {
     userId: string,
     data: {
       barrelId: string;
+      disposalReason?: DisposalReason;
       reason: string;
     },
   ) {
@@ -129,6 +131,7 @@ export class DisposalService {
         tenantId,
         barrelId: data.barrelId,
         requestedById: userId,
+        disposalReason: data.disposalReason,
         reason: data.reason,
         tcoAccumulated: barrel.totalMaintenanceCost,
         replacementCost: barrel.acquisitionCost || 0,

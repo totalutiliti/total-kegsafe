@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
     DollarSign, Package, TrendingDown, BarChart3, Download,
-    FileText, Wrench, AlertTriangle,
+    FileText, Wrench, AlertTriangle, Skull,
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { toast } from 'sonner';
@@ -57,7 +57,7 @@ function useChartColors(): ChartColors {
     return colors;
 }
 
-type ReportTab = 'overview' | 'assets' | 'maintenance' | 'disposals' | 'components';
+type ReportTab = 'overview' | 'assets' | 'maintenance' | 'disposals' | 'loss-analysis' | 'components';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
 const HEALTH_COLORS: Record<string, string> = { GREEN: '#10b981', YELLOW: '#f59e0b', RED: '#ef4444' };
@@ -72,6 +72,12 @@ const MAINT_STATUS_LABELS: Record<string, string> = {
 const DISPOSAL_STATUS_LABELS: Record<string, string> = {
     PENDING_APPROVAL: 'Pend. Aprovação', APPROVED: 'Aprovado', IN_PROGRESS: 'Em Andamento',
     COMPLETED: 'Concluído', REJECTED: 'Rejeitado',
+};
+const DISPOSAL_REASON_LABELS: Record<string, string> = {
+    CORROSION: 'Corrosão', STRUCTURAL_DAMAGE: 'Dano Estrutural',
+    VALVE_FAILURE: 'Falha Válvula', EXCESSIVE_WEAR: 'Desgaste',
+    LOGISTICS_ACCIDENT: 'Acidente Logístico', REGULATORY: 'Regulatório',
+    HIGH_TCO: 'TCO Elevado', OTHER: 'Outro',
 };
 
 function downloadCsv(endpoint: string) {
@@ -113,9 +119,9 @@ function AssetReport({ data, cc }: { data: any[]; cc: ChartColors }) {
     const materialCounts = countBy(data, d => d.material);
     const materialChart = toChartData(materialCounts);
 
-    const totalCost = data.reduce((s, d) => s + (d.totalMaintenanceCost || 0), 0);
-    const totalAcquisition = data.reduce((s, d) => s + (d.acquisitionCost || 0), 0);
-    const avgCycles = data.length ? Math.round(data.reduce((s, d) => s + d.totalCycles, 0) / data.length) : 0;
+    const totalCost = data.reduce((s, d) => s + Number(d.totalMaintenanceCost || 0), 0);
+    const totalAcquisition = data.reduce((s, d) => s + Number(d.acquisitionCost || 0), 0);
+    const avgCycles = data.length ? Math.round(data.reduce((s, d) => s + (d.totalCycles || 0), 0) / data.length) : 0;
 
     return (
         <div className="space-y-6">
@@ -152,8 +158,8 @@ function AssetReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                 rows={data.slice(0, 100).map(d => [
                     d.internalCode, d.chassisNumber || '-', STATUS_LABELS[d.status] || d.status,
                     d.material, `${d.capacityLiters}L`, d.totalCycles,
-                    `R$ ${d.totalMaintenanceCost.toFixed(2)}`,
-                    `${d.components.length} (${d.components.filter((c: any) => c.healthScore === 'RED').length} crit.)`,
+                    `R$ ${Number(d.totalMaintenanceCost || 0).toFixed(2)}`,
+                    `${(d.components || []).length} (${(d.components || []).filter((c: any) => c.healthScore === 'RED').length} crit.)`,
                 ])}
                 total={data.length}
             />
@@ -168,8 +174,8 @@ function MaintenanceReport({ data, cc }: { data: any[]; cc: ChartColors }) {
     const typeCounts = countBy(data, d => d.orderType);
     const typeChart = toChartData(typeCounts);
 
-    const totalEstimated = data.reduce((s, d) => s + (d.estimatedCost || 0), 0);
-    const totalActual = data.reduce((s, d) => s + (d.actualCost || 0), 0);
+    const totalEstimated = data.reduce((s, d) => s + Number(d.estimatedCost || 0), 0);
+    const totalActual = data.reduce((s, d) => s + Number(d.actualCost || 0), 0);
     const completed = data.filter(d => d.status === 'COMPLETED').length;
 
     return (
@@ -208,8 +214,8 @@ function MaintenanceReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                     d.orderNumber, d.barrelCode, d.orderType,
                     MAINT_STATUS_LABELS[d.status] || d.status, d.priority,
                     d.provider || '-',
-                    d.estimatedCost ? `R$ ${d.estimatedCost.toFixed(2)}` : '-',
-                    d.actualCost ? `R$ ${d.actualCost.toFixed(2)}` : '-',
+                    d.estimatedCost ? `R$ ${Number(d.estimatedCost).toFixed(2)}` : '-',
+                    d.actualCost ? `R$ ${Number(d.actualCost).toFixed(2)}` : '-',
                     new Date(d.createdAt).toLocaleDateString('pt-BR'),
                 ])}
                 total={data.length}
@@ -225,8 +231,8 @@ function DisposalReport({ data, cc }: { data: any[]; cc: ChartColors }) {
     const reasonCounts = countBy(data, d => d.reason);
     const reasonChart = toChartData(reasonCounts);
 
-    const totalTco = data.reduce((s, d) => s + (d.tcoAccumulated || 0), 0);
-    const totalScrap = data.reduce((s, d) => s + (d.scrapValue || 0), 0);
+    const totalTco = data.reduce((s, d) => s + Number(d.tcoAccumulated || 0), 0);
+    const totalScrap = data.reduce((s, d) => s + Number(d.scrapValue || 0), 0);
 
     return (
         <div className="space-y-6">
@@ -263,8 +269,8 @@ function DisposalReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                 rows={data.slice(0, 100).map(d => [
                     d.barrelCode, DISPOSAL_STATUS_LABELS[d.status] || d.status,
                     d.reason, d.destination || '-',
-                    `R$ ${d.tcoAccumulated.toFixed(2)}`, `R$ ${d.replacementCost.toFixed(2)}`,
-                    d.scrapValue ? `R$ ${d.scrapValue.toFixed(2)}` : '-',
+                    `R$ ${Number(d.tcoAccumulated || 0).toFixed(2)}`, `R$ ${Number(d.replacementCost || 0).toFixed(2)}`,
+                    d.scrapValue ? `R$ ${Number(d.scrapValue).toFixed(2)}` : '-',
                     d.requestedBy, new Date(d.createdAt).toLocaleDateString('pt-BR'),
                 ])}
                 total={data.length}
@@ -333,6 +339,146 @@ function ComponentReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                 total={data.length}
                 healthColumn={3}
             />
+        </div>
+    );
+}
+
+// ===== LOSS ANALYSIS TAB =====
+function LossAnalysisReport({ data, cc }: { data: any; cc: ChartColors }) {
+    if (!data?.summary) return <p className="text-muted-foreground text-center py-8">Nenhum dado de análise de perdas</p>;
+
+    const { summary, byReason, byClient, byMonth } = data;
+
+    const reasonChart = (byReason || []).map((r: any) => ({
+        name: DISPOSAL_REASON_LABELS[r.reason] || r.reason,
+        value: r.count,
+        loss: r.totalLoss,
+    }));
+
+    const clientChart = (byClient || []).slice(0, 10).map((c: any) => ({
+        name: c.clientName.length > 15 ? c.clientName.slice(0, 15) + '...' : c.clientName,
+        value: c.count,
+        loss: c.totalLoss,
+    }));
+
+    const monthChart = (byMonth || []).map((m: any) => ({
+        name: m.month,
+        descartes: m.count,
+        perda: Number((m.totalLoss / 1000).toFixed(1)),
+    }));
+
+    return (
+        <div className="space-y-6">
+            {/* KPIs */}
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+                <KpiCard label="Total Descartes" value={summary.totalDisposals} />
+                <KpiCard label="Perda Total" value={`R$ ${summary.totalLoss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color="text-red-400" />
+                <KpiCard label="Sucata Recuperada" value={`R$ ${summary.totalScrapRecovered.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} color="text-green-400" />
+                <KpiCard label="Perda Média" value={`R$ ${summary.avgLossPerDisposal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                <KpiCard label="Prematuros" value={summary.prematureCount} color="text-amber-400" />
+                <KpiCard label="Taxa Prematura" value={`${summary.prematurePercentage}%`} color="text-amber-400" />
+            </div>
+
+            {/* Charts row 1: By Reason + By Client */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <ChartCard title="Descartes por Motivo">
+                    <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={reasonChart} layout="vertical">
+                            <XAxis type="number" tick={{ fill: cc.text, fontSize: 11 }} />
+                            <YAxis dataKey="name" type="category" width={120} tick={{ fill: cc.text, fontSize: 10 }} />
+                            <Tooltip {...chartTooltip(cc)} formatter={(value: any, name: any) =>
+                                name === 'loss' ? [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Perda'] : [value, 'Qtd']
+                            } />
+                            <Bar dataKey="value" name="Qtd" fill="#ef4444" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+
+                <ChartCard title="Descartes por Cliente (Top 10)">
+                    {clientChart.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={clientChart} layout="vertical">
+                                <XAxis type="number" tick={{ fill: cc.text, fontSize: 11 }} />
+                                <YAxis dataKey="name" type="category" width={120} tick={{ fill: cc.text, fontSize: 10 }} />
+                                <Tooltip {...chartTooltip(cc)} formatter={(value: any, name: any) =>
+                                    name === 'loss' ? [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Perda'] : [value, 'Qtd']
+                                } />
+                                <Bar dataKey="value" name="Qtd" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-12 text-sm">Sem dados de cliente</p>
+                    )}
+                </ChartCard>
+            </div>
+
+            {/* Chart row 2: Timeline */}
+            {monthChart.length > 1 && (
+                <ChartCard title="Evolução Mensal de Descartes">
+                    <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={monthChart}>
+                            <XAxis dataKey="name" tick={{ fill: cc.text, fontSize: 11 }} />
+                            <YAxis yAxisId="left" tick={{ fill: cc.text, fontSize: 11 }} />
+                            <YAxis yAxisId="right" orientation="right" tick={{ fill: cc.text, fontSize: 11 }} />
+                            <Tooltip {...chartTooltip(cc)} formatter={(value: any, name: any) =>
+                                name === 'perda' ? [`R$ ${(Number(value) * 1000).toLocaleString('pt-BR')}`, 'Perda'] : [value, 'Descartes']
+                            } />
+                            <Legend />
+                            <Bar yAxisId="left" dataKey="descartes" name="Descartes" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                            <Bar yAxisId="right" dataKey="perda" name="Perda (R$ mil)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+            )}
+
+            {/* Detail tables */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Reason breakdown table */}
+                <Card className="border-border bg-card/50">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-foreground">Detalhamento por Motivo</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            {(byReason || []).map((r: any) => (
+                                <div key={r.reason} className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
+                                    <div>
+                                        <span className="text-sm font-medium text-foreground">{DISPOSAL_REASON_LABELS[r.reason] || r.reason}</span>
+                                        <span className="ml-2 text-xs text-muted-foreground">{r.count} barris</span>
+                                    </div>
+                                    <span className="text-sm text-red-400 font-medium">R$ {r.totalLoss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            ))}
+                            {(!byReason || byReason.length === 0) && (
+                                <p className="text-muted-foreground text-center py-4 text-sm">Nenhum dado</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Client breakdown table */}
+                <Card className="border-border bg-card/50">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-foreground">Detalhamento por Cliente</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {(byClient || []).map((c: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
+                                    <div>
+                                        <span className="text-sm font-medium text-foreground">{c.clientName}</span>
+                                        <span className="ml-2 text-xs text-muted-foreground">{c.count} barris</span>
+                                    </div>
+                                    <span className="text-sm text-red-400 font-medium">R$ {c.totalLoss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            ))}
+                            {(!byClient || byClient.length === 0) && (
+                                <p className="text-muted-foreground text-center py-4 text-sm">Nenhum dado</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
@@ -486,6 +632,7 @@ const tabs: { key: ReportTab; label: string; icon: React.ReactNode; csvEndpoint?
     { key: 'assets', label: 'Ativos', icon: <FileText className="h-4 w-4" />, csvEndpoint: '/reports/assets/csv' },
     { key: 'maintenance', label: 'Manutenção', icon: <Wrench className="h-4 w-4" />, csvEndpoint: '/reports/maintenance/csv' },
     { key: 'disposals', label: 'Descartes', icon: <Package className="h-4 w-4" />, csvEndpoint: '/reports/disposals/csv' },
+    { key: 'loss-analysis', label: 'Análise de Perdas', icon: <Skull className="h-4 w-4" /> },
     { key: 'components', label: 'Componentes', icon: <AlertTriangle className="h-4 w-4" />, csvEndpoint: '/reports/components/csv' },
 ];
 
@@ -496,6 +643,7 @@ export default function ReportsPage() {
     const [turnoverData, setTurnoverData] = useState<any>(null);
     const [lossData, setLossData] = useState<any>(null);
     const [reportData, setReportData] = useState<any[]>([]);
+    const [lossAnalysisData, setLossAnalysisData] = useState<any>(null);
     const [loadingReport, setLoadingReport] = useState(false);
     const cc = useChartColors();
 
@@ -515,6 +663,15 @@ export default function ReportsPage() {
         if (activeTab === 'overview') return;
         setLoadingReport(true);
         setReportData([]);
+
+        if (activeTab === 'loss-analysis') {
+            api.get('/reports/loss-analysis')
+                .then(r => setLossAnalysisData(r.data))
+                .catch(() => toast.error('Erro ao carregar análise de perdas'))
+                .finally(() => setLoadingReport(false));
+            return;
+        }
+
         const endpointMap: Record<string, string> = {
             assets: '/reports/assets',
             maintenance: '/reports/maintenance',
@@ -575,6 +732,7 @@ export default function ReportsPage() {
                         {activeTab === 'assets' && <AssetReport data={reportData} cc={cc} />}
                         {activeTab === 'maintenance' && <MaintenanceReport data={reportData} cc={cc} />}
                         {activeTab === 'disposals' && <DisposalReport data={reportData} cc={cc} />}
+                        {activeTab === 'loss-analysis' && <LossAnalysisReport data={lossAnalysisData} cc={cc} />}
                         {activeTab === 'components' && <ComponentReport data={reportData} cc={cc} />}
                     </>
                 )}

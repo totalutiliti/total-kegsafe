@@ -118,6 +118,7 @@ export class ReportService {
       barrelCode: d.barrel.internalCode,
       chassisNumber: d.barrel.chassisNumber,
       status: d.status,
+      disposalReason: d.disposalReason,
       reason: d.reason,
       destination: d.destination,
       tcoAccumulated: Number(d.tcoAccumulated),
@@ -219,6 +220,172 @@ export class ReportService {
       unresolvedAlerts,
       blockedBarrels,
       longIdleBarrels,
+    };
+  }
+
+  /**
+   * Loss analysis: why are we losing barrels?
+   * Groups disposals by reason, client, month, and calculates costs.
+   */
+  async getLossAnalysis(tenantId: string) {
+    const disposals = await this.prisma.disposal.findMany({
+      where: { tenantId, status: DisposalStatus.COMPLETED },
+      include: {
+        barrel: {
+          select: {
+            id: true,
+            internalCode: true,
+            chassisNumber: true,
+            lastClientId: true,
+            manufactureDate: true,
+            totalCycles: true,
+            acquisitionCost: true,
+            totalMaintenanceCost: true,
+          },
+        },
+        requestedBy: { select: { name: true } },
+      },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    // Get tenant settings
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const settings = (tenant?.settings as Record<string, unknown>) || {};
+    const expectedLifeYears =
+      (settings.expectedBarrelLifeYears as number) || 20;
+
+    // Collect unique client IDs
+    const clientIds = [
+      ...new Set(
+        disposals
+          .map((d) => d.barrel.lastClientId)
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    const clients =
+      clientIds.length > 0
+        ? await this.prisma.client.findMany({
+            where: { id: { in: clientIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const clientMap = new Map(clients.map((c) => [c.id, c.name]));
+
+    // Calculate per-disposal metrics
+    const items = disposals.map((d) => {
+      const tco = Number(d.tcoAccumulated);
+      const replacement = Number(d.replacementCost);
+      const scrap = d.scrapValue ? Number(d.scrapValue) : 0;
+      const netLoss = tco + replacement - scrap;
+
+      const ageYears = d.barrel.manufactureDate
+        ? ((d.completedAt ?? new Date()).getTime() -
+            d.barrel.manufactureDate.getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000)
+        : null;
+      const isPremature =
+        ageYears !== null && ageYears / expectedLifeYears < 0.7;
+
+      return {
+        id: d.id,
+        barrelCode: d.barrel.internalCode,
+        disposalReason: d.disposalReason || 'OTHER',
+        reason: d.reason,
+        clientId: d.barrel.lastClientId,
+        clientName: d.barrel.lastClientId
+          ? clientMap.get(d.barrel.lastClientId) || 'Desconhecido'
+          : 'Sem cliente',
+        tco,
+        replacement,
+        scrap,
+        netLoss,
+        ageYears: ageYears !== null ? Number(ageYears.toFixed(1)) : null,
+        isPremature,
+        totalCycles: d.barrel.totalCycles,
+        completedAt: d.completedAt,
+        month: d.completedAt ? d.completedAt.toISOString().slice(0, 7) : null,
+      };
+    });
+
+    // ── By Reason ──
+    const byReason: Record<string, { count: number; totalLoss: number }> = {};
+    for (const item of items) {
+      const key = item.disposalReason;
+      if (!byReason[key]) byReason[key] = { count: 0, totalLoss: 0 };
+      byReason[key].count++;
+      byReason[key].totalLoss += item.netLoss;
+    }
+
+    // ── By Client ──
+    const byClient: Record<
+      string,
+      { clientName: string; count: number; totalLoss: number }
+    > = {};
+    for (const item of items) {
+      const key = item.clientId || 'none';
+      if (!byClient[key])
+        byClient[key] = {
+          clientName: item.clientName,
+          count: 0,
+          totalLoss: 0,
+        };
+      byClient[key].count++;
+      byClient[key].totalLoss += item.netLoss;
+    }
+
+    // ── By Month ──
+    const byMonth: Record<string, { count: number; totalLoss: number }> = {};
+    for (const item of items) {
+      if (!item.month) continue;
+      if (!byMonth[item.month])
+        byMonth[item.month] = { count: 0, totalLoss: 0 };
+      byMonth[item.month].count++;
+      byMonth[item.month].totalLoss += item.netLoss;
+    }
+
+    // ── Summary ──
+    const totalLoss = items.reduce((s, i) => s + i.netLoss, 0);
+    const totalScrapRecovered = items.reduce((s, i) => s + i.scrap, 0);
+    const prematureCount = items.filter((i) => i.isPremature).length;
+
+    return {
+      summary: {
+        totalDisposals: items.length,
+        totalLoss: Number(totalLoss.toFixed(2)),
+        totalScrapRecovered: Number(totalScrapRecovered.toFixed(2)),
+        prematureCount,
+        prematurePercentage:
+          items.length > 0
+            ? Number(((prematureCount / items.length) * 100).toFixed(1))
+            : 0,
+        avgLossPerDisposal:
+          items.length > 0 ? Number((totalLoss / items.length).toFixed(2)) : 0,
+      },
+      byReason: Object.entries(byReason)
+        .map(([reason, data]) => ({
+          reason,
+          ...data,
+          totalLoss: Number(data.totalLoss.toFixed(2)),
+        }))
+        .sort((a, b) => b.count - a.count),
+      byClient: Object.entries(byClient)
+        .map(([, data]) => ({
+          ...data,
+          totalLoss: Number(data.totalLoss.toFixed(2)),
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20),
+      byMonth: Object.entries(byMonth)
+        .map(([month, data]) => ({
+          month,
+          ...data,
+          totalLoss: Number(data.totalLoss.toFixed(2)),
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month)),
+      items: items.slice(0, 100),
     };
   }
 
