@@ -73,4 +73,17 @@ export interface IMaintenanceService {
       photoUrl?: string;
     },
   ): Promise<unknown>;
+
+  getCalendar(
+    tenantId: string,
+    query?: { from?: string; to?: string },
+  ): Promise<Record<string, unknown[]>>;
+
+  checkMaintenanceDueOnReturn(
+    tenantId: string,
+    barrelId: string,
+  ): Promise<{
+    maintenanceRequired: boolean;
+    autoOrderCreated: boolean;
+  } | null>;
 }

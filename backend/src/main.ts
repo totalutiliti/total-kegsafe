@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { SloInterceptor } from './shared/slo/slo.interceptor.js';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
 
   // Production safety: reject insecure JWT secrets and missing CORS
@@ -28,6 +30,9 @@ async function bootstrap() {
   // SLO metrics interceptor — registered globally via main.ts (not APP_INTERCEPTOR)
   const sloInterceptor = app.get(SloInterceptor);
   app.useGlobalInterceptors(sloInterceptor);
+
+  // Serve static uploads (disposal photos, etc.)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   // API versioning — all routes under /api/v1/
   app.setGlobalPrefix('api/v1');
