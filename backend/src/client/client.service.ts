@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { GeofenceType } from '@prisma/client';
+import { AlertType, AlertPriority, GeofenceType } from '@prisma/client';
 import {
   ResourceNotFoundException,
   ResourceAlreadyExistsException,
@@ -10,10 +10,17 @@ import {
 export class ClientService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string, query?: { page?: number; limit?: number }) {
+  async findAll(
+    tenantId: string,
+    query?: { page?: number; limit?: number; includeInactive?: boolean },
+  ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
-    const where = { tenantId, isActive: true, deletedAt: null };
+    const where = {
+      tenantId,
+      deletedAt: null,
+      ...(query?.includeInactive ? {} : { isActive: true }),
+    };
 
     const [items, total] = await Promise.all([
       this.prisma.client.findMany({
@@ -109,8 +116,84 @@ export class ClientService {
     });
   }
 
+  /**
+   * Inativar cliente. Se houver barris no local, cria alerta.
+   */
+  async deactivate(tenantId: string, id: string) {
+    const client = await this.findById(tenantId, id);
+
+    // Buscar barris cujo último evento logístico indica localização neste cliente
+    const pendingBarrels = await this.prisma.barrel.findMany({
+      where: {
+        tenantId,
+        lastClientId: id,
+        status: 'AT_CLIENT',
+        deletedAt: null,
+      },
+      select: { id: true, internalCode: true, chassisNumber: true },
+    });
+
+    // Inativar o cliente
+    await this.prisma.client.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    // Se houver barris pendentes, criar alerta
+    if (pendingBarrels.length > 0) {
+      await this.prisma.alert.create({
+        data: {
+          tenantId,
+          alertType: AlertType.CLIENT_DEACTIVATED_WITH_BARRELS,
+          priority: AlertPriority.HIGH,
+          title: `Cliente inativado com ${pendingBarrels.length} barril(is) pendente(s)`,
+          description: `O cliente "${client.tradeName || client.name}" foi inativado mas possui ${pendingBarrels.length} barril(is) ainda no local. É necessário coletar os barris.`,
+          metadata: {
+            clientId: id,
+            clientName: client.tradeName || client.name,
+            barrels: pendingBarrels.map((b) => ({
+              id: b.id,
+              internalCode: b.internalCode,
+              chassisNumber: b.chassisNumber,
+            })),
+          },
+        },
+      });
+    }
+
+    return {
+      deactivated: true,
+      pendingBarrels: pendingBarrels.map((b) => ({
+        id: b.id,
+        internalCode: b.internalCode,
+        chassisNumber: b.chassisNumber,
+      })),
+    };
+  }
+
+  /**
+   * Reativar cliente
+   */
+  async activate(tenantId: string, id: string) {
+    // Allow finding inactive clients
+    const client = await this.prisma.client.findFirst({
+      where: { id, tenantId, deletedAt: null },
+    });
+    if (!client) throw new ResourceNotFoundException('Client', id);
+
+    await this.prisma.client.update({
+      where: { id },
+      data: { isActive: true },
+    });
+
+    return { activated: true };
+  }
+
   async delete(tenantId: string, id: string) {
     await this.findById(tenantId, id);
-    return this.prisma.client.delete({ where: { id } });
+    return this.prisma.client.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
   }
 }

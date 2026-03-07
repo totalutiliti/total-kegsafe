@@ -8,6 +8,9 @@ import type { CreateBarrelDto } from './dto/create-barrel.dto.js';
 import type { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import type { QuickRegisterDto } from './dto/quick-register.dto.js';
 import type { LinkQrDto } from './dto/link-qr.dto.js';
+import type { ScanBarrelDto } from './dto/scan-barrel.dto.js';
+import type { GenerateBatchDto } from './dto/generate-batch.dto.js';
+import type { TransferBarrelDto } from './dto/transfer-barrel.dto.js';
 
 /** Barrel with included componentCycles and their configs */
 export type BarrelWithComponents = Barrel & {
@@ -88,4 +91,32 @@ export interface IBarrelService {
     buffer: Buffer,
     filename: string,
   ): Promise<unknown>;
+
+  scanOrCreate(
+    tenantId: string,
+    dto: ScanBarrelDto,
+  ): Promise<{ barrel: unknown; action: 'found' | 'activated' | 'created' }>;
+
+  generateBatch(
+    tenantId: string,
+    dto: GenerateBatchDto,
+    actorId?: string,
+  ): Promise<{
+    batchId: string;
+    codes: string[];
+    range: { start: string; end: string };
+    quantity: number;
+    tenant: string | null;
+  }>;
+
+  transferBarrel(
+    tenantId: string,
+    barrelId: string,
+    dto: TransferBarrelDto,
+  ): Promise<unknown>;
+
+  getOwnershipHistory(
+    tenantId: string,
+    barrelId: string,
+  ): Promise<{ data: unknown[] }>;
 }

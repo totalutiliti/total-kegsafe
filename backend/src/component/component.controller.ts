@@ -75,6 +75,12 @@ export class ComponentController {
     return this.componentService.update(tenantId, id, data);
   }
 
+  @Patch(':id/deactivate')
+  @Roles(Role.ADMIN)
+  async deactivate(@TenantId() tenantId: string, @Param('id') id: string) {
+    return this.componentService.deactivate(tenantId, id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   async delete(@TenantId() tenantId: string, @Param('id') id: string) {

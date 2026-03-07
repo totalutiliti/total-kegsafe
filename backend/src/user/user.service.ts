@@ -137,6 +137,40 @@ export class UserService {
     return { message: 'Account unlocked successfully' };
   }
 
+  async deactivate(tenantId: string, id: string) {
+    const user = await this.findById(tenantId, id);
+
+    if (user.role === 'ADMIN') {
+      const adminCount = await this.prisma.user.count({
+        where: { tenantId, role: 'ADMIN', isActive: true, deletedAt: null },
+      });
+      if (adminCount <= 1) {
+        throw new BusinessException(
+          'CANNOT_DEACTIVATE_LAST_ADMIN',
+          'Não é possível inativar o último administrador',
+          400,
+        );
+      }
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  async activate(tenantId: string, id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id, tenantId },
+    });
+    if (!user) throw new ResourceNotFoundException('User', id);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive: true },
+    });
+  }
+
   async delete(tenantId: string, id: string) {
     const user = await this.findById(tenantId, id);
 

@@ -17,16 +17,22 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import type { IBarrelService } from './barrel.service.interface.js';
 import { BARREL_SERVICE } from './barrel.constants.js';
+import { ComponentService } from '../component/component.service.js';
 import { CreateBarrelDto } from './dto/create-barrel.dto.js';
 import { UpdateBarrelDto } from './dto/update-barrel.dto.js';
 import { FindBarrelsQueryDto } from './dto/find-barrels-query.dto.js';
 import { QuickRegisterDto } from './dto/quick-register.dto.js';
 import { ExecuteImportDto } from './dto/import-barrel.dto.js';
 import { LinkQrDto } from './dto/link-qr.dto.js';
+import { ScanBarrelDto } from './dto/scan-barrel.dto.js';
+import { GenerateBatchDto } from './dto/generate-batch.dto.js';
+import { TransferBarrelDto } from './dto/transfer-barrel.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import type { JwtUser } from '../shared/types/authenticated-request.js';
 import { Role } from '@prisma/client';
 
 @Controller('barrels')
@@ -34,6 +40,7 @@ import { Role } from '@prisma/client';
 export class BarrelController {
   constructor(
     @Inject(BARREL_SERVICE) private readonly barrelService: IBarrelService,
+    private readonly componentService: ComponentService,
   ) {}
 
   // =============================================
@@ -121,6 +128,21 @@ export class BarrelController {
     return this.barrelService.getTimeline(tenantId, id);
   }
 
+  @Get(':id/ownership-history')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async getOwnershipHistory(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.barrelService.getOwnershipHistory(tenantId, id);
+  }
+
+  @Get(':id/components')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.MAINTENANCE)
+  async getBarrelComponents(@Param('id') id: string) {
+    return this.componentService.getBarrelComponents(id);
+  }
+
   // =============================================
   // POST endpoints
   // =============================================
@@ -164,6 +186,23 @@ export class BarrelController {
     return this.barrelService.executeImport(tenantId, dto.uploadId);
   }
 
+  // --- QR Code como Fonte da Verdade ---
+  @Post('scan')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
+  async scanOrCreate(@TenantId() tenantId: string, @Body() dto: ScanBarrelDto) {
+    return this.barrelService.scanOrCreate(tenantId, dto);
+  }
+
+  @Post('generate-batch')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.SUPER_ADMIN)
+  async generateBatch(
+    @TenantId() tenantId: string,
+    @Body() dto: GenerateBatchDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.barrelService.generateBatch(tenantId, dto, user.id);
+  }
+
   // --- Feature 3: Vinculação QR em massa ---
   @Post('link-qr/batch')
   @Roles(Role.ADMIN, Role.MANAGER)
@@ -179,6 +218,17 @@ export class BarrelController {
       file.buffer,
       file.originalname,
     );
+  }
+
+  // --- QR Code: Transferência entre tenants ---
+  @Post(':id/transfer')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async transferBarrel(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: TransferBarrelDto,
+  ) {
+    return this.barrelService.transferBarrel(tenantId, id, dto);
   }
 
   // =============================================
