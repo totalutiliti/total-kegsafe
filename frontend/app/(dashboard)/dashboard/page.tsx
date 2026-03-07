@@ -26,6 +26,7 @@ export default function DashboardPage() {
     const { data: costData } = useApiQuery(['dashboard', 'cost'], '/dashboard/cost-per-liter');
     const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/dashboard/asset-turnover');
     const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/alerts/counts');
+    const { data: bigNumbers } = useApiQuery(['reports', 'big-numbers'], '/reports/big-numbers');
 
     // Theme-aware chart colors for axes
     const axisStroke = theme === 'dark' ? '#3f3f46' : '#d4d4d8';
@@ -141,11 +142,11 @@ export default function DashboardPage() {
                             <CardTitle className="text-sm font-medium text-foreground">Distribuição da Frota</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center gap-8">
-                                <div className="h-48 w-48">
+                            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
+                                <div className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
                                                 {pieData.map((entry, i) => (
                                                     <Cell key={i} fill={entry.color} stroke="transparent" />
                                                 ))}
@@ -153,7 +154,7 @@ export default function DashboardPage() {
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="flex-1 space-y-2">
+                                <div className="w-full flex-1 space-y-2">
                                     {pieData.map((entry, i) => (
                                         <div key={i} className="flex items-center justify-between text-sm">
                                             <div className="flex items-center gap-2">
@@ -195,6 +196,42 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Operational Big Numbers */}
+                {bigNumbers && (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                        <Card className="border-border bg-card/50">
+                            <CardContent className="p-4 text-center">
+                                <p className="text-2xl font-bold text-foreground">{bigNumbers.openMaintenanceOrders || 0}</p>
+                                <p className="text-[11px] text-muted-foreground">OS Abertas</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border bg-card/50">
+                            <CardContent className="p-4 text-center">
+                                <p className="text-2xl font-bold text-foreground">{bigNumbers.pendingDisposals || 0}</p>
+                                <p className="text-[11px] text-muted-foreground">Descartes Pendentes</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border bg-card/50">
+                            <CardContent className="p-4 text-center">
+                                <p className="text-2xl font-bold text-red-400">{bigNumbers.redComponents || 0}</p>
+                                <p className="text-[11px] text-muted-foreground">Componentes Críticos</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border bg-card/50">
+                            <CardContent className="p-4 text-center">
+                                <p className="text-2xl font-bold text-foreground">{bigNumbers.totalCycles || 0}</p>
+                                <p className="text-[11px] text-muted-foreground">Ciclos Totais</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border bg-card/50">
+                            <CardContent className="p-4 text-center">
+                                <p className="text-2xl font-bold text-foreground">{bigNumbers.unresolvedAlerts || 0}</p>
+                                <p className="text-[11px] text-muted-foreground">Alertas Não Resolvidos</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Status Quick Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

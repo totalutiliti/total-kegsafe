@@ -43,7 +43,7 @@ export default function UsersPage() {
     return (
         <RoleGuard allowedRoles={['ADMIN']}>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
                         <p className="text-sm text-muted-foreground mt-1">{total} usuários</p>
@@ -88,8 +88,8 @@ export default function UsersPage() {
                 )}
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                             Página {page} de {totalPages}
                         </p>
                         <div className="flex gap-2">
@@ -100,7 +100,7 @@ export default function UsersPage() {
                                 disabled={page === 1}
                                 className="border-border text-foreground hover:bg-accent"
                             >
-                                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                                <ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline ml-1">Anterior</span>
                             </Button>
                             <Button
                                 variant="outline"
@@ -109,7 +109,7 @@ export default function UsersPage() {
                                 disabled={page >= totalPages}
                                 className="border-border text-foreground hover:bg-accent"
                             >
-                                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                                <span className="hidden sm:inline mr-1">Próximo</span><ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
