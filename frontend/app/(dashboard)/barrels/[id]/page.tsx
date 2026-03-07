@@ -303,7 +303,9 @@ export default function BarrelDetailPage() {
                     {cycles.map((cycle: any) => {
                         const hc = healthConfig[cycle.healthScore] || healthConfig.GREEN;
                         const config = cycle.componentConfig || {};
-                        const percentage = Math.min(cycle.healthPercentage || 0, 100);
+                        const percentage = config.maxCycles > 0
+                            ? Math.min((cycle.cyclesSinceLastService / config.maxCycles) * 100, 100)
+                            : 0;
                         return (
                             <Card key={cycle.id} className={`border ${hc.bg}`}>
                                 <CardContent className="p-4">
