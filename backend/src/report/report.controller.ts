@@ -104,6 +104,11 @@ export class ReportController {
     res.send(csv);
   }
 
+  @Get('loss-analysis')
+  async getLossAnalysis(@TenantId() tenantId: string) {
+    return this.reportService.getLossAnalysis(tenantId);
+  }
+
   @Get('anomalies')
   async getAnomalyReport(@TenantId() tenantId: string) {
     return this.reportService.getAnomalyReport(tenantId);

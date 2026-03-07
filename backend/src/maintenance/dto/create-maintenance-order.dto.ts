@@ -34,4 +34,8 @@ export class CreateMaintenanceOrderDto {
   @IsOptional()
   @IsUUID()
   providerId?: string;
+
+  @IsOptional()
+  @IsString()
+  scheduledDate?: string;
 }

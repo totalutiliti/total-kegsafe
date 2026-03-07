@@ -627,13 +627,17 @@ model MaintenanceOrder {
   
   /// Data/hora de conclusão
   completedAt     DateTime?          @db.Timestamptz(3)
-  
+
+  /// Data agendada para a manutenção (se null, execução imediata)
+  /// Quando preenchida, o barril NÃO muda de status até a data chegar
+  scheduledDate   DateTime?          @db.Timestamptz(3)
+
   /// Data de criação
   createdAt       DateTime           @default(now()) @db.Timestamptz(3)
-  
+
   /// Data da última atualização
   updatedAt       DateTime           @updatedAt @db.Timestamptz(3)
-  
+
   /// Soft delete
   deletedAt       DateTime?          @db.Timestamptz(3)
 
@@ -645,6 +649,7 @@ model MaintenanceOrder {
   @@index([tenantId, priority, status])
   @@index([tenantId, assignedToId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, scheduledDate])
   @@index([orderNumber])
   @@map("maintenance_orders")
 }
@@ -1013,7 +1018,10 @@ model Disposal {
   /// Status do processo de descarte
   status          DisposalStatus    @default(SUGGESTED)
   
-  /// Motivo da sugestão/solicitação de descarte
+  /// Categoria do motivo de descarte
+  disposalReason  DisposalReason?
+
+  /// Motivo da sugestão/solicitação de descarte (texto livre)
   reason          String            @db.VarChar(500)
   
   /// TCO acumulado até o momento em R$
@@ -1059,6 +1067,18 @@ enum DisposalStatus {
   APPROVED          // Aprovado, aguardando destino final
   COMPLETED         // Concluído (destino registrado)
   REJECTED          // Rejeitado pelo MANAGER
+}
+
+/// Categoria do motivo de descarte
+enum DisposalReason {
+  CORROSION           // Corrosão avançada
+  STRUCTURAL_DAMAGE   // Dano estrutural (amassado, furo, rachadura)
+  VALVE_FAILURE       // Falha de válvula irreparável
+  EXCESSIVE_WEAR      // Desgaste excessivo / fim de vida útil
+  LOGISTICS_ACCIDENT  // Acidente logístico (queda, colisão)
+  REGULATORY          // Exigência regulatória / inspeção reprovada
+  HIGH_TCO            // TCO acumulado alto demais
+  OTHER               // Outros motivos
 }
 
 /// Destino final do barril descartado
