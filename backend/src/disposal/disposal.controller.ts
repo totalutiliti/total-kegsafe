@@ -18,11 +18,11 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { TenantId } from '../auth/decorators/tenant-id.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
-import { Role, DisposalStatus } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { CreateDisposalDto } from './dto/create-disposal.dto.js';
 import { UpdateDisposalDto } from './dto/update-disposal.dto.js';
 import { CompleteDisposalDto } from './dto/complete-disposal.dto.js';
-import { PaginationQueryDto } from '../shared/dto/pagination-query.dto.js';
+import { DisposalQueryDto } from './dto/disposal-query.dto.js';
 
 @Controller('disposals')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,17 +33,9 @@ export class DisposalController {
   @Roles(Role.ADMIN, Role.MANAGER)
   async findAll(
     @TenantId() tenantId: string,
-    @Query() query: PaginationQueryDto,
-    @Query('status') status?: DisposalStatus,
-    @Query('barrelId') barrelId?: string,
-    @Query('search') search?: string,
+    @Query() query: DisposalQueryDto,
   ) {
-    return this.disposalService.findAll(tenantId, {
-      ...query,
-      status,
-      barrelId,
-      search,
-    });
+    return this.disposalService.findAll(tenantId, query);
   }
 
   @Get('suggestions')
