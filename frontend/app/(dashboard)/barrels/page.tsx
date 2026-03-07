@@ -135,8 +135,11 @@ export default function BarrelsPage() {
   };
 
   useEffect(() => {
-    fetchBarrels();
-  }, [page, statusFilter]);
+    const timeout = setTimeout(() => {
+      fetchBarrels();
+    }, search ? 400 : 0);
+    return () => clearTimeout(timeout);
+  }, [page, statusFilter, search]);
 
   const getWorstHealth = (cycles: any[]) => {
     if (!cycles || cycles.length === 0) return "GREEN";
@@ -238,8 +241,7 @@ export default function BarrelsPage() {
           <Input
             placeholder="Buscar por código ou QR..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchBarrels()}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground"
           />
         </div>
