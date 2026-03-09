@@ -24,6 +24,7 @@ import {
     Menu,
     X,
     BookOpen,
+    Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -85,6 +86,18 @@ export function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Menu principal">
+                <button
+                    onClick={() => {
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-muted/50 px-3 py-2 mb-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                    <Search className="h-4 w-4" />
+                    <span className="flex-1 text-left text-xs">Buscar...</span>
+                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
+                        Ctrl+K
+                    </kbd>
+                </button>
                 <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Menu</p>
                 {filteredNav.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');

@@ -13,13 +13,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Building2, Phone, Mail, MapPin, ChevronLeft, ChevronRight, Pencil, Trash2, Search } from 'lucide-react';
+import { Building2, Phone, Mail, MapPin, ChevronLeft, ChevronRight, Pencil, Trash2, Search, Star } from 'lucide-react';
 import { CreateClientDialog } from '@/components/dialogs/create-client-dialog';
 import { EditClientDialog } from '@/components/dialogs/edit-client-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RoleGuard } from '@/components/role-guard';
 import { useSearchShortcut } from '@/hooks/use-keyboard-shortcuts';
+import { useFavorites } from '@/hooks/use-favorites';
 import { toast } from 'sonner';
 
 export default function ClientsPage() {
@@ -34,6 +35,7 @@ export default function ClientsPage() {
     const [deleting, setDeleting] = useState(false);
     const [limit, setLimit] = useState(20);
     const searchRef = useSearchShortcut();
+    const { isFavorite, toggleFavorite } = useFavorites();
     const totalPages = Math.ceil(total / limit);
 
     useEffect(() => {
@@ -107,6 +109,21 @@ export default function ClientsPage() {
                                                 <p className="text-xs text-muted-foreground truncate">{client.name}</p>
                                             </div>
                                             <div className="flex gap-1 shrink-0">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-amber-400"
+                                                            onClick={() => toggleFavorite({
+                                                                id: client.id,
+                                                                type: 'client',
+                                                                label: client.tradeName || client.name,
+                                                                sublabel: client.name,
+                                                                href: `/clients`,
+                                                            })}>
+                                                            <Star className={`h-3.5 w-3.5 ${isFavorite(client.id) ? 'fill-amber-400 text-amber-400' : ''}`} />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{isFavorite(client.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}</TooltipContent>
+                                                </Tooltip>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"

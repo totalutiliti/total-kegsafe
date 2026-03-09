@@ -2,6 +2,8 @@
 
 import { ProtectedRoute } from '@/components/protected-route';
 import { Sidebar } from '@/components/sidebar';
+import { OnboardingDialog } from '@/components/onboarding-dialog';
+import { GlobalSearch } from '@/components/global-search';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -14,6 +16,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                 </main>
             </div>
+            <OnboardingDialog />
+            <GlobalSearch />
         </ProtectedRoute>
     );
 }
