@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
@@ -25,10 +25,13 @@ import {
     X,
     BookOpen,
     Search,
+    Volume2,
+    VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { getSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
@@ -53,6 +56,15 @@ export function Sidebar() {
     const { user, logout } = useAuthStore();
     const { theme, toggleTheme } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
+    const [soundEnabled, setSoundState] = useState(true);
+
+    useEffect(() => { setSoundState(getSoundEnabled()); }, []);
+
+    const toggleSound = () => {
+        const next = !soundEnabled;
+        setSoundState(next);
+        setSoundEnabled(next);
+    };
 
     const filteredNav = navigation.filter(item => user && item.roles.includes(user.role));
     const filteredSettings = settingsNav.filter(item => user && item.roles.includes(user.role));
@@ -98,6 +110,9 @@ export function Sidebar() {
                         Ctrl+K
                     </kbd>
                 </button>
+                <p className="mb-1 px-3 text-[10px] text-muted-foreground/60">
+                    Pressione <kbd className="px-1 rounded border border-border bg-muted text-[10px]">?</kbd> para ver atalhos
+                </p>
                 <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Menu</p>
                 {filteredNav.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -154,6 +169,22 @@ export function Sidebar() {
 
             {/* User Info + Theme Toggle */}
             <div className="p-4 space-y-3">
+                {/* Sound toggle */}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSound}
+                    className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-accent"
+                    aria-label={soundEnabled ? 'Desativar sons' : 'Ativar sons'}
+                >
+                    {soundEnabled ? (
+                        <Volume2 className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                    ) : (
+                        <VolumeX className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    )}
+                    <span className="text-sm">{soundEnabled ? 'Sons Ligados' : 'Sons Desligados'}</span>
+                </Button>
+
                 {/* Theme toggle */}
                 <Button
                     variant="ghost"

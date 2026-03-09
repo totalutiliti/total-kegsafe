@@ -9,7 +9,7 @@ import { Settings, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { CreateComponentDialog } from '@/components/dialogs/create-component-dialog';
 import { EditComponentDialog } from '@/components/dialogs/edit-component-dialog';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const criticalityConfig: Record<string, { label: string; color: string }> = {
     LOW: { label: 'Baixa', color: 'bg-zinc-500/10 text-muted-foreground' },

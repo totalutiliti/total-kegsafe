@@ -22,7 +22,7 @@ import {
     AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 import { CreateTenantAdminDialog } from '@/components/dialogs/create-tenant-admin-dialog';
 import { ResetPasswordDialog } from '@/components/dialogs/reset-password-dialog';
 

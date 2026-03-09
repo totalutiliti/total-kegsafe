@@ -2,39 +2,16 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import { playSuccess, playError } from "@/lib/sounds";
+
+// Re-export para compatibilidade com imports existentes
+export { playSuccess as playSuccessBeep, playError as playErrorBeep } from "@/lib/sounds";
 
 interface QrScannerProps {
   onScan: (qrCode: string) => void;
   onError?: (error: string) => void;
   active?: boolean;
   cooldownMs?: number;
-}
-
-/** Gera um beep curto via Web Audio API */
-function playBeep(frequency: number, durationMs: number) {
-  try {
-    const ctx = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.frequency.value = frequency;
-    oscillator.type = "sine";
-    gain.gain.value = 0.3;
-    oscillator.start();
-    oscillator.stop(ctx.currentTime + durationMs / 1000);
-  } catch {
-    // Silenciar erros de AudioContext (ex: auto-play policy)
-  }
-}
-
-export function playSuccessBeep() {
-  playBeep(1200, 150);
-}
-
-export function playErrorBeep() {
-  playBeep(400, 300);
 }
 
 export function QrScanner({

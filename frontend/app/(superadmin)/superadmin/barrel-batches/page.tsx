@@ -32,7 +32,7 @@ import {
     ChevronRight,
     Check,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 interface Tenant {
     id: string;
