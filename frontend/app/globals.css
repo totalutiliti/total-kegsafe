@@ -124,4 +124,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Focus indicators for keyboard navigation (WCAG 2.4.7) */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
+  }
 }

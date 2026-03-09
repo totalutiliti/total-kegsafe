@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -37,6 +38,10 @@ export function CreateTenantAdminDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.name.trim()) { toast.error('O campo "Nome" é obrigatório'); return; }
+        if (!form.email.trim()) { toast.error('O campo "Email" é obrigatório'); return; }
+        if (!form.password.trim()) { toast.error('O campo "Senha" é obrigatório'); return; }
+        if (form.password.length < 8) { toast.error('A senha deve ter no mínimo 8 caracteres'); return; }
         setLoading(true);
         try {
             await api.post(`/super-admin/tenants/${tenantId}/users`, form);
@@ -72,12 +77,14 @@ export function CreateTenantAdminDialog({
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Criar Admin — {tenantName}</DialogTitle>
+                    <DialogDescription className="sr-only">Preencha os dados do administrador</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2" noValidate>
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Nome Completo</Label>
+                        <Label className="text-muted-foreground">Nome Completo <span className="text-red-400">*</span></Label>
                         <Input
                             required
+                            aria-required="true"
                             value={form.name}
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, name: e.target.value }))
@@ -88,10 +95,11 @@ export function CreateTenantAdminDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Email</Label>
+                        <Label className="text-muted-foreground">Email <span className="text-red-400">*</span></Label>
                         <Input
                             type="email"
                             required
+                            aria-required="true"
                             value={form.email}
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, email: e.target.value }))
@@ -102,11 +110,12 @@ export function CreateTenantAdminDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Senha Temporária</Label>
+                        <Label className="text-muted-foreground">Senha Temporária <span className="text-red-400">*</span></Label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
                                 required
+                                aria-required="true"
                                 minLength={8}
                                 value={form.password}
                                 onChange={(e) =>

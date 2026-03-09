@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -19,6 +19,9 @@ export function CreateClientDialog({ onCreated }: { onCreated?: () => void }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.name.trim()) { toast.error('O campo "Razão Social" é obrigatório'); return; }
+        if (!form.tradeName.trim()) { toast.error('O campo "Nome Fantasia" é obrigatório'); return; }
+        if (!form.cnpj.trim()) { toast.error('O campo "CNPJ" é obrigatório'); return; }
         setLoading(true);
         try {
             await api.post('/clients', {
@@ -47,24 +50,25 @@ export function CreateClientDialog({ onCreated }: { onCreated?: () => void }) {
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+                    <DialogDescription className="sr-only">Preencha os dados do novo cliente</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2" noValidate>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Razão Social</Label>
-                            <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                            <Label className="text-muted-foreground">Razão Social <span className="text-red-400">*</span></Label>
+                            <Input required aria-required="true" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Nome Fantasia</Label>
-                            <Input required value={form.tradeName} onChange={e => setForm(f => ({ ...f, tradeName: e.target.value }))}
+                            <Label className="text-muted-foreground">Nome Fantasia <span className="text-red-400">*</span></Label>
+                            <Input required aria-required="true" value={form.tradeName} onChange={e => setForm(f => ({ ...f, tradeName: e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">CNPJ</Label>
-                            <Input required value={form.cnpj} onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
+                            <Label className="text-muted-foreground">CNPJ <span className="text-red-400">*</span></Label>
+                            <Input required aria-required="true" value={form.cnpj} onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
                                 placeholder="00000000000000" className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
@@ -98,7 +102,7 @@ export function CreateClientDialog({ onCreated }: { onCreated?: () => void }) {
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                            {loading ? 'Salvando...' : 'Criar Cliente'}
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Criar Cliente'}
                         </Button>
                     </div>
                 </form>

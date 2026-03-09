@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -46,6 +47,9 @@ export function EditClientDialog({ client, open, onOpenChange, onUpdated }: Edit
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!client) return;
+        if (!form.name.trim()) { toast.error('O campo "Razão Social" é obrigatório'); return; }
+        if (!form.tradeName.trim()) { toast.error('O campo "Nome Fantasia" é obrigatório'); return; }
+        if (!form.cnpj.trim()) { toast.error('O campo "CNPJ" é obrigatório'); return; }
 
         setLoading(true);
         try {
@@ -69,22 +73,25 @@ export function EditClientDialog({ client, open, onOpenChange, onUpdated }: Edit
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Editar Cliente</DialogTitle>
+                    <DialogDescription className="sr-only">Edite os dados do cliente</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-2">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Razão Social</Label>
+                            <Label className="text-muted-foreground">Razão Social <span className="text-red-400">*</span></Label>
                             <Input
                                 required
+                                aria-required="true"
                                 value={form.name}
                                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Nome Fantasia</Label>
+                            <Label className="text-muted-foreground">Nome Fantasia <span className="text-red-400">*</span></Label>
                             <Input
                                 required
+                                aria-required="true"
                                 value={form.tradeName}
                                 onChange={e => setForm(f => ({ ...f, tradeName: e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground"
@@ -93,9 +100,10 @@ export function EditClientDialog({ client, open, onOpenChange, onUpdated }: Edit
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">CNPJ</Label>
+                            <Label className="text-muted-foreground">CNPJ <span className="text-red-400">*</span></Label>
                             <Input
                                 required
+                                aria-required="true"
                                 value={form.cnpj}
                                 onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
                                 placeholder="00000000000000"
@@ -167,7 +175,7 @@ export function EditClientDialog({ client, open, onOpenChange, onUpdated }: Edit
                             disabled={loading}
                             className="bg-gradient-to-r from-amber-500 to-orange-600 text-white"
                         >
-                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Salvar Alterações'}
                         </Button>
                     </div>
                 </form>

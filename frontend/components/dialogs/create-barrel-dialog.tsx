@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -25,6 +25,12 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.qrCode.trim()) { toast.error('O campo "QR Code" é obrigatório'); return; }
+        if (!form.manufacturer.trim()) { toast.error('O campo "Fabricante" é obrigatório'); return; }
+        if (!form.capacityLiters) { toast.error('O campo "Capacidade" é obrigatório'); return; }
+        if (!form.tareWeightKg) { toast.error('O campo "Peso Tara" é obrigatório'); return; }
+        if (!form.acquisitionCost) { toast.error('O campo "Custo Aquisição" é obrigatório'); return; }
+        if (isUsed && !form.manufactureDate) { toast.error('O campo "Data de Fabricação" é obrigatório para barris usados'); return; }
         setLoading(true);
         try {
             const payload: Record<string, unknown> = { ...form };
@@ -61,11 +67,12 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
             <DialogContent className="border-border bg-background text-foreground sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Barril</DialogTitle>
+                    <DialogDescription className="sr-only">Preencha os dados do novo barril</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2" noValidate>
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">QR Code</Label>
-                        <Input required value={form.qrCode} onChange={e => setForm(f => ({ ...f, qrCode: e.target.value }))}
+                        <Label className="text-muted-foreground">QR Code <span className="text-red-400">*</span></Label>
+                        <Input required aria-required="true" value={form.qrCode} onChange={e => setForm(f => ({ ...f, qrCode: e.target.value }))}
                             placeholder="Ex: QR-000051" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
@@ -75,8 +82,8 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Fabricante</Label>
-                            <Input required value={form.manufacturer} onChange={e => setForm(f => ({ ...f, manufacturer: e.target.value }))}
+                            <Label className="text-muted-foreground">Fabricante <span className="text-red-400">*</span></Label>
+                            <Input required aria-required="true" value={form.manufacturer} onChange={e => setForm(f => ({ ...f, manufacturer: e.target.value }))}
                                 placeholder="Ex: Franke" className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
@@ -93,13 +100,13 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Capacidade (L)</Label>
-                            <Input type="number" required value={form.capacityLiters} onChange={e => setForm(f => ({ ...f, capacityLiters: +e.target.value }))}
+                            <Label className="text-muted-foreground">Capacidade (L) <span className="text-red-400">*</span></Label>
+                            <Input type="number" required aria-required="true" value={form.capacityLiters} onChange={e => setForm(f => ({ ...f, capacityLiters: +e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Peso Tara (kg)</Label>
-                            <Input type="number" step="0.1" required value={form.tareWeightKg} onChange={e => setForm(f => ({ ...f, tareWeightKg: +e.target.value }))}
+                            <Label className="text-muted-foreground">Peso Tara (kg) <span className="text-red-400">*</span></Label>
+                            <Input type="number" step="0.1" required aria-required="true" value={form.tareWeightKg} onChange={e => setForm(f => ({ ...f, tareWeightKg: +e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
@@ -116,8 +123,8 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Custo Aquisição (R$)</Label>
-                            <Input type="number" step="0.01" required value={form.acquisitionCost} onChange={e => setForm(f => ({ ...f, acquisitionCost: +e.target.value }))}
+                            <Label className="text-muted-foreground">Custo Aquisição (R$) <span className="text-red-400">*</span></Label>
+                            <Input type="number" step="0.01" required aria-required="true" value={form.acquisitionCost} onChange={e => setForm(f => ({ ...f, acquisitionCost: +e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
@@ -137,7 +144,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                             <Label className="text-muted-foreground">
                                 Data de Fabricação {isUsed && <span className="text-red-400">*</span>}
                             </Label>
-                            <Input type="date" required={isUsed} value={form.manufactureDate}
+                            <Input type="date" required={isUsed} aria-required={isUsed} value={form.manufactureDate}
                                 onChange={e => setForm(f => ({ ...f, manufactureDate: e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
@@ -147,7 +154,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                             <Label className="text-muted-foreground">
                                 Ciclos Aproximados <span className="text-red-400">*</span>
                             </Label>
-                            <Input type="number" required min={0} value={form.initialCycles}
+                            <Input type="number" required aria-required="true" min={0} value={form.initialCycles}
                                 onChange={e => setForm(f => ({ ...f, initialCycles: e.target.value === '' ? '' : +e.target.value }))}
                                 placeholder="Ex: 150"
                                 className="border-border bg-muted/50 text-foreground" />
@@ -159,7 +166,7 @@ export function CreateBarrelDialog({ onCreated }: { onCreated?: () => void }) {
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                            {loading ? 'Salvando...' : 'Criar Barril'}
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Criar Barril'}
                         </Button>
                     </div>
                 </form>

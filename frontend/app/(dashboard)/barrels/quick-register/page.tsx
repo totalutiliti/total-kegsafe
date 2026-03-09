@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QrScanner, playSuccessBeep, playErrorBeep } from "@/components/qr-scanner";
 import { ArrowLeft, Check, X, QrCode } from "lucide-react";
+import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from "sonner";
 
 interface RegisteredBarrel {
@@ -92,12 +93,11 @@ export default function QuickRegisterPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: 'Barris', href: '/barrels' },
+        { label: 'Cadastro Rápido' },
+      ]} />
       <div className="flex items-center gap-4">
-        <Link href="/barrels">
-          <Button variant="outline" size="sm" className="border-border text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Scan de Barris

@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter,
@@ -30,6 +31,7 @@ import {
     ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Clock,
     ArrowRightLeft, Building2, User,
 } from 'lucide-react';
+import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from 'sonner';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -211,10 +213,12 @@ export default function BarrelDetailPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
+            <Breadcrumb items={[
+                { label: 'Dashboard', href: '/' },
+                { label: 'Barris', href: '/barrels' },
+                { label: barrel?.internalCode || 'Detalhe' },
+            ]} />
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
                 <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl font-bold text-foreground">{barrel.internalCode}</h1>
@@ -449,6 +453,7 @@ export default function BarrelDetailPage() {
                 <DialogContent className="border-border bg-card max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-foreground">Enviar para Manutenção</DialogTitle>
+                        <DialogDescription className="sr-only">Solicite uma ordem de serviço de manutenção</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -532,6 +537,7 @@ export default function BarrelDetailPage() {
                         <DialogTitle className="text-foreground">
                             Transferir Propriedade
                         </DialogTitle>
+                        <DialogDescription className="sr-only">Registre uma movimentação logística</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
