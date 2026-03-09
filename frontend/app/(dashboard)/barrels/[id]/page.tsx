@@ -40,6 +40,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
     ACTIVE: { label: 'Ativo', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
     IN_TRANSIT: { label: 'Em Trânsito', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     AT_CLIENT: { label: 'No Cliente', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+    IN_YARD: { label: 'No Pátio', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
     IN_MAINTENANCE: { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
     BLOCKED: { label: 'Bloqueado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
     DISPOSED: { label: 'Descartado', color: 'bg-zinc-500/10 text-muted-foreground border-zinc-500/20' },
