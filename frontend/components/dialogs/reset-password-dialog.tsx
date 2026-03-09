@@ -6,6 +6,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,8 @@ export function ResetPasswordDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newPassword.trim()) { toast.error('O campo "Nova Senha" é obrigatório'); return; }
+        if (newPassword.length < 8) { toast.error('A senha deve ter no mínimo 8 caracteres'); return; }
         setLoading(true);
         try {
             await api.post(`/super-admin/users/${userId}/reset-password`, {
@@ -67,14 +70,16 @@ export function ResetPasswordDialog({
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Resetar Senha — {userName}</DialogTitle>
+                    <DialogDescription className="sr-only">Defina a nova senha do usuário</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Nova Senha</Label>
+                        <Label className="text-muted-foreground">Nova Senha <span className="text-red-400">*</span></Label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
                                 required
+                                aria-required="true"
                                 minLength={8}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}

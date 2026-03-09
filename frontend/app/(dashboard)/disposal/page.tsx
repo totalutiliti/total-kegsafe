@@ -8,8 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter,
@@ -31,6 +39,7 @@ import {
     DollarSign,
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from 'sonner';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -79,7 +88,7 @@ export default function DisposalPage() {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'list' | 'analytics'>('list');
     const [statusFilter, setStatusFilter] = useState('');
-    const limit = 20;
+    const [limit, setLimit] = useState(20);
     const totalPages = Math.ceil(total / limit);
 
     // Create dialog
@@ -106,9 +115,14 @@ export default function DisposalPage() {
     // Approve
     const [approving, setApproving] = useState(false);
 
+    // Revert confirm
+    const [revertConfirmOpen, setRevertConfirmOpen] = useState(false);
+    const [revertTarget, setRevertTarget] = useState<string | null>(null);
+    const [reverting, setReverting] = useState(false);
+
     useEffect(() => {
         fetchData();
-    }, [page, statusFilter]);
+    }, [page, statusFilter, limit]);
 
     useEffect(() => {
         if (viewMode === 'analytics' && !analytics) {
@@ -229,14 +243,18 @@ export default function DisposalPage() {
         } finally { setCompleting(false); }
     };
 
-    const handleRevert = async (id: string) => {
-        if (!confirm('Reverter este descarte? O barril voltará ao status Bloqueado.')) return;
+    const handleRevert = async () => {
+        if (!revertTarget) return;
+        setReverting(true);
         try {
-            await api.delete(`/disposals/${id}/revert`);
+            await api.delete(`/disposals/${revertTarget}/revert`);
             toast.success('Descarte revertido com sucesso');
+            setRevertConfirmOpen(false);
+            setRevertTarget(null);
             setDetailOpen(false);
             fetchData();
         } catch { toast.error('Erro ao reverter descarte'); }
+        finally { setReverting(false); }
     };
 
     return (
@@ -439,9 +457,25 @@ export default function DisposalPage() {
 
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                                    Página {page} de {totalPages}
-                                </p>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Itens:</span>
+                                        <Select value={String(limit)} onValueChange={v => { setLimit(Number(v)); setPage(1); }}>
+                                            <SelectTrigger className="w-[70px] h-8 text-xs border-border bg-muted/50">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-border bg-card">
+                                                <SelectItem value="10">10</SelectItem>
+                                                <SelectItem value="20">20</SelectItem>
+                                                <SelectItem value="50">50</SelectItem>
+                                                <SelectItem value="100">100</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                                        Página {page} de {totalPages}
+                                    </p>
+                                </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
@@ -473,6 +507,7 @@ export default function DisposalPage() {
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Nova Solicitação de Descarte</DialogTitle>
+                        <DialogDescription className="sr-only">Solicite o descarte de um barril</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         {/* Barrel search */}
@@ -570,6 +605,7 @@ export default function DisposalPage() {
                             <Trash2 className="h-5 w-5 text-red-400" />
                             Descarte — {selectedDisposal?.barrel?.internalCode}
                         </DialogTitle>
+                        <DialogDescription className="sr-only">Detalhes do descarte selecionado</DialogDescription>
                     </DialogHeader>
                     {detailLoading ? (
                         <p className="text-center text-muted-foreground py-8">Carregando...</p>
@@ -698,7 +734,7 @@ export default function DisposalPage() {
                                 {selectedDisposal.status === 'COMPLETED' && (
                                     <Button
                                         variant="outline"
-                                        onClick={() => handleRevert(selectedDisposal.id)}
+                                        onClick={() => { setRevertTarget(selectedDisposal.id); setRevertConfirmOpen(true); }}
                                         className="flex-1 border-amber-500/20 text-amber-400 hover:bg-amber-500/10"
                                     >
                                         <Undo2 className="h-4 w-4 mr-2" /> Reverter
@@ -715,6 +751,7 @@ export default function DisposalPage() {
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Concluir Descarte</DialogTitle>
+                        <DialogDescription className="sr-only">Preencha os dados para concluir o descarte</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div>
@@ -772,6 +809,17 @@ export default function DisposalPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={revertConfirmOpen}
+                onOpenChange={setRevertConfirmOpen}
+                title="Reverter descarte"
+                description="Reverter este descarte? O barril voltará ao status Bloqueado."
+                confirmLabel="Reverter"
+                variant="default"
+                loading={reverting}
+                onConfirm={handleRevert}
+            />
         </RoleGuard>
     );
 }

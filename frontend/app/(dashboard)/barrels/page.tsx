@@ -39,9 +39,13 @@ import {
   Upload,
   Link2,
   Download,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { CreateBarrelDialog } from "@/components/dialogs/create-barrel-dialog";
 import { ShowForRoles } from "@/components/show-for-roles";
+import { useSearchShortcut } from "@/hooks/use-keyboard-shortcuts";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -96,7 +100,10 @@ export default function BarrelsPage() {
     searchParams.get("status") || "all",
   );
   const [loading, setLoading] = useState(true);
-  const limit = 20;
+  const [sortBy, setSortBy] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [limit, setLimit] = useState(20);
+  const searchRef = useSearchShortcut();
 
   const handleDownloadTemplate = async () => {
     try {
@@ -139,7 +146,7 @@ export default function BarrelsPage() {
       fetchBarrels();
     }, search ? 400 : 0);
     return () => clearTimeout(timeout);
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, limit]);
 
   const getWorstHealth = (cycles: any[]) => {
     if (!cycles || cycles.length === 0) return "GREEN";
@@ -147,6 +154,44 @@ export default function BarrelsPage() {
     if (cycles.some((c: any) => c.healthScore === "YELLOW")) return "YELLOW";
     return "GREEN";
   };
+
+  const sortedBarrels = [...barrels].sort((a, b) => {
+    if (!sortBy) return 0;
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    switch (sortBy) {
+        case 'internalCode':
+            return dir * (a.internalCode || '').localeCompare(b.internalCode || '');
+        case 'capacityLiters':
+            return dir * ((a.capacityLiters || 0) - (b.capacityLiters || 0));
+        case 'totalCycles':
+            return dir * ((a.totalCycles || 0) - (b.totalCycles || 0));
+        case 'status':
+            return dir * (a.status || '').localeCompare(b.status || '');
+        default:
+            return 0;
+    }
+  });
+
+  const SortHeader = ({ column, label }: { column: string; label: string }) => (
+    <button
+        className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+        onClick={() => {
+            if (sortBy === column) {
+                setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+            } else {
+                setSortBy(column);
+                setSortOrder('asc');
+            }
+        }}
+    >
+        {label}
+        {sortBy === column ? (
+            sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        ) : (
+            <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
@@ -239,6 +284,7 @@ export default function BarrelsPage() {
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchRef}
             placeholder="Buscar por código ou QR..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -267,7 +313,7 @@ export default function BarrelsPage() {
             <thead>
               <tr className="border-b border-border">
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Código
+                  <SortHeader column="internalCode" label="Código" />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   QR Code
@@ -276,16 +322,16 @@ export default function BarrelsPage() {
                   Chassi
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Capacidade
+                  <SortHeader column="capacityLiters" label="Capacidade" />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Ciclos
+                  <SortHeader column="totalCycles" label="Ciclos" />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                   Saúde
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                  Status
+                  <SortHeader column="status" label="Status" />
                 </th>
               </tr>
             </thead>
@@ -309,7 +355,7 @@ export default function BarrelsPage() {
                   </td>
                 </tr>
               ) : (
-                barrels.map((barrel) => {
+                sortedBarrels.map((barrel) => {
                   const worst = getWorstHealth(barrel.componentCycles);
                   const hc = healthConfig[worst];
                   const sc = statusConfig[barrel.status] || statusConfig.ACTIVE;
@@ -364,9 +410,25 @@ export default function BarrelsPage() {
         </div>
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-border px-4 py-3 gap-2">
-            <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-              Página {page} de {totalPages}
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Itens:</span>
+                <Select value={String(limit)} onValueChange={v => { setLimit(Number(v)); setPage(1); }}>
+                  <SelectTrigger className="w-[70px] h-8 text-xs border-border bg-muted/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-border bg-card">
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                Página {page} de {totalPages}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"

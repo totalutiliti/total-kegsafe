@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { MapPointPicker } from '@/components/map-point-picker-wrapper';
 
 interface EditGeofenceDialogProps {
     geofence: any | null;
@@ -37,6 +39,10 @@ export function EditGeofenceDialog({ geofence, open, onOpenChange, onUpdated }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!geofence?.id) return;
+        if (!form.name.trim()) { toast.error('O campo "Nome" é obrigatório'); return; }
+        if (!form.latitude) { toast.error('O campo "Latitude" é obrigatório'); return; }
+        if (!form.longitude) { toast.error('O campo "Longitude" é obrigatório'); return; }
+        if (!form.radiusMeters) { toast.error('O campo "Raio" é obrigatório'); return; }
 
         setLoading(true);
         try {
@@ -57,14 +63,15 @@ export function EditGeofenceDialog({ geofence, open, onOpenChange, onUpdated }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Editar Geofence</DialogTitle>
+                    <DialogDescription className="sr-only">Edite os dados da geofence</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Nome</Label>
-                        <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        <Label className="text-muted-foreground">Nome <span className="text-red-400">*</span></Label>
+                        <Input required aria-required="true" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                             placeholder="Ex: Fábrica São Paulo" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
@@ -80,25 +87,31 @@ export function EditGeofenceDialog({ geofence, open, onOpenChange, onUpdated }: 
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Latitude</Label>
-                            <Input type="number" step="any" required value={form.latitude} onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
+                            <Label className="text-muted-foreground">Latitude <span className="text-red-400">*</span></Label>
+                            <Input type="number" step="any" required aria-required="true" value={form.latitude} onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
                                 placeholder="-23.5505" className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Longitude</Label>
-                            <Input type="number" step="any" required value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
+                            <Label className="text-muted-foreground">Longitude <span className="text-red-400">*</span></Label>
+                            <Input type="number" step="any" required aria-required="true" value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
                                 placeholder="-46.6333" className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Raio (metros)</Label>
-                        <Input type="number" required value={form.radiusMeters} onChange={e => setForm(f => ({ ...f, radiusMeters: +e.target.value }))}
+                        <Label className="text-muted-foreground">Raio (metros) <span className="text-red-400">*</span></Label>
+                        <Input type="number" required aria-required="true" value={form.radiusMeters} onChange={e => setForm(f => ({ ...f, radiusMeters: +e.target.value }))}
                             className="border-border bg-muted/50 text-foreground" />
                     </div>
+                    <MapPointPicker
+                        latitude={form.latitude ? +form.latitude : null}
+                        longitude={form.longitude ? +form.longitude : null}
+                        radius={form.radiusMeters}
+                        onChange={(lat, lng) => setForm(f => ({ ...f, latitude: String(lat.toFixed(6)), longitude: String(lng.toFixed(6)) }))}
+                    />
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Salvar Alterações'}
                         </Button>
                     </div>
                 </form>
