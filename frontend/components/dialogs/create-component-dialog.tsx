@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -20,6 +20,9 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.name.trim()) { toast.error('O campo "Nome do Componente" é obrigatório'); return; }
+        if (!form.maxCycles || form.maxCycles < 1) { toast.error('O campo "Ciclos Máximos" é obrigatório'); return; }
+        if (!form.maxDays || form.maxDays < 1) { toast.error('O campo "Dias Máximos" é obrigatório'); return; }
         setLoading(true);
         try {
             await api.post('/components', {
@@ -49,11 +52,12 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
             <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Cadastrar Novo Componente</DialogTitle>
+                    <DialogDescription className="sr-only">Preencha os dados do novo componente</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label className="text-muted-foreground">Nome do Componente</Label>
-                        <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        <Label className="text-muted-foreground">Nome do Componente <span className="text-red-400">*</span></Label>
+                        <Input required aria-required="true" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                             placeholder="Ex: Válvula de Saída" className="border-border bg-muted/50 text-foreground" />
                     </div>
                     <div className="space-y-2">
@@ -63,13 +67,13 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Ciclos Máximos</Label>
-                            <Input type="number" required min={1} value={form.maxCycles} onChange={e => setForm(f => ({ ...f, maxCycles: +e.target.value }))}
+                            <Label className="text-muted-foreground">Ciclos Máximos <span className="text-red-400">*</span></Label>
+                            <Input type="number" required aria-required="true" min={1} value={form.maxCycles} onChange={e => setForm(f => ({ ...f, maxCycles: +e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-muted-foreground">Dias Máximos</Label>
-                            <Input type="number" required min={1} value={form.maxDays} onChange={e => setForm(f => ({ ...f, maxDays: +e.target.value }))}
+                            <Label className="text-muted-foreground">Dias Máximos <span className="text-red-400">*</span></Label>
+                            <Input type="number" required aria-required="true" min={1} value={form.maxDays} onChange={e => setForm(f => ({ ...f, maxDays: +e.target.value }))}
                                 className="border-border bg-muted/50 text-foreground" />
                         </div>
                     </div>
@@ -100,7 +104,7 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground">Cancelar</Button>
                         <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                            {loading ? 'Salvando...' : 'Criar Componente'}
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Criar Componente'}
                         </Button>
                     </div>
                 </form>

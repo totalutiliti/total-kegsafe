@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
+import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from "sonner";
 
 interface ValidationError {
@@ -161,12 +162,11 @@ export default function ImportBarrelsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: 'Barris', href: '/barrels' },
+        { label: 'Importar Planilha' },
+      ]} />
       <div className="flex items-center gap-4">
-        <Link href="/barrels">
-          <Button variant="outline" size="sm" className="border-border text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Importar Barris
