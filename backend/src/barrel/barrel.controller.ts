@@ -27,6 +27,7 @@ import { LinkQrDto } from './dto/link-qr.dto.js';
 import { ScanBarrelDto } from './dto/scan-barrel.dto.js';
 import { GenerateBatchDto } from './dto/generate-batch.dto.js';
 import { TransferBarrelDto } from './dto/transfer-barrel.dto.js';
+import { BatchUpdateStatusDto } from './dto/batch-update.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -234,6 +235,16 @@ export class BarrelController {
   // =============================================
   // PATCH endpoints
   // =============================================
+
+  @Patch('batch-status')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async batchUpdateStatus(
+    @TenantId() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: BatchUpdateStatusDto,
+  ) {
+    return this.barrelService.batchUpdateStatus(tenantId, dto, userId);
+  }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)

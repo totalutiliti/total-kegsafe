@@ -14,9 +14,14 @@ export class ReportService {
   /**
    * Asset report: all barrels with status, cycles, costs, components health
    */
-  async getAssetReport(tenantId: string) {
+  async getAssetReport(tenantId: string, query?: { from?: string; to?: string }) {
+    const dateFilter: any = {};
+    if (query?.from) dateFilter.gte = new Date(query.from);
+    if (query?.to) dateFilter.lte = new Date(query.to);
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     const barrels = await this.prisma.barrel.findMany({
-      where: { tenantId, deletedAt: null },
+      where: { tenantId, deletedAt: null, ...dateWhere },
       orderBy: { internalCode: 'asc' },
       include: {
         componentCycles: {
@@ -96,9 +101,14 @@ export class ReportService {
   /**
    * Disposal report: all disposals with barrel info
    */
-  async getDisposalReport(tenantId: string) {
+  async getDisposalReport(tenantId: string, query?: { from?: string; to?: string }) {
+    const dateFilter: any = {};
+    if (query?.from) dateFilter.gte = new Date(query.from);
+    if (query?.to) dateFilter.lte = new Date(query.to);
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     const disposals = await this.prisma.disposal.findMany({
-      where: { tenantId },
+      where: { tenantId, ...dateWhere },
       orderBy: { createdAt: 'desc' },
       include: {
         barrel: {
@@ -135,9 +145,14 @@ export class ReportService {
   /**
    * Component health report: per-barrel component status
    */
-  async getComponentReport(tenantId: string) {
+  async getComponentReport(tenantId: string, query?: { from?: string; to?: string }) {
+    const dateFilter: any = {};
+    if (query?.from) dateFilter.gte = new Date(query.from);
+    if (query?.to) dateFilter.lte = new Date(query.to);
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     const cycles = await this.prisma.componentCycle.findMany({
-      where: { barrel: { tenantId, deletedAt: null } },
+      where: { barrel: { tenantId, deletedAt: null }, ...dateWhere },
       include: {
         barrel: {
           select: { internalCode: true, chassisNumber: true, status: true },
@@ -227,9 +242,14 @@ export class ReportService {
    * Loss analysis: why are we losing barrels?
    * Groups disposals by reason, client, month, and calculates costs.
    */
-  async getLossAnalysis(tenantId: string) {
+  async getLossAnalysis(tenantId: string, query?: { from?: string; to?: string }) {
+    const dateFilter: any = {};
+    if (query?.from) dateFilter.gte = new Date(query.from);
+    if (query?.to) dateFilter.lte = new Date(query.to);
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     const disposals = await this.prisma.disposal.findMany({
-      where: { tenantId, status: DisposalStatus.COMPLETED },
+      where: { tenantId, status: DisposalStatus.COMPLETED, ...dateWhere },
       include: {
         barrel: {
           select: {

@@ -14,25 +14,34 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get('assets')
-  async getAssetReport(@TenantId() tenantId: string) {
-    return this.reportService.getAssetReport(tenantId);
+  async getAssetReport(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reportService.getAssetReport(tenantId, { from, to });
   }
 
   @Get('assets/csv')
-  async getAssetReportCsv(@TenantId() tenantId: string, @Res() res: Response) {
-    const data = await this.reportService.getAssetReport(tenantId);
+  async getAssetReportCsv(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Res() res?: Response,
+  ) {
+    const data = await this.reportService.getAssetReport(tenantId, { from, to });
     const flat = data.map(({ components, ...rest }) => ({
       ...rest,
       componentCount: components.length,
       redComponents: components.filter((c) => c.healthScore === 'RED').length,
     }));
     const csv = this.reportService.exportToCsv(flat);
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       'attachment; filename=assets-report.csv',
     );
-    res.send(csv);
+    res!.send(csv);
   }
 
   @Get('maintenance')
@@ -65,48 +74,64 @@ export class ReportController {
   }
 
   @Get('disposals')
-  async getDisposalReport(@TenantId() tenantId: string) {
-    return this.reportService.getDisposalReport(tenantId);
+  async getDisposalReport(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reportService.getDisposalReport(tenantId, { from, to });
   }
 
   @Get('disposals/csv')
   async getDisposalReportCsv(
     @TenantId() tenantId: string,
-    @Res() res: Response,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Res() res?: Response,
   ) {
-    const data = await this.reportService.getDisposalReport(tenantId);
+    const data = await this.reportService.getDisposalReport(tenantId, { from, to });
     const csv = this.reportService.exportToCsv(data);
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       'attachment; filename=disposals-report.csv',
     );
-    res.send(csv);
+    res!.send(csv);
   }
 
   @Get('components')
-  async getComponentReport(@TenantId() tenantId: string) {
-    return this.reportService.getComponentReport(tenantId);
+  async getComponentReport(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reportService.getComponentReport(tenantId, { from, to });
   }
 
   @Get('components/csv')
   async getComponentReportCsv(
     @TenantId() tenantId: string,
-    @Res() res: Response,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Res() res?: Response,
   ) {
-    const data = await this.reportService.getComponentReport(tenantId);
+    const data = await this.reportService.getComponentReport(tenantId, { from, to });
     const csv = this.reportService.exportToCsv(data);
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       'attachment; filename=components-report.csv',
     );
-    res.send(csv);
+    res!.send(csv);
   }
 
   @Get('loss-analysis')
-  async getLossAnalysis(@TenantId() tenantId: string) {
-    return this.reportService.getLossAnalysis(tenantId);
+  async getLossAnalysis(
+    @TenantId() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reportService.getLossAnalysis(tenantId, { from, to });
   }
 
   @Get('anomalies')

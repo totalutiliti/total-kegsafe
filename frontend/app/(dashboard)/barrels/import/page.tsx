@@ -15,6 +15,7 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from "sonner";
@@ -29,10 +30,12 @@ interface ValidationResult {
   uploadId: string;
   totalRows: number;
   validRows: number;
+  updateRows: number;
   errorRows: number;
   duplicateRows: number;
   errors: ValidationError[];
   preview: any[];
+  updatePreview: any[];
 }
 
 interface ImportProgress {
@@ -255,7 +258,7 @@ export default function ImportBarrelsPage() {
       {step === "validation" && validation && (
         <div className="space-y-4">
           {/* Indicadores */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="border-border bg-card/50">
               <CardContent className="pt-4 flex items-center gap-3">
                 <CheckCircle className="h-8 w-8 text-green-400" />
@@ -263,7 +266,18 @@ export default function ImportBarrelsPage() {
                   <p className="text-2xl font-bold text-foreground">
                     {validation.validRows}
                   </p>
-                  <p className="text-xs text-muted-foreground">Válidos</p>
+                  <p className="text-xs text-muted-foreground">Novos</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-card/50">
+              <CardContent className="pt-4 flex items-center gap-3">
+                <RefreshCw className="h-8 w-8 text-blue-400" />
+                <div>
+                  <p className="text-2xl font-bold text-foreground">
+                    {validation.updateRows ?? 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Atualizar</p>
                 </div>
               </CardContent>
             </Card>
@@ -400,13 +414,15 @@ export default function ImportBarrelsPage() {
             >
               Voltar
             </Button>
-            {validation.validRows > 0 && (
+            {(validation.validRows > 0 || (validation.updateRows ?? 0) > 0) && (
               <Button
                 onClick={handleExecuteImport}
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-white"
               >
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Importar {validation.validRows} barris válidos
+                {(validation.updateRows ?? 0) > 0
+                  ? `Importar ${validation.validRows} novos + Atualizar ${validation.updateRows} pré-registrados`
+                  : `Importar ${validation.validRows} barris válidos`}
               </Button>
             )}
           </div>

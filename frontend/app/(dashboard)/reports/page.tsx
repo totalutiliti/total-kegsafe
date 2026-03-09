@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
     DollarSign, Package, TrendingDown, BarChart3, Download,
-    FileText, Wrench, AlertTriangle, Skull,
+    FileText, Wrench, AlertTriangle, Skull, FileDown,
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
     BarChart, Bar, PieChart, Pie, Cell,
@@ -66,6 +67,9 @@ const STATUS_LABELS: Record<string, string> = {
     IN_MAINTENANCE: 'Em Manutenção', BLOCKED: 'Bloqueado', DISPOSED: 'Descartado',
     LOST: 'Perdido', PENDING_ACTIVATION: 'Pend. Ativação',
 };
+const STATUS_LABELS_REVERSE: Record<string, string> = Object.fromEntries(
+    Object.entries(STATUS_LABELS).map(([k, v]) => [v, k])
+);
 const MAINT_STATUS_LABELS: Record<string, string> = {
     PENDING: 'Pendente', IN_PROGRESS: 'Em Andamento', COMPLETED: 'Concluída', CANCELLED: 'Cancelada',
 };
@@ -114,6 +118,7 @@ function chartTooltip(cc: ChartColors) {
 
 // ===== ASSET REPORT TAB =====
 function AssetReport({ data, cc }: { data: any[]; cc: ChartColors }) {
+    const router = useRouter();
     const statusCounts = countBy(data, d => d.status);
     const statusChart = toChartData(statusCounts, STATUS_LABELS);
     const materialCounts = countBy(data, d => d.material);
@@ -135,7 +140,15 @@ function AssetReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                 <ChartCard title="Distribuição por Status">
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
-                            <Pie data={statusChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, value }) => `${name}: ${value}`}>
+                            <Pie data={statusChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}
+                                label={({ name, value }) => `${name}: ${value}`}
+                                onClick={(data) => {
+                                    if (!data?.name) return;
+                                    const statusCode = STATUS_LABELS_REVERSE[data.name as string];
+                                    if (statusCode) router.push(`/barrels?status=${statusCode}`);
+                                }}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 {statusChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                             </Pie>
                             <Tooltip {...chartTooltip(cc)} />
@@ -281,6 +294,7 @@ function DisposalReport({ data, cc }: { data: any[]; cc: ChartColors }) {
 
 // ===== COMPONENT REPORT TAB =====
 function ComponentReport({ data, cc }: { data: any[]; cc: ChartColors }) {
+    const router = useRouter();
     const healthCounts = countBy(data, d => d.healthScore);
     const healthChart = toChartData(healthCounts).map(d => ({ ...d, fill: HEALTH_COLORS[d.name] || '#888' }));
 
@@ -307,7 +321,15 @@ function ComponentReport({ data, cc }: { data: any[]; cc: ChartColors }) {
                 <ChartCard title="Saúde Geral">
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
-                            <Pie data={healthChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, value }) => `${name}: ${value}`}>
+                            <Pie data={healthChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}
+                                label={({ name, value }) => `${name}: ${value}`}
+                                onClick={(data) => {
+                                    if (data?.name && ['GREEN', 'YELLOW', 'RED'].includes(data.name as string)) {
+                                        router.push(`/barrels?health=${data.name}`);
+                                    }
+                                }}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 {healthChart.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                             </Pie>
                             <Tooltip {...chartTooltip(cc)} />
@@ -645,7 +667,21 @@ export default function ReportsPage() {
     const [reportData, setReportData] = useState<any[]>([]);
     const [lossAnalysisData, setLossAnalysisData] = useState<any>(null);
     const [loadingReport, setLoadingReport] = useState(false);
+    const [period, setPeriod] = useState<string>('all');
     const cc = useChartColors();
+
+    const getPeriodDates = (p: string): { from?: string; to?: string } => {
+        if (p === 'all') return {};
+        const to = new Date().toISOString();
+        const from = new Date();
+        switch (p) {
+            case '7d': from.setDate(from.getDate() - 7); break;
+            case '30d': from.setDate(from.getDate() - 30); break;
+            case '90d': from.setDate(from.getDate() - 90); break;
+            case '1y': from.setFullYear(from.getFullYear() - 1); break;
+        }
+        return { from: from.toISOString(), to };
+    };
 
     useEffect(() => {
         Promise.all([
@@ -664,8 +700,10 @@ export default function ReportsPage() {
         setLoadingReport(true);
         setReportData([]);
 
+        const dateParams = getPeriodDates(period);
+
         if (activeTab === 'loss-analysis') {
-            api.get('/reports/loss-analysis')
+            api.get('/reports/loss-analysis', { params: dateParams })
                 .then(r => setLossAnalysisData(r.data))
                 .catch(() => toast.error('Erro ao carregar análise de perdas'))
                 .finally(() => setLoadingReport(false));
@@ -678,11 +716,11 @@ export default function ReportsPage() {
             disposals: '/reports/disposals',
             components: '/reports/components',
         };
-        api.get(endpointMap[activeTab])
+        api.get(endpointMap[activeTab], { params: dateParams })
             .then(r => setReportData(Array.isArray(r.data) ? r.data : []))
             .catch(() => toast.error('Erro ao carregar relatório'))
             .finally(() => setLoadingReport(false));
-    }, [activeTab]);
+    }, [activeTab, period]);
 
     const currentTabConfig = tabs.find(t => t.key === activeTab);
 
@@ -694,14 +732,23 @@ export default function ReportsPage() {
                         <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
                         <p className="text-sm text-muted-foreground mt-1">Análise financeira e operacional</p>
                     </div>
-                    {activeTab !== 'overview' && currentTabConfig?.csvEndpoint && (
+                    <div className="flex gap-2">
                         <Button
-                            onClick={() => downloadCsv(currentTabConfig.csvEndpoint!)}
-                            className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20"
+                            onClick={() => window.print()}
+                            variant="outline"
+                            className="border-border text-foreground no-print"
                         >
-                            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                            <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
                         </Button>
-                    )}
+                        {activeTab !== 'overview' && currentTabConfig?.csvEndpoint && (
+                            <Button
+                                onClick={() => downloadCsv(currentTabConfig.csvEndpoint!)}
+                                className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20 no-print"
+                            >
+                                <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex gap-1 rounded-lg bg-muted/50 p-1 w-fit flex-wrap">
@@ -719,6 +766,32 @@ export default function ReportsPage() {
                             {tab.label}
                         </button>
                     ))}
+                </div>
+
+                {/* Period Filter */}
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Período:</span>
+                    <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+                        {[
+                            { key: '7d', label: '7 dias' },
+                            { key: '30d', label: '30 dias' },
+                            { key: '90d', label: '90 dias' },
+                            { key: '1y', label: '1 ano' },
+                            { key: 'all', label: 'Tudo' },
+                        ].map(p => (
+                            <button
+                                key={p.key}
+                                onClick={() => setPeriod(p.key)}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                    period === p.key
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {activeTab === 'overview' ? (

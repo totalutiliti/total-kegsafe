@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from 'sonner';
+import { useRecentHistory } from '@/hooks/use-recent-history';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
     PRE_REGISTERED: { label: 'Pré-Registrado', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
@@ -95,6 +96,8 @@ export default function BarrelDetailPage() {
     const [maintenanceDescription, setMaintenanceDescription] = useState('');
     const [maintenanceScheduledDate, setMaintenanceScheduledDate] = useState('');
 
+    const { recordVisit } = useRecentHistory();
+
     const canTransfer = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
     const canSendToMaintenance = (barrel?.status === 'ACTIVE' || barrel?.status === 'BLOCKED') &&
         (user?.role === 'ADMIN' || user?.role === 'MAINTENANCE' || user?.role === 'MANAGER');
@@ -119,6 +122,18 @@ export default function BarrelDetailPage() {
         };
         if (params.id) load();
     }, [params.id]);
+
+    useEffect(() => {
+        if (barrel) {
+            recordVisit({
+                id: barrel.id,
+                type: 'barrel',
+                label: barrel.internalCode,
+                sublabel: `${barrel.capacityLiters}L • ${(statusConfig[barrel.status] || statusConfig.ACTIVE).label}`,
+                href: `/barrels/${barrel.id}`,
+            });
+        }
+    }, [barrel?.id]);
 
     // Load tenants for transfer modal (try super-admin endpoint, fallback gracefully)
     const openTransferModal = async () => {
@@ -311,10 +326,13 @@ export default function BarrelDetailPage() {
                             ? Math.min((cycle.cyclesSinceLastService / config.maxCycles) * 100, 100)
                             : 0;
                         return (
-                            <Card key={cycle.id} className={`border ${hc.bg}`}>
+                            <Card key={cycle.id} className={`border ${hc.bg} ${cycle.healthScore === 'RED' ? 'animate-pulse-red border-red-500/50' : ''}`}>
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-sm font-medium text-foreground truncate pr-2">{config.name || 'Componente'}</h3>
+                                        <div className="flex items-center gap-1.5">
+                                            {cycle.healthScore === 'RED' && <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 animate-pulse" />}
+                                            <h3 className="text-sm font-medium text-foreground truncate">{config.name || 'Componente'}</h3>
+                                        </div>
                                         <Badge variant="outline" className={`text-[10px] ${hc.bg} ${hc.color}`}>{hc.label}</Badge>
                                     </div>
                                     {/* Progress bar */}

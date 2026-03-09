@@ -132,3 +132,74 @@
     @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
   }
 }
+
+@keyframes pulse-red-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px 0 rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.5);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red-glow 2s ease-in-out infinite;
+}
+
+@media print {
+  /* Hide non-content elements */
+  nav,
+  aside,
+  .no-print,
+  button,
+  [role="dialog"],
+  [data-slot="popover"],
+  .fixed {
+    display: none !important;
+  }
+
+  /* Full width content */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Force white backgrounds */
+  .bg-card\/50,
+  .bg-card,
+  .bg-background,
+  .bg-muted\/50,
+  .bg-muted\/30 {
+    background: white !important;
+  }
+
+  /* Force dark text */
+  .text-foreground,
+  .text-muted-foreground {
+    color: #1a1a1a !important;
+  }
+
+  /* Borders visible */
+  .border-border {
+    border-color: #e5e5e5 !important;
+  }
+
+  /* Charts - preserve colors */
+  svg {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  .space-y-6 > * {
+    page-break-inside: avoid;
+  }
+}

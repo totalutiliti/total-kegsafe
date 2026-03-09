@@ -324,17 +324,16 @@ model Barrel {
   triages            Triage[]
   ownershipHistory   OwnershipHistory[]
 
-  // Índices otimizados para queries frequentes
-  @@unique([tenantId, internalCode])
-  @@unique([tenantId, qrCode])
-  @@unique([tenantId, chassisNumber])
+  // Índices e constraints otimizados
+  @@unique([internalCode])                              // GLOBAL — código vem da sequência global
+  @@unique([qrCode])                                    // GLOBAL — QR Code é etiqueta física única
+  @@unique([tenantId, chassisNumber])                   // Per-tenant — chassi é dado do tenant
   @@index([tenantId, status])                           // Listagem por status
   @@index([tenantId, lastEventAt])                      // Ordenação temporal
   @@index([tenantId, status, lastEventAt])              // Filtro + ordenação
   @@index([tenantId, deletedAt])                        // Soft delete filter
   @@index([tenantId, totalCycles])                      // Ranking por uso
   @@index([tenantId, totalMaintenanceCost])             // Ranking por custo
-  @@index([qrCode])                                     // Lookup por scan (cross-tenant check)
   @@index([tenantId, lastClientId])                     // Barris por cliente
   @@index([tenantId, capacityLiters, status])           // Filtro por capacidade
   @@map("barrels")

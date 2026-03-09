@@ -107,9 +107,15 @@ const IMPORT_COLUMNS = [
   },
 ];
 
+interface UpdateRow extends ValidatedRow {
+  existingBarrelId: string;
+  existingInternalCode: string;
+}
+
 interface ImportSession {
   tenantId: string;
   rows: ValidatedRow[];
+  updateRows: UpdateRow[];
   validatedAt: Date;
   status: 'validated' | 'in_progress' | 'completed' | 'failed';
   progress: {
@@ -294,10 +300,10 @@ export class BarrelService {
 
     const initialCycles = isUsed ? (dto.initialCycles ?? 0) : 0;
 
-    // Verificar unicidade do QR Code (apenas quando fornecido)
+    // Verificar unicidade GLOBAL do QR Code (QR Codes são etiquetas físicas únicas)
     if (dto.qrCode) {
       const existing = await this.prisma.barrel.findFirst({
-        where: { qrCode: dto.qrCode, tenantId },
+        where: { qrCode: dto.qrCode, deletedAt: null },
       });
       if (existing) {
         throw new BarrelQrCodeExistsException(dto.qrCode);
@@ -316,8 +322,8 @@ export class BarrelService {
       }
     }
 
-    // Gerar código interno com retry (protege contra race condition)
-    const internalCode = await this.generateInternalCode(tenantId);
+    // Gerar código interno via sequência global (protege contra race condition)
+    const internalCode = await this.generateInternalCode();
 
     // Criar barril
     const barrel = await this.prisma.barrel.create({
@@ -410,39 +416,23 @@ export class BarrelService {
   }
 
   /**
-   * Gera o próximo internalCode com transaction serializable + retry.
-   * Protege contra race condition em criações simultâneas e contra dados corrompidos.
+   * Gera o próximo internalCode usando a sequência global BarrelSequence.
+   * Garante unicidade global (cross-tenant) com transaction serializable + retry.
    */
-  async generateInternalCode(tenantId: string): Promise<string> {
+  async generateInternalCode(): Promise<string> {
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        const result = await this.prisma.$transaction(
+        return await this.prisma.$transaction(
           async (tx) => {
-            const lastBarrel = await tx.barrel.findFirst({
-              where: { tenantId },
-              orderBy: { internalCode: 'desc' },
-              select: { internalCode: true },
+            const seq = await tx.barrelSequence.upsert({
+              where: { key: 'global' },
+              create: { key: 'global', lastNumber: 1 },
+              update: { lastNumber: { increment: 1 } },
             });
-
-            const lastNumber = lastBarrel
-              ? parseInt(lastBarrel.internalCode.replace('KS-BAR-', ''), 10)
-              : 0;
-
-            // Fallback contra NaN (dados corrompidos no banco)
-            if (isNaN(lastNumber)) {
-              this.logger.warn(
-                `Corrupt internalCode detected for tenant ${tenantId}: "${lastBarrel?.internalCode}". Using count fallback.`,
-              );
-              const count = await tx.barrel.count({ where: { tenantId } });
-              return `KS-BAR-${String(count + 1).padStart(9, '0')}`;
-            }
-
-            return `KS-BAR-${String(lastNumber + 1).padStart(9, '0')}`;
+            return `KS-BAR-${String(seq.lastNumber).padStart(9, '0')}`;
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
-
-        return result;
       } catch (error: unknown) {
         const prismaError = error as {
           code?: string;
@@ -465,7 +455,6 @@ export class BarrelService {
       }
     }
 
-    // Unreachable, mas TypeScript exige
     throw new Error('Failed to generate internalCode after max retries');
   }
 
@@ -567,37 +556,25 @@ export class BarrelService {
   // =============================================
 
   /**
-   * Gera N internalCodes sequenciais em uma única transaction Serializable.
+   * Gera N internalCodes sequenciais usando a sequência global BarrelSequence.
+   * Garante unicidade global (cross-tenant) com transaction serializable + retry.
    * Usado pela importação em massa para evitar N transactions individuais.
    */
-  async generateInternalCodes(
-    tenantId: string,
-    count: number,
-  ): Promise<string[]> {
+  async generateInternalCodes(count: number): Promise<string[]> {
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
         return await this.prisma.$transaction(
           async (tx) => {
-            const lastBarrel = await tx.barrel.findFirst({
-              where: { tenantId },
-              orderBy: { internalCode: 'desc' },
-              select: { internalCode: true },
+            const seq = await tx.barrelSequence.upsert({
+              where: { key: 'global' },
+              create: { key: 'global', lastNumber: count },
+              update: { lastNumber: { increment: count } },
             });
-
-            let lastNumber = lastBarrel
-              ? parseInt(lastBarrel.internalCode.replace('KS-BAR-', ''), 10)
-              : 0;
-
-            if (isNaN(lastNumber)) {
-              this.logger.warn(
-                `Corrupt internalCode detected for tenant ${tenantId}: "${lastBarrel?.internalCode}". Using count fallback.`,
-              );
-              lastNumber = await tx.barrel.count({ where: { tenantId } });
-            }
-
+            const startNumber = seq.lastNumber - count + 1;
             return Array.from(
               { length: count },
-              (_, i) => `KS-BAR-${String(lastNumber + i + 1).padStart(9, '0')}`,
+              (_, i) =>
+                `KS-BAR-${String(startNumber + i).padStart(9, '0')}`,
             );
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -855,6 +832,9 @@ export class BarrelService {
     }
 
     // Verificar QR codes e chassis existentes no banco em batch
+    // QR Code é verificado GLOBALMENTE (não per-tenant) — são etiquetas físicas únicas
+    const updateRows: UpdateRow[] = [];
+
     if (validRows.length > 0) {
       const qrCodesToCheck = validRows.map((r) => r.qrCode);
       const chassisToCheck = validRows
@@ -862,13 +842,19 @@ export class BarrelService {
         .map((r) => r.chassisNumber!);
 
       const [existingByQr, existingByChassis] = await Promise.all([
+        // Busca GLOBAL por qrCode (sem filtro de tenantId)
         this.prisma.barrel.findMany({
           where: {
-            tenantId,
             qrCode: { in: qrCodesToCheck },
             deletedAt: null,
           },
-          select: { qrCode: true, internalCode: true },
+          select: {
+            id: true,
+            qrCode: true,
+            internalCode: true,
+            status: true,
+            tenantId: true,
+          },
         }),
         chassisToCheck.length > 0
           ? this.prisma.barrel.findMany({
@@ -882,21 +868,58 @@ export class BarrelService {
           : ([] as { chassisNumber: string | null; internalCode: string }[]),
       ]);
 
-      const existingQrCodes = new Set(existingByQr.map((b) => b.qrCode));
+      // Separar PRE_REGISTERED (rota de atualização) de duplicatas reais
+      const preRegisteredByQr = new Map<
+        string,
+        { id: string; internalCode: string }
+      >();
+      const duplicateQrCodes = new Set<string>();
+
+      for (const barrel of existingByQr) {
+        if (
+          barrel.status === BarrelStatus.PRE_REGISTERED &&
+          barrel.tenantId === tenantId
+        ) {
+          // PRE_REGISTERED do MESMO tenant — rota de atualização
+          preRegisteredByQr.set(barrel.qrCode!, {
+            id: barrel.id,
+            internalCode: barrel.internalCode,
+          });
+        } else {
+          // Barril ativo OU PRE_REGISTERED de OUTRO tenant — duplicata
+          duplicateQrCodes.add(barrel.qrCode!);
+        }
+      }
+
       const existingChassis = new Set(
         existingByChassis.map((b) => b.chassisNumber),
       );
       const remainingValid: ValidatedRow[] = [];
 
       for (const row of validRows) {
-        if (existingQrCodes.has(row.qrCode)) {
-          const existing = existingByQr.find((b) => b.qrCode === row.qrCode);
+        if (duplicateQrCodes.has(row.qrCode)) {
+          const existing = existingByQr.find(
+            (b) => b.qrCode === row.qrCode,
+          );
+          const isOtherTenant =
+            existing?.status === BarrelStatus.PRE_REGISTERED &&
+            existing?.tenantId !== tenantId;
           errors.push({
             row: 0,
             field: 'qrCode',
-            message: `QR Code já existe no sistema: ${row.qrCode} (barril ${existing?.internalCode ?? '?'})`,
+            message: isOtherTenant
+              ? `QR Code pertence a outro cliente: ${row.qrCode}`
+              : `QR Code já em uso: ${row.qrCode} (barril ${existing?.internalCode ?? '?'})`,
           });
           duplicateRows++;
+        } else if (preRegisteredByQr.has(row.qrCode)) {
+          // PRE_REGISTERED — rota de atualização (não é erro)
+          const existing = preRegisteredByQr.get(row.qrCode)!;
+          updateRows.push({
+            ...row,
+            existingBarrelId: existing.id,
+            existingInternalCode: existing.internalCode,
+          });
         } else if (
           row.chassisNumber &&
           existingChassis.has(row.chassisNumber)
@@ -924,11 +947,12 @@ export class BarrelService {
     this.importSessions.set(uploadId, {
       tenantId,
       rows: validRows,
+      updateRows,
       validatedAt: new Date(),
       status: 'validated',
       progress: {
         processed: 0,
-        total: validRows.length,
+        total: validRows.length + updateRows.length,
         failed: 0,
         errors: [],
       },
@@ -941,10 +965,12 @@ export class BarrelService {
       uploadId,
       totalRows: rawRows.length,
       validRows: validRows.length,
+      updateRows: updateRows.length,
       errorRows: errors.length,
       duplicateRows,
       errors,
       preview: validRows.slice(0, 100),
+      updatePreview: updateRows.slice(0, 50),
     };
   }
 
@@ -962,9 +988,10 @@ export class BarrelService {
     }
 
     session.status = 'in_progress';
+    const totalRows = session.rows.length + session.updateRows.length;
     session.progress = {
       processed: 0,
-      total: session.rows.length,
+      total: totalRows,
       failed: 0,
       errors: [],
     };
@@ -977,29 +1004,32 @@ export class BarrelService {
     return {
       uploadId,
       status: 'in_progress',
-      total: session.rows.length,
+      total: totalRows,
     };
   }
 
   /**
    * Processa chunks de importação sequencialmente.
+   * Parte 1: Cria barris novos (rows)
+   * Parte 2: Atualiza barris PRE_REGISTERED com dados da planilha (updateRows)
    */
   private async processImportChunks(tenantId: string, session: ImportSession) {
-    const rows = session.rows;
-    const chunks: ValidatedRow[][] = [];
-    for (let i = 0; i < rows.length; i += IMPORT_CHUNK_SIZE) {
-      chunks.push(rows.slice(i, i + IMPORT_CHUNK_SIZE));
-    }
-
     // Buscar componentConfigs uma vez (usado para todos os chunks)
     const componentConfigs = await this.prisma.componentConfig.findMany({
       where: { tenantId, isActive: true, deletedAt: null },
     });
 
-    for (const chunk of chunks) {
+    // === Parte 1: Criar barris novos ===
+    const createRows = session.rows;
+    const createChunks: ValidatedRow[][] = [];
+    for (let i = 0; i < createRows.length; i += IMPORT_CHUNK_SIZE) {
+      createChunks.push(createRows.slice(i, i + IMPORT_CHUNK_SIZE));
+    }
+
+    for (const chunk of createChunks) {
       try {
-        // Gerar internalCodes em batch (1 serializable tx)
-        const codes = await this.generateInternalCodes(tenantId, chunk.length);
+        // Gerar internalCodes em batch via sequência global (1 serializable tx)
+        const codes = await this.generateInternalCodes(chunk.length);
 
         // Preparar dados de barris (id gerado explicitamente — createMany não usa @default(uuid()))
         const barrelData = chunk.map((row, i) => ({
@@ -1029,7 +1059,6 @@ export class BarrelService {
             await tx.barrel.createMany({ data: barrelData });
 
             // Batch insert componentCycles com cálculo de saúde
-            // (usa IDs gerados no barrelData — sem necessidade de findMany extra)
             if (componentConfigs.length > 0 && barrelData.length > 0) {
               const cyclesData = barrelData.flatMap((barrel) => {
                 const row = rowByQr.get(barrel.qrCode);
@@ -1105,7 +1134,113 @@ export class BarrelService {
           chunkStart: session.progress.processed,
           message,
         });
-        this.logger.error(`Import chunk failed: ${message}`, errObj.stack);
+        this.logger.error(`Import create chunk failed: ${message}`, errObj.stack);
+      }
+    }
+
+    // === Parte 2: Atualizar barris PRE_REGISTERED ===
+    const updateChunks: UpdateRow[][] = [];
+    for (let i = 0; i < session.updateRows.length; i += IMPORT_CHUNK_SIZE) {
+      updateChunks.push(session.updateRows.slice(i, i + IMPORT_CHUNK_SIZE));
+    }
+
+    for (const chunk of updateChunks) {
+      try {
+        await this.prisma.$transaction(
+          async (tx) => {
+            for (const row of chunk) {
+              // Atualizar barril PRE_REGISTERED com dados da planilha
+              await tx.barrel.update({
+                where: { id: row.existingBarrelId },
+                data: {
+                  tenantId,
+                  chassisNumber: row.chassisNumber ?? null,
+                  manufacturer: row.manufacturer ?? null,
+                  valveModel: row.valveModel ?? null,
+                  capacityLiters: row.capacityLiters,
+                  tareWeightKg: row.tareWeightKg ?? null,
+                  material: row.material ?? 'INOX_304',
+                  acquisitionCost: row.acquisitionCost ?? null,
+                  condition: row.condition ?? BarrelCondition.NEW,
+                  manufactureDate: row.manufactureDate ?? null,
+                  totalCycles: row.initialCycles ?? 0,
+                  status: BarrelStatus.ACTIVE,
+                  version: { increment: 1 },
+                },
+              });
+
+              // Criar ComponentCycles para o barril atualizado
+              if (componentConfigs.length > 0) {
+                const cycles = row.initialCycles ?? 0;
+                const serviceDate = row.manufactureDate ?? new Date();
+                const cyclesData = componentConfigs.map((config) => {
+                  const { healthScore, healthPercentage } =
+                    this.componentService.calculateHealthScore(
+                      cycles,
+                      config.maxCycles,
+                      serviceDate,
+                      config.maxDays,
+                    );
+                  return {
+                    id: randomUUID(),
+                    barrelId: row.existingBarrelId,
+                    componentConfigId: config.id,
+                    cyclesSinceLastService: cycles,
+                    lastServiceDate: serviceDate,
+                    healthScore,
+                    healthPercentage,
+                  };
+                });
+                await tx.componentCycle.createMany({
+                  data: cyclesData,
+                  skipDuplicates: true,
+                });
+
+                // Alertas para componentes >= 80%
+                const criticalCycles = cyclesData.filter(
+                  (c) => c.healthPercentage >= 80,
+                );
+                for (const cycle of criticalCycles) {
+                  const config = componentConfigs.find(
+                    (cfg) => cfg.id === cycle.componentConfigId,
+                  )!;
+                  await tx.alert.create({
+                    data: {
+                      tenantId,
+                      barrelId: row.existingBarrelId,
+                      alertType: AlertType.COMPONENT_END_OF_LIFE,
+                      priority:
+                        config.criticality === 'CRITICAL'
+                          ? AlertPriority.HIGH
+                          : AlertPriority.MEDIUM,
+                      title: `Componente ${config.name} próximo do limite`,
+                      description: `Componente com ${Math.round(cycle.healthPercentage)}% de uso (importação de pré-registrado)`,
+                      metadata: {
+                        componentName: config.name,
+                        healthPercentage: cycle.healthPercentage,
+                      } as Prisma.InputJsonValue,
+                    },
+                  });
+                }
+              }
+            }
+          },
+          { timeout: 60000 },
+        );
+
+        session.progress.processed += chunk.length;
+      } catch (error: unknown) {
+        const errObj = error as { message?: string; stack?: string };
+        const message = errObj.message ?? 'Unknown error';
+        session.progress.failed += chunk.length;
+        session.progress.errors.push({
+          chunkStart: session.progress.processed,
+          message,
+        });
+        this.logger.error(
+          `Import update chunk failed: ${message}`,
+          errObj.stack,
+        );
       }
     }
 
@@ -1472,6 +1607,16 @@ export class BarrelService {
       include: BARREL_INCLUDE,
     });
 
+    // Sincronizar BarrelSequence para evitar colisão futura
+    const codeNumber = parseInt(code.replace('KS-BAR-', ''), 10);
+    if (!isNaN(codeNumber)) {
+      await this.prisma.$executeRaw`
+        UPDATE barrel_sequences
+        SET "lastNumber" = GREATEST("lastNumber", ${codeNumber}), "updatedAt" = NOW()
+        WHERE key = 'global'
+      `;
+    }
+
     // Criar ComponentCycles
     const componentConfigs = await this.prisma.componentConfig.findMany({
       where: { tenantId, isActive: true, deletedAt: null },
@@ -1526,71 +1671,94 @@ export class BarrelService {
     // Se o DTO especifica um tenantId (super admin), usar esse; senão usar o do caller
     const targetTenantId = dto.tenantId ?? tenantId;
 
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        // Atualizar sequência global atomicamente
-        const seq = await tx.barrelSequence.upsert({
-          where: { key: 'global' },
-          create: { key: 'global', lastNumber: quantity },
-          update: { lastNumber: { increment: quantity } },
-        });
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const result = await this.prisma.$transaction(
+          async (tx) => {
+            // Atualizar sequência global atomicamente
+            const seq = await tx.barrelSequence.upsert({
+              where: { key: 'global' },
+              create: { key: 'global', lastNumber: quantity },
+              update: { lastNumber: { increment: quantity } },
+            });
 
-        const startNumber = seq.lastNumber - quantity + 1;
+            const startNumber = seq.lastNumber - quantity + 1;
 
-        // Gerar códigos
-        const codes: string[] = [];
-        for (let i = 0; i < quantity; i++) {
-          codes.push(`KS-BAR-${String(startNumber + i).padStart(9, '0')}`);
-        }
+            // Gerar códigos
+            const codes: string[] = [];
+            for (let i = 0; i < quantity; i++) {
+              codes.push(
+                `KS-BAR-${String(startNumber + i).padStart(9, '0')}`,
+              );
+            }
 
-        const codeStart = codes[0];
-        const codeEnd = codes[codes.length - 1];
+            const codeStart = codes[0];
+            const codeEnd = codes[codes.length - 1];
 
-        // Criar barris PRE_REGISTERED em lotes de 1000 (PostgreSQL limit)
-        const chunkSize = 1000;
-        for (let i = 0; i < codes.length; i += chunkSize) {
-          const chunk = codes.slice(i, i + chunkSize);
-          await tx.barrel.createMany({
-            data: chunk.map((code) => ({
-              id: randomUUID(),
-              tenantId: targetTenantId,
-              internalCode: code,
-              qrCode: code,
-              capacityLiters: 50,
-              material: BarrelMaterial.INOX_304,
-              condition: BarrelCondition.NEW,
-              status: BarrelStatus.PRE_REGISTERED,
-            })),
-          });
-        }
+            // Criar barris PRE_REGISTERED em lotes de 1000 (PostgreSQL limit)
+            const chunkSize = 1000;
+            for (let i = 0; i < codes.length; i += chunkSize) {
+              const chunk = codes.slice(i, i + chunkSize);
+              await tx.barrel.createMany({
+                data: chunk.map((code) => ({
+                  id: randomUUID(),
+                  tenantId: targetTenantId,
+                  internalCode: code,
+                  qrCode: code,
+                  capacityLiters: 50,
+                  material: BarrelMaterial.INOX_304,
+                  condition: BarrelCondition.NEW,
+                  status: BarrelStatus.PRE_REGISTERED,
+                })),
+              });
+            }
 
-        // Criar registro de lote
-        const batch = await tx.barrelBatch.create({
-          data: {
-            tenantId: dto.tenantId ?? null,
-            codeStart,
-            codeEnd,
-            quantity,
-            createdById: actorId ?? tenantId,
+            // Criar registro de lote
+            const batch = await tx.barrelBatch.create({
+              data: {
+                tenantId: dto.tenantId ?? null,
+                codeStart,
+                codeEnd,
+                quantity,
+                createdById: actorId ?? tenantId,
+              },
+              include: { tenant: { select: { name: true } } },
+            });
+
+            return {
+              batchId: batch.id,
+              codes,
+              range: { start: codeStart, end: codeEnd },
+              quantity,
+              tenant: batch.tenant?.name ?? null,
+            };
           },
-          include: { tenant: { select: { name: true } } },
-        });
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+            timeout: 60000,
+          },
+        );
 
-        return {
-          batchId: batch.id,
-          codes,
-          range: { start: codeStart, end: codeEnd },
-          quantity,
-          tenant: batch.tenant?.name ?? null,
-        };
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        timeout: 60000,
-      },
-    );
+        return result;
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string };
+        const isRetryable =
+          prismaError.code === 'P2034' || prismaError.code === 'P2002';
 
-    return result;
+        if (isRetryable && attempt < MAX_RETRIES - 1) {
+          this.logger.warn(
+            `generateBatch conflict (attempt ${attempt + 1}/${MAX_RETRIES}), retrying...`,
+          );
+          await new Promise((r) =>
+            setTimeout(r, Math.random() * 100 * (attempt + 1)),
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new Error('Failed to generate batch after max retries');
   }
 
   /**
@@ -1642,6 +1810,25 @@ export class BarrelService {
     ]);
 
     return updatedBarrel;
+  }
+
+  /**
+   * Atualiza o status de múltiplos barris em massa.
+   */
+  async batchUpdateStatus(
+    tenantId: string,
+    dto: { barrelIds: string[]; status: string; reason?: string },
+    _userId: string,
+  ) {
+    const result = await this.prisma.barrel.updateMany({
+      where: {
+        id: { in: dto.barrelIds },
+        tenantId,
+        deletedAt: null,
+      },
+      data: { status: dto.status as any },
+    });
+    return { updated: result.count };
   }
 
   /**

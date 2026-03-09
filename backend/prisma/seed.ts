@@ -524,6 +524,14 @@ async function main() {
     `✅ Barrels: ${barrelsCreated} created, ${50 - barrelsCreated} already existed`,
   );
 
+  // 8b. Inicializar BarrelSequence para que generateBatch comece a partir de 51
+  await prisma.barrelSequence.upsert({
+    where: { key: 'global' },
+    create: { key: 'global', lastNumber: 50 },
+    update: {}, // não sobrescrever se já existe com valor maior
+  });
+  console.log('✅ BarrelSequence initialized at 50');
+
   // 9. Criar Eventos Logísticos (100+)
   const allUsers = await prisma.user.findMany({
     where: { tenantId: tenant.id },
