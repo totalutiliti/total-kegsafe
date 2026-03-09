@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { ReactQueryProvider } from "@/lib/query-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,6 +47,7 @@ export default function RootLayout({
             />
             </TooltipProvider>
           </ReactQueryProvider>
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

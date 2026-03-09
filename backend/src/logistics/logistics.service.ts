@@ -220,8 +220,9 @@ export class LogisticsService {
   }
 
   /**
-   * Input 4: Recebimento - IN_TRANSIT → ACTIVE
-   * Incrementa ciclo e recalcula saúde dos componentes
+   * Input 4: Recebimento - IN_TRANSIT → IN_YARD
+   * Barril chega ao pátio e aguarda triagem/higienização.
+   * O ciclo é incrementado apenas quando sai de IN_YARD → ACTIVE (via batchUpdateStatus).
    */
   async reception(
     tenantId: string,
@@ -257,25 +258,18 @@ export class LogisticsService {
       },
     });
 
-    // Incrementar ciclo total + ciclos de componentes
+    // Barril vai para o pátio (IN_YARD) — NÃO incrementa ciclo ainda
     await this.prisma.barrel.update({
       where: { id: data.barrelId },
       data: {
-        status: BarrelStatus.ACTIVE,
-        totalCycles: { increment: 1 },
+        status: BarrelStatus.IN_YARD,
         currentLatitude: data.latitude,
         currentLongitude: data.longitude,
         lastEventAt: new Date(),
       },
     });
 
-    // Incrementar ciclos de cada componente
-    await this.prisma.componentCycle.updateMany({
-      where: { barrelId: data.barrelId },
-      data: { cyclesSinceLastService: { increment: 1 } },
-    });
-
-    // Recalcular health scores
+    // Recalcular health scores (útil para triagem)
     await this.componentService.recalculateBarrelHealth(data.barrelId);
 
     // Trigger: check if maintenance is due on return

@@ -77,6 +77,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
     label: "No Cliente",
     color: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   },
+  IN_YARD: {
+    label: "No Pátio",
+    color: "bg-teal-500/10 text-teal-400 border-teal-500/20",
+  },
   IN_MAINTENANCE: {
     label: "Manutenção",
     color: "bg-amber-500/10 text-amber-400 border-amber-500/20",

@@ -41,8 +41,9 @@ import { OptimisticLockException } from '../shared/exceptions/resource.exception
 const VALID_TRANSITIONS: Record<string, string[]> = {
   PRE_REGISTERED: ['ACTIVE'],
   ACTIVE: ['IN_TRANSIT', 'IN_MAINTENANCE', 'BLOCKED', 'DISPOSED'],
-  IN_TRANSIT: ['AT_CLIENT', 'ACTIVE'],
+  IN_TRANSIT: ['AT_CLIENT', 'IN_YARD'],
   AT_CLIENT: ['IN_TRANSIT', 'BLOCKED'],
+  IN_YARD: ['ACTIVE', 'IN_MAINTENANCE', 'BLOCKED'],
   IN_MAINTENANCE: ['ACTIVE', 'BLOCKED', 'DISPOSED'],
   BLOCKED: ['IN_MAINTENANCE', 'DISPOSED', 'ACTIVE'],
   DISPOSED: [],
@@ -1820,13 +1821,59 @@ export class BarrelService {
     dto: { barrelIds: string[]; status: string; reason?: string },
     _userId: string,
   ) {
+    const targetStatus = dto.status as BarrelStatus;
+
+    // Se a transição é IN_YARD → ACTIVE (triagem concluída), incrementar ciclos
+    if (targetStatus === BarrelStatus.ACTIVE) {
+      const barrelsInYard = await this.prisma.barrel.findMany({
+        where: {
+          id: { in: dto.barrelIds },
+          tenantId,
+          status: BarrelStatus.IN_YARD,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      if (barrelsInYard.length > 0) {
+        const yardIds = barrelsInYard.map((b) => b.id);
+
+        // Incrementar totalCycles dos barris que saem de IN_YARD
+        await this.prisma.barrel.updateMany({
+          where: { id: { in: yardIds } },
+          data: {
+            status: BarrelStatus.ACTIVE,
+            totalCycles: { increment: 1 },
+            lastEventAt: new Date(),
+          },
+        });
+
+        // Incrementar ciclos dos componentes
+        await this.prisma.componentCycle.updateMany({
+          where: { barrelId: { in: yardIds } },
+          data: { cyclesSinceLastService: { increment: 1 } },
+        });
+
+        // Atualizar os demais (não estavam em IN_YARD)
+        const otherIds = dto.barrelIds.filter((id) => !yardIds.includes(id));
+        if (otherIds.length > 0) {
+          await this.prisma.barrel.updateMany({
+            where: { id: { in: otherIds }, tenantId, deletedAt: null },
+            data: { status: targetStatus },
+          });
+        }
+
+        return { updated: dto.barrelIds.length };
+      }
+    }
+
     const result = await this.prisma.barrel.updateMany({
       where: {
         id: { in: dto.barrelIds },
         tenantId,
         deletedAt: null,
       },
-      data: { status: dto.status as any },
+      data: { status: targetStatus },
     });
     return { updated: result.count };
   }

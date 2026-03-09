@@ -18,7 +18,7 @@ export default function LogisticsPage() {
                         { title: 'Expedição', desc: 'Saída da fábrica → Em trânsito', icon: ArrowUp, color: 'from-blue-500 to-blue-600', action: 'ACTIVE → IN_TRANSIT' },
                         { title: 'Entrega', desc: 'Entrega no cliente (PDV)', icon: Package, color: 'from-purple-500 to-purple-600', action: 'IN_TRANSIT → AT_CLIENT' },
                         { title: 'Coleta', desc: 'Retirada no cliente', icon: ArrowDown, color: 'from-amber-500 to-orange-600', action: 'AT_CLIENT → IN_TRANSIT' },
-                        { title: 'Recebimento', desc: 'Retorno à fábrica + ciclo', icon: Factory, color: 'from-green-500 to-green-600', action: 'IN_TRANSIT → ACTIVE' },
+                        { title: 'Recebimento', desc: 'Chegada ao pátio da fábrica', icon: Factory, color: 'from-green-500 to-green-600', action: 'IN_TRANSIT → IN_YARD' },
                     ].map((input, i) => (
                         <Card key={i} className="border-border bg-card/50 hover:border-accent transition-all cursor-pointer group">
                             <CardContent className="p-6">
