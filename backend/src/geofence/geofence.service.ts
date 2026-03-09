@@ -7,11 +7,16 @@ import { ResourceNotFoundException } from '../shared/exceptions/resource.excepti
 export class GeofenceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string, query?: { page?: number; limit?: number }) {
+  async findAll(tenantId: string, query?: { page?: number; limit?: number; search?: string }) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
     const skip = (page - 1) * limit;
-    const where = { tenantId, isActive: true, deletedAt: null };
+    const searchTerm = query?.search?.trim();
+    const where: any = { tenantId, isActive: true, deletedAt: null };
+
+    if (searchTerm) {
+      where.name = { contains: searchTerm, mode: 'insensitive' };
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.geofence.findMany({

@@ -18,8 +18,6 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Role } from '@prisma/client';
 import { CreateGeofenceDto } from './dto/create-geofence.dto.js';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto.js';
-import { PaginationQueryDto } from '../shared/dto/pagination-query.dto.js';
-
 @Controller('geofences')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class GeofenceController {
@@ -29,9 +27,11 @@ export class GeofenceController {
   @Roles(Role.ADMIN, Role.MANAGER, Role.LOGISTICS)
   async findAll(
     @TenantId() tenantId: string,
-    @Query() query: PaginationQueryDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.geofenceService.findAll(tenantId, query);
+    return this.geofenceService.findAll(tenantId, { page, limit, search });
   }
 
   @Get(':id')

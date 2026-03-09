@@ -29,8 +29,9 @@ export class ClientController {
     @TenantId() tenantId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('search') search?: string,
   ) {
-    return this.clientService.findAll(tenantId, { page, limit });
+    return this.clientService.findAll(tenantId, { page, limit, search });
   }
 
   @Get(':id')

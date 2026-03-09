@@ -4,11 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useApiQuery } from '@/lib/use-api';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
-import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban, Star, Clock, Building2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { RoleGuard } from '@/components/role-guard';
 import { useTheme } from '@/lib/theme-provider';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useFavorites } from '@/hooks/use-favorites';
+import { useRecentHistory } from '@/hooks/use-recent-history';
+
+const STATUS_LABEL_TO_CODE: Record<string, string> = {
+    'Ativos': 'ACTIVE',
+    'Em Trânsito': 'IN_TRANSIT',
+    'No Cliente': 'AT_CLIENT',
+    'Manutenção': 'IN_MAINTENANCE',
+    'Bloqueados': 'BLOCKED',
+    'Perdidos': 'LOST',
+};
+
+const HEALTH_LABEL_TO_CODE: Record<string, string> = {
+    'Verde': 'GREEN',
+    'Amarelo': 'YELLOW',
+    'Vermelho': 'RED',
+};
 
 const STATUS_COLORS: Record<string, string> = {
     active: '#22c55e',
@@ -22,11 +40,14 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DashboardPage() {
     const { theme } = useTheme();
+    const router = useRouter();
     const { data: fleetData, isLoading: loadingFleet } = useApiQuery(['dashboard', 'fleet'], '/dashboard/fleet-health');
     const { data: costData } = useApiQuery(['dashboard', 'cost'], '/dashboard/cost-per-liter');
     const { data: turnoverData } = useApiQuery(['dashboard', 'turnover'], '/dashboard/asset-turnover');
     const { data: alertCounts } = useApiQuery(['alerts', 'counts'], '/alerts/counts');
     const { data: bigNumbers } = useApiQuery(['reports', 'big-numbers'], '/reports/big-numbers');
+    const { favorites } = useFavorites();
+    const { history } = useRecentHistory();
 
     // Theme-aware chart colors for axes
     const axisStroke = theme === 'dark' ? '#3f3f46' : '#d4d4d8';
@@ -146,7 +167,14 @@ export default function DashboardPage() {
                                 <div className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
+                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value"
+                                                onClick={(data) => {
+                                                    if (!data?.name) return;
+                                                    const statusCode = STATUS_LABEL_TO_CODE[data.name as string];
+                                                    if (statusCode) router.push(`/barrels?status=${statusCode}`);
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                            >
                                                 {pieData.map((entry, i) => (
                                                     <Cell key={i} fill={entry.color} stroke="transparent" />
                                                 ))}
@@ -185,7 +213,11 @@ export default function DashboardPage() {
                                             labelStyle={{ color: 'var(--foreground)' }}
                                             itemStyle={{ color: 'var(--muted-foreground)' }}
                                         />
-                                        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                        <Bar dataKey="value" radius={[0, 4, 4, 0]} onClick={(data) => {
+                                            if (!data?.name) return;
+                                            const healthCode = HEALTH_LABEL_TO_CODE[data.name as string];
+                                            if (healthCode) router.push(`/barrels?health=${healthCode}`);
+                                        }} style={{ cursor: 'pointer' }}>
                                             {healthBarData.map((entry, i) => (
                                                 <Cell key={i} fill={entry.fill} />
                                             ))}
@@ -267,6 +299,68 @@ export default function DashboardPage() {
                             </Card>
                         </Link>
                     ))}
+                </div>
+
+                {/* Favorites & Recent History */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {/* Favorites */}
+                    {favorites.length > 0 && (
+                        <Card className="border-border bg-card/50">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                                    <Star className="h-4 w-4 text-amber-400" /> Favoritos
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    {favorites.slice(0, 8).map((fav) => (
+                                        <Link key={fav.id} href={fav.href}>
+                                            <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer">
+                                                {fav.type === 'barrel' ? (
+                                                    <Package className="h-4 w-4 text-amber-400 shrink-0" />
+                                                ) : (
+                                                    <Building2 className="h-4 w-4 text-purple-400 shrink-0" />
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">{fav.label}</p>
+                                                    {fav.sublabel && <p className="text-[11px] text-muted-foreground truncate">{fav.sublabel}</p>}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Recent History */}
+                    {history.length > 0 && (
+                        <Card className="border-border bg-card/50">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-blue-400" /> Acessados Recentemente
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    {history.slice(0, 8).map((item) => (
+                                        <Link key={item.id} href={item.href}>
+                                            <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer">
+                                                <Package className="h-4 w-4 text-amber-400 shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">{item.label}</p>
+                                                    {item.sublabel && <p className="text-[11px] text-muted-foreground truncate">{item.sublabel}</p>}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                                    {new Date(item.visitedAt).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </RoleGuard>

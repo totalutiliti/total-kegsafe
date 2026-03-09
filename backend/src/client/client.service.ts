@@ -12,15 +12,24 @@ export class ClientService {
 
   async findAll(
     tenantId: string,
-    query?: { page?: number; limit?: number; includeInactive?: boolean },
+    query?: { page?: number; limit?: number; includeInactive?: boolean; search?: string },
   ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
-    const where = {
+    const searchTerm = query?.search?.trim();
+    const where: any = {
       tenantId,
       deletedAt: null,
       ...(query?.includeInactive ? {} : { isActive: true }),
     };
+
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { tradeName: { contains: searchTerm, mode: 'insensitive' } },
+        { cnpj: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.client.findMany({
