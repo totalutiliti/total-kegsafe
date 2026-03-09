@@ -24,6 +24,8 @@ export function CreateComponentDialog({ onCreated }: { onCreated?: () => void })
         try {
             await api.post('/components', {
                 ...form,
+                // alertThreshold: converter porcentagem (0-100) para decimal (0-1) conforme schema Decimal(3,2)
+                alertThreshold: form.alertThreshold ? form.alertThreshold / 100 : undefined,
                 averageReplacementCost: form.averageReplacementCost || undefined,
             });
             toast.success('Componente criado com sucesso!');

@@ -1,43 +1,40 @@
+-- CreateEnum
+CREATE TYPE "DisposalReason" AS ENUM ('CORROSION', 'STRUCTURAL_DAMAGE', 'VALVE_FAILURE', 'EXCESSIVE_WEAR', 'LOGISTICS_ACCIDENT', 'REGULATORY', 'HIGH_TCO', 'OTHER');
+
 -- AlterEnum
-ALTER TYPE "Role" ADD VALUE 'SUPER_ADMIN';
+-- This migration adds more than one value to an enum.
+-- With PostgreSQL versions 11 and earlier, this is not possible
+-- in a single migration. This can be worked around by creating
+-- multiple migrations, each migration adding only one value to
+-- the enum.
 
--- DropIndex
-DROP INDEX "idx_barrel_internal_code_trgm";
 
--- DropIndex
-DROP INDEX "idx_barrel_qr_code_trgm";
-
--- DropIndex
-DROP INDEX "idx_barrel_tenant_created";
+ALTER TYPE "AlertType" ADD VALUE 'CLIENT_DEACTIVATED_WITH_BARRELS';
+ALTER TYPE "AlertType" ADD VALUE 'MAINTENANCE_DUE_ON_RETURN';
+ALTER TYPE "AlertType" ADD VALUE 'PREMATURE_DISPOSAL';
 
 -- AlterTable
-ALTER TABLE "users" ADD COLUMN     "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "barrel_batch_prints" ALTER COLUMN "id" DROP DEFAULT;
 
--- CreateTable
-CREATE TABLE "super_admin_audit_logs" (
-    "id" UUID NOT NULL,
-    "userId" UUID NOT NULL,
-    "action" VARCHAR(100) NOT NULL,
-    "entityType" VARCHAR(50) NOT NULL,
-    "entityId" VARCHAR(50) NOT NULL,
-    "targetTenantId" UUID,
-    "details" JSONB,
-    "ipAddress" VARCHAR(45),
-    "userAgent" VARCHAR(500),
-    "timestamp" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+-- AlterTable
+ALTER TABLE "barrel_batches" ALTER COLUMN "id" DROP DEFAULT;
 
-    CONSTRAINT "super_admin_audit_logs_pkey" PRIMARY KEY ("id")
-);
+-- AlterTable
+ALTER TABLE "barrels" ADD COLUMN     "chassisNumber" VARCHAR(50);
 
--- CreateIndex
-CREATE INDEX "super_admin_audit_logs_userId_timestamp_idx" ON "super_admin_audit_logs"("userId", "timestamp");
+-- AlterTable
+ALTER TABLE "disposals" ADD COLUMN     "disposalReason" "DisposalReason",
+ADD COLUMN     "photoUrl" VARCHAR(500);
+
+-- AlterTable
+ALTER TABLE "maintenance_orders" ADD COLUMN     "scheduledDate" TIMESTAMPTZ(3);
+
+-- AlterTable
+ALTER TABLE "ownership_history" ALTER COLUMN "id" DROP DEFAULT;
 
 -- CreateIndex
-CREATE INDEX "super_admin_audit_logs_action_idx" ON "super_admin_audit_logs"("action");
+CREATE UNIQUE INDEX "barrels_tenantId_chassisNumber_key" ON "barrels"("tenantId", "chassisNumber");
 
 -- CreateIndex
-CREATE INDEX "super_admin_audit_logs_targetTenantId_idx" ON "super_admin_audit_logs"("targetTenantId");
-
--- AddForeignKey
-ALTER TABLE "super_admin_audit_logs" ADD CONSTRAINT "super_admin_audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+CREATE INDEX "maintenance_orders_tenantId_scheduledDate_idx" ON "maintenance_orders"("tenantId", "scheduledDate");
 

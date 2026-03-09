@@ -192,11 +192,18 @@ export class MaintenanceService {
     // Recalcular saúde
     await this.componentService.recalculateBarrelHealth(data.barrelId);
 
+    // Calcular custo total: usar totalCost informado ou somar custos dos itens
+    const itemsCostSum = data.items.reduce(
+      (sum, item) => sum + (item.cost || 0),
+      0,
+    );
+    const effectiveTotalCost = data.totalCost || itemsCostSum;
+
     // Atualizar custo de manutenção do barril
-    if (data.totalCost) {
+    if (effectiveTotalCost > 0) {
       await this.prisma.barrel.update({
         where: { id: data.barrelId },
-        data: { totalMaintenanceCost: { increment: data.totalCost } },
+        data: { totalMaintenanceCost: { increment: effectiveTotalCost } },
       });
     }
 
@@ -206,10 +213,41 @@ export class MaintenanceService {
         where: { id: data.maintenanceOrderId },
         data: {
           status: MaintenanceOrderStatus.COMPLETED,
-          actualCost: data.totalCost,
+          actualCost: effectiveTotalCost || undefined,
           completedAt: new Date(),
         },
       });
+    }
+
+    // Retornar barril ao status ACTIVE se não há outras OS pendentes/em andamento
+    const openOrders = await this.prisma.maintenanceOrder.count({
+      where: {
+        barrelId: data.barrelId,
+        status: {
+          in: [
+            MaintenanceOrderStatus.PENDING,
+            MaintenanceOrderStatus.IN_PROGRESS,
+          ],
+        },
+        deletedAt: null,
+        // Excluir a OS atual (já completada acima)
+        ...(data.maintenanceOrderId
+          ? { id: { not: data.maintenanceOrderId } }
+          : {}),
+      },
+    });
+
+    if (openOrders === 0) {
+      const barrel = await this.prisma.barrel.findUnique({
+        where: { id: data.barrelId },
+        select: { status: true },
+      });
+      if (barrel?.status === BarrelStatus.IN_MAINTENANCE) {
+        await this.prisma.barrel.update({
+          where: { id: data.barrelId },
+          data: { status: BarrelStatus.ACTIVE },
+        });
+      }
     }
 
     // Resolver alertas relacionados

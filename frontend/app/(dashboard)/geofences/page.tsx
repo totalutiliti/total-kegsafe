@@ -5,8 +5,9 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Map, Radio, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { Map, Radio, ChevronLeft, ChevronRight, LayoutGrid, Pencil, Trash2 } from 'lucide-react';
 import { CreateGeofenceDialog } from '@/components/dialogs/create-geofence-dialog';
+import { EditGeofenceDialog } from '@/components/dialogs/edit-geofence-dialog';
 import { GeofenceMap } from '@/components/geofence-map-wrapper';
 import { RoleGuard } from '@/components/role-guard';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ export default function GeofencesPage() {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'cards' | 'map'>('cards');
+    const [editGeofence, setEditGeofence] = useState<any | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
     const limit = 20;
     const totalPages = Math.ceil(total / limit);
 
@@ -39,6 +42,17 @@ export default function GeofencesPage() {
             })
             .catch(() => toast.error('Erro ao carregar geofences'))
             .finally(() => setLoading(false));
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Deseja realmente excluir a geofence "${name}"?`)) return;
+        try {
+            await api.delete(`/geofences/${id}`);
+            toast.success('Geofence excluída com sucesso');
+            fetchGeofences();
+        } catch {
+            toast.error('Erro ao excluir geofence');
+        }
     };
 
     return (
@@ -95,7 +109,25 @@ export default function GeofencesPage() {
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between mb-2">
                                                 <h3 className="text-sm font-medium text-foreground truncate">{geo.name}</h3>
-                                                <Badge variant="outline" className={`text-[10px] ${tc.color}`}>{tc.label}</Badge>
+                                                <div className="flex items-center gap-1">
+                                                    <Badge variant="outline" className={`text-[10px] ${tc.color}`}>{tc.label}</Badge>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                                        onClick={() => { setEditGeofence(geo); setEditOpen(true); }}
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-muted-foreground hover:text-red-400"
+                                                        onClick={() => handleDelete(geo.id, geo.name)}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <Radio className="h-3 w-3" /> Raio: {geo.radiusMeters}m
@@ -140,6 +172,13 @@ export default function GeofencesPage() {
                     </>
                 )}
             </div>
+
+            <EditGeofenceDialog
+                geofence={editGeofence}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                onUpdated={fetchGeofences}
+            />
         </RoleGuard>
     );
 }
