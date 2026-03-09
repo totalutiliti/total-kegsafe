@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { KeyRound, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 interface ResetPasswordDialogProps {
     userId: string;

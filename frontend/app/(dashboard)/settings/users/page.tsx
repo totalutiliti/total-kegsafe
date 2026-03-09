@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Users, ChevronLeft, ChevronRight, UserCheck, UserX } from 'lucide-react';
 import { CreateUserDialog } from '@/components/dialogs/create-user-dialog';
 import { RoleGuard } from '@/components/role-guard';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const roleConfig: Record<string, { label: string; color: string }> = {
     ADMIN: { label: 'Admin', color: 'bg-red-500/10 text-red-400 border-red-500/20' },

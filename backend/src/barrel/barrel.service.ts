@@ -229,7 +229,7 @@ export class BarrelService {
                 WHERE "tenantId" = ${tenantId}::uuid
                   AND "deletedAt" IS NULL
                   ${statusFilter}
-                  AND ("internalCode" ILIKE ${searchPattern} OR "qrCode" ILIKE ${searchPattern})
+                  AND (unaccent("internalCode") ILIKE unaccent(${searchPattern}) OR unaccent(COALESCE("qrCode",'')) ILIKE unaccent(${searchPattern}))
                 ORDER BY "createdAt" DESC
                 LIMIT ${limit} OFFSET ${skip}
             `,
@@ -238,7 +238,7 @@ export class BarrelService {
                 WHERE "tenantId" = ${tenantId}::uuid
                   AND "deletedAt" IS NULL
                   ${statusFilter}
-                  AND ("internalCode" ILIKE ${searchPattern} OR "qrCode" ILIKE ${searchPattern})
+                  AND (unaccent("internalCode") ILIKE unaccent(${searchPattern}) OR unaccent(COALESCE("qrCode",'')) ILIKE unaccent(${searchPattern}))
             `,
     ]);
 

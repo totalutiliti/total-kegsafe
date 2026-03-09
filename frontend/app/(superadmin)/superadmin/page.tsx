@@ -17,7 +17,7 @@ import {
     Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 interface Tenant {
     id: string;

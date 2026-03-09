@@ -19,7 +19,7 @@ import {
     CalendarDays, List, Search, Package, ClipboardCheck, Stethoscope, X,
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const orderStatusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
     PENDING: { label: 'Pendente', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: Clock },

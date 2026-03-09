@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { QrScanner, playSuccessBeep, playErrorBeep } from "@/components/qr-scanner";
 import { ArrowLeft, Check, X, QrCode } from "lucide-react";
 import { Breadcrumb } from '@/components/breadcrumb';
-import { toast } from "sonner";
+import { toast } from "@/lib/toast-with-sound";
 
 interface RegisteredBarrel {
   id: string;

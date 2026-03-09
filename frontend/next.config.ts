@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 import path from "path";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+});
 
 const cspHeader = [
   "default-src 'self'",
@@ -8,6 +15,7 @@ const cspHeader = [
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
   `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3009'} https://*.azurecontainerapps.io`,
+  "worker-src 'self'",
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -44,4 +52,4 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

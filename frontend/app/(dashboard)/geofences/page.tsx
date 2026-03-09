@@ -21,7 +21,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RoleGuard } from '@/components/role-guard';
 import { useSearchShortcut } from '@/hooks/use-keyboard-shortcuts';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const typeConfig: Record<string, { label: string; color: string }> = {
     FACTORY: { label: 'Fábrica', color: 'bg-orange-500/10 text-orange-400' },

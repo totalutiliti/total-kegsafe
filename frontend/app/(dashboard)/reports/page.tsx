@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 import {
     BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
