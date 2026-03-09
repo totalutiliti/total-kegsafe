@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import { RoleGuard } from '@/components/role-guard';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
     SUGGESTED: { label: 'Sugerido', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },

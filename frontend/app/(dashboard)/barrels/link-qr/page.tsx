@@ -24,7 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Breadcrumb } from '@/components/breadcrumb';
-import { toast } from "sonner";
+import { toast } from "@/lib/toast-with-sound";
 
 interface UnlinkedBarrel {
   id: string;

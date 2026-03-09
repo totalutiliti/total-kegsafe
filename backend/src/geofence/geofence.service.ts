@@ -12,11 +12,13 @@ export class GeofenceService {
     const limit = query?.limit || 20;
     const skip = (page - 1) * limit;
     const searchTerm = query?.search?.trim();
-    const where: any = { tenantId, isActive: true, deletedAt: null };
 
+    // Busca com unaccent — raw SQL p/ IDs, Prisma p/ hydrate
     if (searchTerm) {
-      where.name = { contains: searchTerm, mode: 'insensitive' };
+      return this.findAllWithSearch(tenantId, searchTerm, page, limit, skip);
     }
+
+    const where: any = { tenantId, isActive: true, deletedAt: null };
 
     const [items, total] = await Promise.all([
       this.prisma.geofence.findMany({
@@ -28,6 +30,49 @@ export class GeofenceService {
       }),
       this.prisma.geofence.count({ where }),
     ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  private async findAllWithSearch(
+    tenantId: string,
+    search: string,
+    page: number,
+    limit: number,
+    skip: number,
+  ) {
+    const pattern = `%${search}%`;
+
+    const [matchedIds, countResult] = await Promise.all([
+      this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM geofences
+        WHERE "tenantId" = ${tenantId}::uuid
+          AND "isActive" = true
+          AND "deletedAt" IS NULL
+          AND unaccent("name") ILIKE unaccent(${pattern})
+        ORDER BY "createdAt" DESC
+        LIMIT ${limit} OFFSET ${skip}
+      `,
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*)::bigint AS "count" FROM geofences
+        WHERE "tenantId" = ${tenantId}::uuid
+          AND "isActive" = true
+          AND "deletedAt" IS NULL
+          AND unaccent("name") ILIKE unaccent(${pattern})
+      `,
+    ]);
+
+    const total = Number(countResult[0].count);
+    if (matchedIds.length === 0) {
+      return { items: [], total: 0, page, limit, totalPages: 0 };
+    }
+
+    const ids = matchedIds.map((r) => r.id);
+    const items = await this.prisma.geofence.findMany({
+      where: { id: { in: ids } },
+      include: { client: true },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }

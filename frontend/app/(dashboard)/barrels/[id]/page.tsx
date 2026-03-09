@@ -32,7 +32,7 @@ import {
     ArrowRightLeft, Building2, User,
 } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 import { useRecentHistory } from '@/hooks/use-recent-history';
 
 const statusConfig: Record<string, { label: string; color: string }> = {

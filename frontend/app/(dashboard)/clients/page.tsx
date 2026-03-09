@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RoleGuard } from '@/components/role-guard';
 import { useSearchShortcut } from '@/hooks/use-keyboard-shortcuts';
 import { useFavorites } from '@/hooks/use-favorites';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<any[]>([]);
