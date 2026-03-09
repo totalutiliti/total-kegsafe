@@ -64,8 +64,8 @@ const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'
 const HEALTH_COLORS: Record<string, string> = { GREEN: '#10b981', YELLOW: '#f59e0b', RED: '#ef4444' };
 const STATUS_LABELS: Record<string, string> = {
     ACTIVE: 'Ativo', IN_TRANSIT: 'Em Trânsito', AT_CLIENT: 'No Cliente',
-    IN_MAINTENANCE: 'Em Manutenção', BLOCKED: 'Bloqueado', DISPOSED: 'Descartado',
-    LOST: 'Perdido', PENDING_ACTIVATION: 'Pend. Ativação',
+    IN_YARD: 'No Pátio', IN_MAINTENANCE: 'Em Manutenção', BLOCKED: 'Bloqueado',
+    DISPOSED: 'Descartado', LOST: 'Perdido', PENDING_ACTIVATION: 'Pend. Ativação',
 };
 const STATUS_LABELS_REVERSE: Record<string, string> = Object.fromEntries(
     Object.entries(STATUS_LABELS).map(([k, v]) => [v, k])

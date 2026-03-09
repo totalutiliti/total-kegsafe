@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useApiQuery } from '@/lib/use-api';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
-import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban, Star, Clock, Building2 } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, DollarSign, Wrench, Truck, MapPin, Ban, Star, Clock, Building2, Warehouse } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { RoleGuard } from '@/components/role-guard';
 import { useTheme } from '@/lib/theme-provider';
@@ -17,6 +17,7 @@ const STATUS_LABEL_TO_CODE: Record<string, string> = {
     'Ativos': 'ACTIVE',
     'Em Trânsito': 'IN_TRANSIT',
     'No Cliente': 'AT_CLIENT',
+    'No Pátio': 'IN_YARD',
     'Manutenção': 'IN_MAINTENANCE',
     'Bloqueados': 'BLOCKED',
     'Perdidos': 'LOST',
@@ -32,6 +33,7 @@ const STATUS_COLORS: Record<string, string> = {
     active: '#22c55e',
     inTransit: '#3b82f6',
     atClient: '#a855f7',
+    inYard: '#14b8a6',
     inMaintenance: '#f59e0b',
     blocked: '#ef4444',
     disposed: '#6b7280',
@@ -64,6 +66,7 @@ export default function DashboardPage() {
         { name: 'Ativos', value: barrels.active || 0, color: STATUS_COLORS.active },
         { name: 'Em Trânsito', value: barrels.inTransit || 0, color: STATUS_COLORS.inTransit },
         { name: 'No Cliente', value: barrels.atClient || 0, color: STATUS_COLORS.atClient },
+        { name: 'No Pátio', value: barrels.inYard || 0, color: STATUS_COLORS.inYard },
         { name: 'Manutenção', value: barrels.inMaintenance || 0, color: STATUS_COLORS.inMaintenance },
         { name: 'Bloqueados', value: barrels.blocked || 0, color: STATUS_COLORS.blocked },
         { name: 'Perdidos', value: barrels.lost || 0, color: STATUS_COLORS.lost },
@@ -276,10 +279,11 @@ export default function DashboardPage() {
                 )}
 
                 {/* Status Quick Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
                     {[
                         { label: 'Em Trânsito', icon: Truck, value: barrels.inTransit, color: 'text-blue-400 bg-blue-500/10', status: 'IN_TRANSIT', hoverBorder: 'hover:border-blue-500/40' },
                         { label: 'No Cliente', icon: MapPin, value: barrels.atClient, color: 'text-purple-400 bg-purple-500/10', status: 'AT_CLIENT', hoverBorder: 'hover:border-purple-500/40' },
+                        { label: 'No Pátio', icon: Warehouse, value: barrels.inYard, color: 'text-teal-400 bg-teal-500/10', status: 'IN_YARD', hoverBorder: 'hover:border-teal-500/40' },
                         { label: 'Manutenção', icon: Wrench, value: barrels.inMaintenance, color: 'text-amber-400 bg-amber-500/10', status: 'IN_MAINTENANCE', hoverBorder: 'hover:border-amber-500/40' },
                         { label: 'Bloqueados', icon: Ban, value: barrels.blocked, color: 'text-red-400 bg-red-500/10', status: 'BLOCKED', hoverBorder: 'hover:border-red-500/40' },
                         { label: 'Descartados', icon: Package, value: barrels.disposed, color: 'text-muted-foreground bg-zinc-500/10', status: 'DISPOSED', hoverBorder: 'hover:border-zinc-500/40' },

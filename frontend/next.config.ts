@@ -1,12 +1,5 @@
 import type { NextConfig } from "next";
 import path from "path";
-import withSerwistInit from "@serwist/next";
-
-const withSerwist = withSerwistInit({
-  swSrc: "app/sw.ts",
-  swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
-});
 
 const cspHeader = [
   "default-src 'self'",
@@ -52,4 +45,4 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default withSerwist(nextConfig);
+export default nextConfig;

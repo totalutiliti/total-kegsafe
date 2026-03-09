@@ -345,6 +345,7 @@ enum BarrelStatus {
   ACTIVE          // Na fábrica, disponível para expedição
   IN_TRANSIT      // Em trânsito (expedido ou coletado)
   AT_CLIENT       // Entregue no cliente (PDV)
+  IN_YARD         // No pátio da fábrica, aguardando triagem/higienização
   IN_MAINTENANCE  // Em manutenção na oficina
   BLOCKED         // Bloqueado por segurança (não pode ser usado)
   DISPOSED        // Descartado/baixa patrimonial
