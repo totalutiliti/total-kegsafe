@@ -197,58 +197,55 @@ export class MaintenanceService {
       (sum, item) => sum + (item.cost || 0),
       0,
     );
-    const effectiveTotalCost = data.totalCost || itemsCostSum;
+    // Usar nullish coalescing para preservar totalCost=0 quando explicitamente informado
+    const effectiveTotalCost =
+      data.totalCost != null ? data.totalCost : itemsCostSum;
 
-    // Atualizar custo de manutenção do barril
-    if (effectiveTotalCost > 0) {
-      await this.prisma.barrel.update({
-        where: { id: data.barrelId },
-        data: { totalMaintenanceCost: { increment: effectiveTotalCost } },
-      });
-    }
+    // Executar atualização de custo, conclusão da OS e retorno do barril
+    // em uma transação interativa para garantir atomicidade e visibilidade
+    await this.prisma.$transaction(async (tx) => {
+      // Atualizar custo acumulado de manutenção do barril
+      if (effectiveTotalCost > 0) {
+        await tx.barrel.update({
+          where: { id: data.barrelId },
+          data: { totalMaintenanceCost: { increment: effectiveTotalCost } },
+        });
+      }
 
-    // Completar OS se vinculada
-    if (data.maintenanceOrderId) {
-      await this.prisma.maintenanceOrder.update({
-        where: { id: data.maintenanceOrderId },
-        data: {
-          status: MaintenanceOrderStatus.COMPLETED,
-          actualCost: effectiveTotalCost || undefined,
-          completedAt: new Date(),
+      // Completar OS se vinculada — gravar custo real e data de conclusão
+      if (data.maintenanceOrderId) {
+        await tx.maintenanceOrder.update({
+          where: { id: data.maintenanceOrderId },
+          data: {
+            status: MaintenanceOrderStatus.COMPLETED,
+            actualCost: effectiveTotalCost,
+            completedAt: new Date(),
+          },
+        });
+      }
+
+      // Verificar se há outras OS abertas (PENDING ou IN_PROGRESS) para o mesmo barril
+      const openOrders = await tx.maintenanceOrder.count({
+        where: {
+          barrelId: data.barrelId,
+          status: {
+            in: [
+              MaintenanceOrderStatus.PENDING,
+              MaintenanceOrderStatus.IN_PROGRESS,
+            ],
+          },
+          deletedAt: null,
         },
       });
-    }
 
-    // Retornar barril ao status ACTIVE se não há outras OS pendentes/em andamento
-    const openOrders = await this.prisma.maintenanceOrder.count({
-      where: {
-        barrelId: data.barrelId,
-        status: {
-          in: [
-            MaintenanceOrderStatus.PENDING,
-            MaintenanceOrderStatus.IN_PROGRESS,
-          ],
-        },
-        deletedAt: null,
-        // Excluir a OS atual (já completada acima)
-        ...(data.maintenanceOrderId
-          ? { id: { not: data.maintenanceOrderId } }
-          : {}),
-      },
-    });
-
-    if (openOrders === 0) {
-      const barrel = await this.prisma.barrel.findUnique({
-        where: { id: data.barrelId },
-        select: { status: true },
-      });
-      if (barrel?.status === BarrelStatus.IN_MAINTENANCE) {
-        await this.prisma.barrel.update({
+      // Se não há nenhuma OS aberta, retornar barril ao status ACTIVE
+      if (openOrders === 0) {
+        await tx.barrel.update({
           where: { id: data.barrelId },
           data: { status: BarrelStatus.ACTIVE },
         });
       }
-    }
+    });
 
     // Resolver alertas relacionados
     await this.prisma.alert.updateMany({
