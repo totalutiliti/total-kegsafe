@@ -57,6 +57,8 @@ export function EditComponentDialog({ component, open, onOpenChange, onUpdated }
         try {
             await api.patch(`/components/${component.id}`, {
                 ...form,
+                // alertThreshold: converter porcentagem (0-100) para decimal (0-1) conforme schema Decimal(3,2)
+                alertThreshold: form.alertThreshold ? form.alertThreshold / 100 : undefined,
                 averageReplacementCost: form.averageReplacementCost || undefined,
             });
             toast.success('Componente atualizado com sucesso!');

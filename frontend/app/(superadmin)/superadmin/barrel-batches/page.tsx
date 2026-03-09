@@ -98,19 +98,24 @@ export default function BarrelBatchesPage() {
 
     const fetchData = useCallback(async () => {
         setLoading(true);
-        try {
-            const [batchRes, statsRes] = await Promise.all([
-                api.get('/super-admin/batches', { params: { page, limit } }),
-                api.get('/super-admin/batches/stats'),
-            ]);
-            setBatches(batchRes.data.items);
-            setTotal(batchRes.data.total);
-            setStats(statsRes.data);
-        } catch {
+        // Buscar lotes e stats de forma independente para que a falha de um não afete o outro
+        const [batchResult, statsResult] = await Promise.allSettled([
+            api.get('/super-admin/batches', { params: { page, limit } }),
+            api.get('/super-admin/batches/stats'),
+        ]);
+
+        if (batchResult.status === 'fulfilled') {
+            setBatches(batchResult.value.data.items);
+            setTotal(batchResult.value.data.total);
+        } else {
             toast.error('Erro ao carregar lotes');
-        } finally {
-            setLoading(false);
         }
+
+        if (statsResult.status === 'fulfilled') {
+            setStats(statsResult.value.data);
+        }
+
+        setLoading(false);
     }, [page]);
 
     const fetchTenants = useCallback(async () => {
