@@ -53,9 +53,13 @@ return super({ adapter } as any).$extends(createTenantRlsExtension(this.cls)) as
 // (ajuste o tipo de retorno; a instância estendida substitui o cliente base)
 ```
 
-**4. Transações explícitas** (o app tem ~71 `$transaction` interativas): no início de cada uma,
-chamar `await setTenantContext(tx, tenantId, isSuperAdmin)` — senão o RLS bloqueia as queries
-dentro delas (a extensão não alcança a conexão da transação interativa).
+**4. Transações + raw SQL** — a extensão cobre queries diretas de model, mas **não** alcança
+(medido no código): **8** `$transaction(async (tx) => …)` interativas, **3** `$transaction([…])`
+em array (`barrel.service.ts:1796`, `super-admin.service.ts:488` e `:645`) e **19**
+`$queryRaw`/`$executeRaw`. Em cada ponto, setar o contexto na mesma conexão:
+`await setTenantContext(tx, …)` nas transações e um `SELECT set_config('app.tenant_id', <id>, true)`
+antes dos raw. Alternativa mais limpa: um override de `$transaction` no `PrismaService` cobre as
+8+3 de uma vez, restando só os 19 raw.
 
 ## Teste (2 tenants)
 1. Crie um 2º tenant + alguns barris nele (via super-admin ou seed).

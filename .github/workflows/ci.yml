@@ -79,6 +79,12 @@ jobs:
       - name: Integration Tests
         run: npm run test:integration
 
+      # Advisory: expoe vulnerabilidades conhecidas nas deps de producao. Nao
+      # bloqueia o merge (continue-on-error) — revise e trate CRITICAL/HIGH.
+      - name: Security audit (advisory)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
   # ---------------------------------------------------------------------------
   # Scan de segredos — bloqueia o merge se detectar credencial no diff/histórico
   # ---------------------------------------------------------------------------
