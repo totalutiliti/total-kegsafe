@@ -9,6 +9,7 @@ import {
   MaintenanceOrderStatus,
   AlertPriority,
   AlertType,
+  AlertStatus,
   LogisticsAction,
   DisposalStatus,
   DisposalDestination,
@@ -731,6 +732,11 @@ async function main() {
           title: scenario.title,
           description: `Alerta de demonstração: ${scenario.title}`,
           resolvedAt: scenario.resolved ? new Date() : null,
+          // Mantém status e resolvedAt em sincronia (evita alerta "resolvido"
+          // ainda marcado como ACTIVE — inconsistencia entre contador e lista).
+          status: scenario.resolved
+            ? AlertStatus.RESOLVED
+            : AlertStatus.ACTIVE,
           createdAt: new Date(Date.now() - (i + 1) * 3 * 24 * 60 * 60 * 1000),
         },
       });
