@@ -99,10 +99,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   },
 };
 
-const healthConfig: Record<string, { label: string; color: string }> = {
-  GREEN: { label: "●", color: "text-green-400" },
-  YELLOW: { label: "●", color: "text-amber-400" },
-  RED: { label: "●", color: "text-red-400" },
+const healthConfig: Record<string, { label: string; text: string; color: string }> = {
+  GREEN: { label: "●", text: "Saúde boa", color: "text-green-400" },
+  YELLOW: { label: "●", text: "Saúde em atenção", color: "text-amber-400" },
+  RED: { label: "●", text: "Saúde crítica", color: "text-red-400" },
 };
 
 export default function BarrelsPage() {
@@ -618,7 +618,12 @@ export default function BarrelsPage() {
                           {barrel.totalCycles}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`text-lg ${hc.color}`}>
+                          <span
+                            className={`text-lg ${hc.color}`}
+                            role="img"
+                            aria-label={hc.text}
+                            title={hc.text}
+                          >
                             {hc.label}
                           </span>
                         </td>
@@ -722,7 +727,14 @@ export default function BarrelsPage() {
                             </button>
                             <span className="text-sm font-medium text-amber-400">{barrel.internalCode}</span>
                           </div>
-                          <span className={`text-lg ${hc.color}`}>{hc.label}</span>
+                          <span
+                            className={`text-lg ${hc.color}`}
+                            role="img"
+                            aria-label={hc.text}
+                            title={hc.text}
+                          >
+                            {hc.label}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 mb-3">
                           <Badge variant="outline" className={`text-[10px] ${sc.color}`}>{sc.label}</Badge>
