@@ -39,6 +39,10 @@ ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 EXPOSE 8080
 
+# Healthcheck HTTP (a rota /login responde 200)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -q --spider http://localhost:8080/login || exit 1
+
 # Drop root privileges — never run the app as root
 USER node
 

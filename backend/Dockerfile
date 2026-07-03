@@ -43,6 +43,11 @@ RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 ENV PORT=8080
 EXPOSE 8080
 
+# Healthcheck HTTP no endpoint público /health (usado pelo docker-compose local;
+# no Azure App Service quem vale são as health probes do próprio serviço).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -q --spider http://localhost:8080/api/v1/health || exit 1
+
 # Drop root privileges — never run the app as root
 USER node
 
