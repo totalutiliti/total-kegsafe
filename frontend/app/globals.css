@@ -131,6 +131,31 @@
   [tabindex]:focus-visible {
     @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
   }
+
+  /* Autofill: preserva o visual do tema (evita o fundo claro do Chrome no dark) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--muted) inset;
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
+/* Acessibilidade: respeita "reduzir movimento" do sistema operacional (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @keyframes pulse-red-glow {
