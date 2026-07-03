@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { SloInterceptor } from './shared/slo/slo.interceptor.js';
 import { join } from 'path';
+import type { ServerResponse } from 'http';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -37,7 +38,16 @@ async function bootstrap() {
   app.useGlobalInterceptors(sloInterceptor);
 
   // Serve static uploads (disposal photos, etc.)
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+  // Segurança: força download e bloqueia execução no browser (anti stored-XSS),
+  // já que os arquivos são enviados por upload de usuários.
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads',
+    setHeaders: (res: ServerResponse) => {
+      res.setHeader('Content-Disposition', 'attachment');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    },
+  });
 
   // API versioning — all routes under /api/v1/
   app.setGlobalPrefix('api/v1');

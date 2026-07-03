@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   DisposalStatus,
@@ -13,6 +13,7 @@ import { BusinessException } from '../shared/exceptions/business.exception.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
+import { detectImage } from '../shared/validators/file-signature.js';
 
 @Injectable()
 export class DisposalService {
@@ -309,6 +310,19 @@ export class DisposalService {
   ) {
     await this.findById(tenantId, id);
 
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Nenhum arquivo enviado.');
+    }
+
+    // Segurança: valida o CONTEÚDO (magic bytes), não o Content-Type declarado
+    // (spoofável). Impede gravar HTML/SVG/executável disfarçado de imagem.
+    const detected = detectImage(file.buffer);
+    if (!detected) {
+      throw new BadRequestException(
+        'Arquivo inválido: envie uma imagem JPEG, PNG, WebP ou GIF.',
+      );
+    }
+
     const uploadsDir = path.join(
       process.cwd(),
       'uploads',
@@ -317,8 +331,8 @@ export class DisposalService {
     );
     await fs.mkdir(uploadsDir, { recursive: true });
 
-    const ext = path.extname(file.originalname) || '.jpg';
-    const filename = `${id}-${randomUUID()}${ext}`;
+    // Extensão derivada do tipo DETECTADO (não do nome enviado pelo usuário).
+    const filename = `${id}-${randomUUID()}${detected.ext}`;
     const filePath = path.join(uploadsDir, filename);
     await fs.writeFile(filePath, file.buffer);
 
