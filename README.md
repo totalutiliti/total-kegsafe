@@ -135,10 +135,10 @@ Abra **http://localhost:3000** no navegador.
 
 | Perfil | Email | Senha |
 |---|---|---|
-| **Admin** | admin@petropolis.com.br | Admin@123 |
-| **Gestor** | gestor@petropolis.com.br | Gestor@123 |
-| **Logistica** | logistica@petropolis.com.br | Logistica@123 |
-| **Manutencao** | manutencao@petropolis.com.br | Manutencao@123 |
+| **Admin** | admin@kegsafe.com.br | Admin@123 |
+| **Gestor** | gestor@kegsafe.com.br | Gestor@123 |
+| **Logistica** | logistica@kegsafe.com.br | Logistica@123 |
+| **Manutencao** | manutencao@kegsafe.com.br | Manutencao@123 |
 | **Super Admin** | superadmin@kegsafe.com.br | SuperAdmin@123 |
 
 ---

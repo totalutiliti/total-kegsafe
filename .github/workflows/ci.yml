@@ -72,3 +72,21 @@ jobs:
 
       - name: Integration Tests
         run: npm run test:integration
+
+  # ---------------------------------------------------------------------------
+  # Scan de segredos — bloqueia o merge se detectar credencial no diff/histórico
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # gitleaks-action é gratuito para contas pessoais; repositórios de
+      # organização exigem o secret GITLEAKS_LICENSE.
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

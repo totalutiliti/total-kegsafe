@@ -327,6 +327,12 @@ export class SuperAdminService {
       data: { passwordHash, mustChangePassword: true },
     });
 
+    // Segurança: invalidar as sessões ativas do usuário após o reset de senha.
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true },
+    });
+
     await this.logAction(
       actorId,
       'USER_PASSWORD_RESET',

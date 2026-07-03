@@ -12,6 +12,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Atrás do ingress do Azure App Service: confiar no 1º proxy para que req.ip
+  // seja o IP real do cliente. Sem isso, o rate limit por IP vira um balde
+  // global compartilhado (todos os clientes viram o mesmo IP do proxy).
+  app.set('trust proxy', 1);
+
   // Production safety: reject insecure JWT secrets and missing CORS
   if (process.env.NODE_ENV === 'production') {
     if (/dev|change|secret|fallback/i.test(process.env.JWT_SECRET || '')) {
