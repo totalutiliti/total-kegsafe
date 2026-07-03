@@ -12,7 +12,12 @@ export class ClientService {
 
   async findAll(
     tenantId: string,
-    query?: { page?: number; limit?: number; includeInactive?: boolean; search?: string },
+    query?: {
+      page?: number;
+      limit?: number;
+      includeInactive?: boolean;
+      search?: string;
+    },
   ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
@@ -20,10 +25,16 @@ export class ClientService {
 
     // Busca com unaccent — usa raw SQL p/ IDs, Prisma p/ hydrate
     if (searchTerm) {
-      return this.findAllWithSearch(tenantId, searchTerm, page, limit, query?.includeInactive);
+      return this.findAllWithSearch(
+        tenantId,
+        searchTerm,
+        page,
+        limit,
+        query?.includeInactive,
+      );
     }
 
-    const where: any = {
+    const where: Prisma.ClientWhereInput = {
       tenantId,
       deletedAt: null,
       ...(query?.includeInactive ? {} : { isActive: true }),

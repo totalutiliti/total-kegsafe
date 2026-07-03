@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { GeofenceType } from '@prisma/client';
+import { GeofenceType, Prisma } from '@prisma/client';
 import { ResourceNotFoundException } from '../shared/exceptions/resource.exceptions.js';
 
 @Injectable()
 export class GeofenceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string, query?: { page?: number; limit?: number; search?: string }) {
+  async findAll(
+    tenantId: string,
+    query?: { page?: number; limit?: number; search?: string },
+  ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
     const skip = (page - 1) * limit;
@@ -18,7 +21,11 @@ export class GeofenceService {
       return this.findAllWithSearch(tenantId, searchTerm, page, limit, skip);
     }
 
-    const where: any = { tenantId, isActive: true, deletedAt: null };
+    const where: Prisma.GeofenceWhereInput = {
+      tenantId,
+      isActive: true,
+      deletedAt: null,
+    };
 
     const [items, total] = await Promise.all([
       this.prisma.geofence.findMany({
