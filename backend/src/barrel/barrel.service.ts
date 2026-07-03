@@ -473,7 +473,14 @@ export class BarrelService {
 
     // Verificar campos imutáveis
     const { version, ...updateData } = dto;
-    const attempted = Object.keys(updateData);
+    // BUG FIX: considerar apenas os campos REALMENTE enviados. O ValidationPipe
+    // (class-transformer) materializa todas as propriedades do DTO como
+    // undefined; sem filtrar, o check de imutabilidade disparava em QUALQUER
+    // update (ex.: mudar só o fabricante acusava capacityLiters/material/
+    // tareWeightKg como alterados), quebrando toda edição de barril.
+    const attempted = Object.keys(updateData).filter(
+      (field) => (updateData as Record<string, unknown>)[field] !== undefined,
+    );
     const violatedFields = attempted.filter((field) =>
       (BarrelService.IMMUTABLE_FIELDS as readonly string[]).includes(field),
     );
@@ -574,8 +581,7 @@ export class BarrelService {
             const startNumber = seq.lastNumber - count + 1;
             return Array.from(
               { length: count },
-              (_, i) =>
-                `KS-BAR-${String(startNumber + i).padStart(9, '0')}`,
+              (_, i) => `KS-BAR-${String(startNumber + i).padStart(9, '0')}`,
             );
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -899,9 +905,7 @@ export class BarrelService {
 
       for (const row of validRows) {
         if (duplicateQrCodes.has(row.qrCode)) {
-          const existing = existingByQr.find(
-            (b) => b.qrCode === row.qrCode,
-          );
+          const existing = existingByQr.find((b) => b.qrCode === row.qrCode);
           const isOtherTenant =
             existing?.status === BarrelStatus.PRE_REGISTERED &&
             existing?.tenantId !== tenantId;
@@ -1135,7 +1139,10 @@ export class BarrelService {
           chunkStart: session.progress.processed,
           message,
         });
-        this.logger.error(`Import create chunk failed: ${message}`, errObj.stack);
+        this.logger.error(
+          `Import create chunk failed: ${message}`,
+          errObj.stack,
+        );
       }
     }
 
@@ -1688,9 +1695,7 @@ export class BarrelService {
             // Gerar códigos
             const codes: string[] = [];
             for (let i = 0; i < quantity; i++) {
-              codes.push(
-                `KS-BAR-${String(startNumber + i).padStart(9, '0')}`,
-              );
+              codes.push(`KS-BAR-${String(startNumber + i).padStart(9, '0')}`);
             }
 
             const codeStart = codes[0];
