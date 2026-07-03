@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Inject,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -201,6 +202,14 @@ export class BarrelController {
     @Body() dto: GenerateBatchDto,
     @CurrentUser() user: JwtUser,
   ) {
+    // Segurança multi-tenant: só o SUPER_ADMIN pode direcionar o lote a outro
+    // tenant via dto.tenantId. Um ADMIN/MANAGER comum não deve sequer enviar o
+    // campo — se enviar, é bloqueado (evita escrita cross-tenant).
+    if (dto.tenantId && user.role !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Apenas SUPER_ADMIN pode gerar lotes para outro tenant.',
+      );
+    }
     return this.barrelService.generateBatch(tenantId, dto, user.id);
   }
 

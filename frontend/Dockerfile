@@ -29,14 +29,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Next.js standalone output copies only what's needed
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+# Next.js standalone output copies only what's needed — owned by non-root "node" user
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
 
 # Azure App Service uses port 8080 by default
 ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 EXPOSE 8080
+
+# Drop root privileges — never run the app as root
+USER node
 
 CMD ["node", "server.js"]

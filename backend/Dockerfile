@@ -29,16 +29,22 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Only copy what's needed to run
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./
+# Only copy what's needed to run — owned by the non-root "node" user (uid 1000)
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./
+COPY --from=builder --chown=node:node /app/prisma ./prisma
+COPY --from=builder --chown=node:node /app/prisma.config.ts ./
+
+# Writable uploads dir (disposal photos) owned by the non-root user
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 
 # Azure App Service uses port 8080 by default
 ENV PORT=8080
 EXPOSE 8080
+
+# Drop root privileges — never run the app as root
+USER node
 
 # Run migrations then start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
