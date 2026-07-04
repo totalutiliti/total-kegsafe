@@ -41,6 +41,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     logout: () => {
         // Server clears httpOnly cookies
         api.post('/auth/logout').catch(() => { });
+        // Segurança: limpar os caches do Service Worker que contêm dados do
+        // tenant (API + páginas), mantendo só o estático. Evita que um próximo
+        // usuário no mesmo dispositivo veja dados do usuário anterior.
+        if (typeof caches !== 'undefined') {
+            caches.keys()
+                .then((keys) =>
+                    keys
+                        .filter((k) => k !== 'kegsafe-static-v1')
+                        .forEach((k) => caches.delete(k))
+                )
+                .catch(() => { });
+        }
         set({ user: null, isAuthenticated: false });
         window.location.href = '/login';
     },
