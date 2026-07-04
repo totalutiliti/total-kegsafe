@@ -158,6 +158,22 @@
   }
 }
 
+/* Campos de login SEMPRE legíveis: fundo branco + texto escuro, à prova de
+   autofill do navegador e de qualquer tema (evita "texto branco no branco"). */
+input.kegsafe-login-input,
+input.kegsafe-login-input:hover,
+input.kegsafe-login-input:focus,
+input.kegsafe-login-input:-webkit-autofill,
+input.kegsafe-login-input:-webkit-autofill:hover,
+input.kegsafe-login-input:-webkit-autofill:focus,
+input.kegsafe-login-input:-webkit-autofill:active {
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+  caret-color: #171717 !important;
+  background-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
 @keyframes pulse-red-glow {
   0%, 100% {
     box-shadow: 0 0 8px 0 rgba(239, 68, 68, 0.3);

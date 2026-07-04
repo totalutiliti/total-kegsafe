@@ -109,7 +109,7 @@ export default function LoginPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-amber-500 focus:ring-amber-500/20"
+                                    className="kegsafe-login-input border-border bg-white text-neutral-900 placeholder:text-neutral-500 focus:border-amber-500 focus:ring-amber-500/20"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -122,7 +122,7 @@ export default function LoginPage() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="border-border bg-muted/50 pr-10 text-foreground placeholder:text-muted-foreground focus:border-amber-500 focus:ring-amber-500/20"
+                                        className="kegsafe-login-input border-border bg-white pr-10 text-neutral-900 placeholder:text-neutral-500 focus:border-amber-500 focus:ring-amber-500/20"
                                     />
                                     <button
                                         type="button"
