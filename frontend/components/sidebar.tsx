@@ -27,6 +27,7 @@ import {
     Search,
     Volume2,
     VolumeX,
+    Beer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +37,7 @@ import { getSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
     { name: 'Barris', href: '/barrels', icon: Package, roles: ['ADMIN', 'MANAGER', 'LOGISTICS', 'MAINTENANCE'] },
+    { name: 'Catálogo', href: '/catalogo', icon: Beer, roles: ['ADMIN', 'MANAGER', 'LOGISTICS', 'MAINTENANCE'] },
     { name: 'Logística', href: '/logistics', icon: Truck, roles: ['ADMIN', 'LOGISTICS'] },
     { name: 'Manutenção', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },
     { name: 'Alertas', href: '/alerts', icon: AlertTriangle, roles: ['ADMIN', 'MANAGER', 'MAINTENANCE'] },

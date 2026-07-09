@@ -425,7 +425,7 @@ export default function BarrelsPage() {
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Capacidade</p>
                 <div className="flex flex-wrap gap-2">
-                  {['30', '50'].map(cap => (
+                  {['10', '15', '20', '30', '50'].map(cap => (
                     <button
                       key={cap}
                       onClick={() => toggleCapacity(cap)}
@@ -527,6 +527,9 @@ export default function BarrelsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                     <SortHeader column="capacityLiters" label="Capacidade" />
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase hidden md:table-cell">
+                    Estilo
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                     <SortHeader column="totalCycles" label="Ciclos" />
                   </th>
@@ -542,7 +545,7 @@ export default function BarrelsPage() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-4 py-12 text-center text-muted-foreground"
                     >
                       Carregando...
@@ -551,7 +554,7 @@ export default function BarrelsPage() {
                 ) : barrels.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-4 py-12 text-center text-muted-foreground"
                     >
                       Nenhum barril encontrado
@@ -613,6 +616,15 @@ export default function BarrelsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-foreground">
                           {barrel.capacityLiters}L
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          {barrel.currentBeerStyle ? (
+                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20">
+                              {barrel.currentBeerStyle}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-foreground">
                           {barrel.totalCycles}
@@ -736,8 +748,13 @@ export default function BarrelsPage() {
                             {hc.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
                           <Badge variant="outline" className={`text-[10px] ${sc.color}`}>{sc.label}</Badge>
+                          {barrel.currentBeerStyle && (
+                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20">
+                              {barrel.currentBeerStyle}
+                            </Badge>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                           <span>{barrel.capacityLiters}L</span>

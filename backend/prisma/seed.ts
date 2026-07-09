@@ -41,65 +41,88 @@ async function hashPassword(password: string): Promise<string> {
 
 const users = [
   {
-    name: 'Administrador',
-    email: 'admin@kegsafe.com.br',
+    name: 'Administrador Germânia',
+    email: 'admin@germania.com.br',
     role: Role.ADMIN,
     password: 'Admin@123',
   },
   {
     name: 'Gestor de Operações',
-    email: 'gestor@kegsafe.com.br',
+    email: 'gestor@germania.com.br',
     role: Role.MANAGER,
     password: 'Gestor@123',
   },
   {
     name: 'Operador de Logística',
-    email: 'logistica@kegsafe.com.br',
+    email: 'logistica@germania.com.br',
     role: Role.LOGISTICS,
     password: 'Logistica@123',
   },
   {
     name: 'Técnico de Manutenção',
-    email: 'manutencao@kegsafe.com.br',
+    email: 'manutencao@germania.com.br',
     role: Role.MAINTENANCE,
     password: 'Manutencao@123',
   },
   {
     name: 'Carlos Motorista',
-    email: 'carlos@kegsafe.com.br',
+    email: 'carlos@germania.com.br',
     role: Role.LOGISTICS,
     password: 'Carlos@123',
   },
   {
     name: 'Ana Supervisora',
-    email: 'ana@kegsafe.com.br',
+    email: 'ana@germania.com.br',
     role: Role.MANAGER,
     password: 'Ana@12345',
   },
   {
     name: 'Pedro Técnico',
-    email: 'pedro@kegsafe.com.br',
+    email: 'pedro@germania.com.br',
     role: Role.MAINTENANCE,
     password: 'Pedro@123',
   },
   {
     name: 'Fernanda Operadora',
-    email: 'fernanda@kegsafe.com.br',
+    email: 'fernanda@germania.com.br',
     role: Role.LOGISTICS,
     password: 'Fernanda@123',
   },
   {
     name: 'Ricardo Gestor',
-    email: 'ricardo@kegsafe.com.br',
+    email: 'ricardo@germania.com.br',
     role: Role.MANAGER,
     password: 'Ricardo@123',
   },
   {
     name: 'Juliana Técnica',
-    email: 'juliana@kegsafe.com.br',
+    email: 'juliana@germania.com.br',
     role: Role.MAINTENANCE,
     password: 'Juliana@123',
   },
+];
+
+// ---------------------------------------------------------------------------
+// Estilos de chopp Germânia (fonte: planilha oficial germania_produtos.xlsx)
+// Usados para "envasar" cada barril (campo currentBeerStyle) e alimentar o
+// Catálogo. Carioquinha é exclusiva de growler → NÃO entra em barril.
+// ---------------------------------------------------------------------------
+// Distribuição ponderada: Pilsen é o "estilo mais vendido".
+const barrelBeerStyles: string[] = [
+  'Germânia Pilsen',
+  'Germânia Pilsen',
+  'Germânia Pilsen',
+  'Germânia Pilsen',
+  'Germânia Puro Malte',
+  'Germânia Puro Malte',
+  'Germânia Escuro',
+  'Germânia Vinhedo',
+  'Germânia Amber Lager',
+  'Germânia IPA',
+  'Germânia Munich Helles',
+  'Germânia Weissbier',
+  'Germânia Black',
+  'Slow Beer',
 ];
 
 const componentConfigs = [
@@ -155,103 +178,111 @@ const componentConfigs = [
 
 const geofences = [
   {
-    name: 'Fábrica Petrópolis - Matriz',
+    name: 'Fábrica Germânia - Vinhedo/SP',
     type: GeofenceType.FACTORY,
-    latitude: -22.5112,
-    longitude: -43.1779,
+    latitude: -23.0299,
+    longitude: -46.975,
     radiusMeters: 1000,
   },
   {
-    name: 'Centro de Distribuição SP',
+    name: 'Centro de Distribuição Campinas',
     type: GeofenceType.FACTORY,
-    latitude: -23.5505,
-    longitude: -46.6333,
+    latitude: -22.9099,
+    longitude: -47.0626,
     radiusMeters: 800,
   },
 ];
 
 const suppliers = [
   {
-    name: 'Vedações Brasil Ltda',
-    cnpj: '33444555000199',
+    name: 'Vedações Campinas Ltda',
+    cnpj: '90847213000146',
     supplyType: 'O-Rings e vedações industriais',
     leadTimeDays: 7,
-    contactEmail: 'vendas@vedacoesbrasil.com.br',
-    contactPhone: '+5524999001122',
+    contactEmail: 'vendas@vedacoescampinas.com.br',
+    contactPhone: '+5519999001122',
     paymentTerms: '30 dias',
   },
   {
-    name: 'InoxParts Comércio',
-    cnpj: '44555666000177',
+    name: 'InoxParts Vinhedo Comércio',
+    cnpj: '47120389000172',
     supplyType: 'Componentes em aço inox',
     leadTimeDays: 14,
-    contactEmail: 'contato@inoxparts.com.br',
-    contactPhone: '+5524988112233',
+    contactEmail: 'contato@inoxpartsvinhedo.com.br',
+    contactPhone: '+5519988112233',
     paymentTerms: '28 dias',
   },
 ];
 
 const serviceProviders = [
   {
-    name: 'MetalSolda Serviços Industriais',
+    name: 'MetalSolda Campinas Serviços',
     specialty: 'Soldagem TIG/MIG em aço inox',
     certifications: 'NR-13, ISO 9001',
     hourlyRate: 120.0,
     serviceRate: 350.0,
-    contactEmail: 'orcamento@metalsolda.com.br',
-    contactPhone: '+5524977001122',
+    contactEmail: 'orcamento@metalsoldacampinas.com.br',
+    contactPhone: '+5519977001122',
   },
   {
-    name: 'HidroTest Engenharia',
+    name: 'HidroTest Vinhedo Engenharia',
     specialty: 'Teste hidrostático e pneumático',
     certifications: 'NR-13, ABNT NBR 13465',
     hourlyRate: 150.0,
     serviceRate: 500.0,
-    contactEmail: 'contato@hidrotest.eng.br',
-    contactPhone: '+5524966112233',
+    contactEmail: 'contato@hidrotestvinhedo.eng.br',
+    contactPhone: '+5519966112233',
   },
 ];
 
 const clients = [
   {
-    name: 'Bar do Zé',
-    tradeName: 'Bar do Zé',
-    cnpj: '98765432000110',
-    latitude: -23.561,
-    longitude: -46.6555,
+    name: 'Lig Chopp Germânia Vinhedo Ltda',
+    tradeName: 'Lig Chopp Germânia Vinhedo',
+    cnpj: '43776517000180',
+    latitude: -23.03,
+    longitude: -46.983,
     connectorType: 'TYPE_S',
   },
   {
-    name: 'Restaurante Sabor da Terra',
-    tradeName: 'Sabor da Terra',
-    cnpj: '11222333000144',
-    latitude: -23.548,
-    longitude: -46.63,
+    name: 'Boteco do Vale Bar e Petiscaria',
+    tradeName: 'Boteco do Vale',
+    cnpj: '60112094000112',
+    latitude: -22.9705,
+    longitude: -46.9959,
     connectorType: 'TYPE_S',
   },
   {
-    name: 'Choperia Central',
-    tradeName: 'Choperia Central',
-    cnpj: '55666777000188',
-    latitude: -23.57,
-    longitude: -46.645,
+    name: 'Choperia Bierhaus Campinas',
+    tradeName: 'Bierhaus Campinas',
+    cnpj: '12908736000141',
+    latitude: -22.9099,
+    longitude: -47.0626,
     connectorType: 'TYPE_D',
   },
   {
-    name: 'Pizzaria Bella Napoli',
-    tradeName: 'Bella Napoli',
-    cnpj: '66777888000122',
-    latitude: -23.555,
-    longitude: -46.66,
+    name: 'Cantina Toscana Restaurante',
+    tradeName: 'Cantina Toscana',
+    cnpj: '55321470000149',
+    latitude: -23.1857,
+    longitude: -46.8978,
     connectorType: 'TYPE_S',
   },
   {
-    name: 'Empório do Chopp',
-    tradeName: 'Empório do Chopp',
-    cnpj: '77888999000133',
-    latitude: -23.543,
-    longitude: -46.638,
+    name: 'Empório do Chopp Louveira',
+    tradeName: 'Empório do Chopp Louveira',
+    cnpj: '78904561000102',
+    latitude: -23.0873,
+    longitude: -46.9506,
     connectorType: 'TYPE_S',
+  },
+  {
+    name: 'Chopp Germânia Moema',
+    tradeName: 'Chopp Germânia Moema',
+    cnpj: '33915602000128',
+    latitude: -23.6024,
+    longitude: -46.6636,
+    connectorType: 'TYPE_D',
   },
 ];
 
@@ -303,21 +334,23 @@ async function main() {
     console.log('⏭️ Super admin already exists:', superAdminEmail);
   }
 
-  // 1. Criar Tenant (idempotente)
+  // 1. Criar Tenant (idempotente) — Cervejaria Germânia (Vinhedo/SP)
   let tenant = await prisma.tenant.findFirst({
-    where: { cnpj: '12345678000190' },
+    where: { cnpj: '24328078000106' },
   });
   if (!tenant) {
     tenant = await prisma.tenant.create({
       data: {
-        name: 'Cervejaria Petrópolis',
-        cnpj: '12345678000190',
-        slug: 'petropolis',
+        name: 'Cervejaria Germânia',
+        cnpj: '24328078000106',
+        slug: 'germania',
         settings: {
           idleThresholdDays: 15,
           autoTriageEnabled: true,
           maintenanceBlockMode: 'ADVISORY',
           expectedBarrelLifeYears: 20,
+          city: 'Vinhedo/SP',
+          contactPhone: '0800 110 0420',
         },
       },
     });
@@ -450,17 +483,38 @@ async function main() {
     `✅ Service providers: ${providersCreated} created, ${serviceProviders.length - providersCreated} already existed`,
   );
 
-  // 8. Criar 50 Barris + ComponentCycles (idempotente)
+  // 8. Criar Barris + ComponentCycles (idempotente)
+  // Frota Germânia: capacidades reais (10/15/20/30/50 L) com peso de tara e
+  // custo de aquisição coerentes por tamanho. Cada barril é "envasado" com um
+  // estilo real (currentBeerStyle).
   const manufacturers = ['Franke', 'Portinox', 'Blefa'];
+  const valveModels = ['TYPE_S', 'TYPE_S', 'TYPE_S', 'TYPE_D'] as const;
   const barrelStatuses: BarrelStatus[] = [
     BarrelStatus.ACTIVE, BarrelStatus.ACTIVE, BarrelStatus.ACTIVE,
     BarrelStatus.IN_TRANSIT, BarrelStatus.AT_CLIENT, BarrelStatus.AT_CLIENT,
     BarrelStatus.IN_MAINTENANCE, BarrelStatus.BLOCKED,
   ];
+  // Especificações por capacidade (tara em kg, custo de aquisição em R$)
+  const capacitySpec: Record<number, { tare: number; cost: number }> = {
+    10: { tare: 5.0, cost: 380 },
+    15: { tare: 6.5, cost: 450 },
+    20: { tare: 8.0, cost: 520 },
+    30: { tare: 9.5, cost: 650 },
+    50: { tare: 13.2, cost: 800 },
+  };
+  // Distribuição realista da frota (50L e 30L predominam em eventos)
+  const fleetCapacities: number[] = [
+    ...Array<number>(24).fill(50),
+    ...Array<number>(18).fill(30),
+    ...Array<number>(9).fill(20),
+    ...Array<number>(6).fill(15),
+    ...Array<number>(3).fill(10),
+  ];
+  const FLEET_SIZE = fleetCapacities.length; // 60 barris
   let barrelsCreated = 0;
   const createdBarrelIds: string[] = [];
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < FLEET_SIZE; i++) {
     const internalCode = `KS-BAR-${String(i + 1).padStart(9, '0')}`;
     const existing = await prisma.barrel.findFirst({
       where: { internalCode, tenantId: tenant.id },
@@ -472,6 +526,8 @@ async function main() {
 
     const totalCycles = Math.floor(Math.random() * 30);
     const status = barrelStatuses[i % barrelStatuses.length];
+    const capacityLiters = fleetCapacities[i];
+    const spec = capacitySpec[capacityLiters];
     const manufactureDate = new Date(
       Date.now() - (2 + Math.random() * 8) * 365.25 * 24 * 60 * 60 * 1000,
     );
@@ -483,11 +539,12 @@ async function main() {
         qrCode: `KS-QR-${String(i + 1).padStart(9, '0')}`,
         chassisNumber: `CH-${String(i + 1).padStart(6, '0')}`,
         manufacturer: manufacturers[i % 3],
-        valveModel: 'TYPE_S',
-        capacityLiters: [30, 50][i % 2],
-        tareWeightKg: [9.5, 13.2][i % 2],
+        valveModel: valveModels[i % valveModels.length],
+        capacityLiters,
+        tareWeightKg: spec.tare,
         material: 'INOX_304',
-        acquisitionCost: [650, 800][i % 2],
+        acquisitionCost: spec.cost,
+        currentBeerStyle: barrelBeerStyles[i % barrelBeerStyles.length],
         status,
         totalCycles,
         manufactureDate,
@@ -522,16 +579,16 @@ async function main() {
     barrelsCreated++;
   }
   console.log(
-    `✅ Barrels: ${barrelsCreated} created, ${50 - barrelsCreated} already existed`,
+    `✅ Barrels: ${barrelsCreated} created, ${FLEET_SIZE - barrelsCreated} already existed`,
   );
 
-  // 8b. Inicializar BarrelSequence para que generateBatch comece a partir de 51
+  // 8b. Inicializar BarrelSequence para que generateBatch comece após a frota
   await prisma.barrelSequence.upsert({
     where: { key: 'global' },
-    create: { key: 'global', lastNumber: 50 },
+    create: { key: 'global', lastNumber: FLEET_SIZE },
     update: {}, // não sobrescrever se já existe com valor maior
   });
-  console.log('✅ BarrelSequence initialized at 50');
+  console.log(`✅ BarrelSequence initialized at ${FLEET_SIZE}`);
 
   // 9. Criar Eventos Logísticos (100+)
   const allUsers = await prisma.user.findMany({
@@ -674,13 +731,14 @@ async function main() {
           },
         });
 
-        // Mark barrel as DISPOSED for completed disposals
+        // Mark barrel as DISPOSED for completed disposals (sucata → sem estilo envasado)
         if (scenario.status === DisposalStatus.COMPLETED) {
           await prisma.barrel.update({
             where: { id: barrelId },
-            data: { status: BarrelStatus.DISPOSED },
+            data: { status: BarrelStatus.DISPOSED, currentBeerStyle: null },
           });
         }
+
 
         // Create PREMATURE_DISPOSAL alert for last scenario (young barrel)
         if (i === 7) {
