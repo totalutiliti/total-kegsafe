@@ -6,7 +6,12 @@ PostgreSQL gerenciado. Região **Brazil South**. Resource group: `rg-kegsafe-dev
 ## 🔗 Acesso
 - **App (frontend):** https://ca-kegsafe-frontend.agreeablecoast-02056331.brazilsouth.azurecontainerapps.io
 - **API (backend):** https://ca-kegsafe-backend.agreeablecoast-02056331.brazilsouth.azurecontainerapps.io
-- **Login:** `admin@kegsafe.com.br` / `Admin@123` · **Super Admin:** `superadmin@kegsafe.com.br` / `SuperAdmin@123`
+- **Login:** `admin@germania.com.br` / `Admin@123` · **Super Admin:** `superadmin@kegsafe.com.br` / `SuperAdmin@123`
+
+> 🍺 O ambiente está populado com os dados de demonstração da **Cervejaria Germânia**
+> (60 barris, estilos de chopp, catálogo, clientes/geofences na região de Vinhedo/SP).
+> Outros logins @germania.com.br: `gestor@` / `Gestor@123`, `logistica@` / `Logistica@123`,
+> `manutencao@` / `Manutencao@123`.
 
 > ⏱️ Ao abrir após ficar parado, aguarde **~20-30s** (o app "acorda" do zero na 1ª visita).
 
