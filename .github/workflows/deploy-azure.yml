@@ -18,6 +18,7 @@
 #   - DATABASE_URL                → postgresql://user:pass@host:5432/kegsafe_prod?sslmode=require
 #   - JWT_SECRET                  → secret forte (openssl rand -base64 32)
 #   - JWT_REFRESH_SECRET          → secret forte (openssl rand -base64 32)
+#   - PEPPER_SECRET               → segredo forte p/ hash de senha (openssl rand -base64 32) — SEM ele o backend NÃO sobe
 #   - CORS_ORIGINS                → https://kegsafe-frontend.azurewebsites.net
 #   - NEXT_PUBLIC_API_URL         → https://kegsafe-backend.azurewebsites.net
 # ============================================================================
@@ -117,6 +118,7 @@ jobs:
               { "name": "JWT_EXPIRATION",          "value": "15m" },
               { "name": "JWT_REFRESH_SECRET",      "value": "${{ secrets.JWT_REFRESH_SECRET }}" },
               { "name": "JWT_REFRESH_EXPIRATION",  "value": "7d" },
+              { "name": "PEPPER_SECRET",           "value": "${{ secrets.PEPPER_SECRET }}" },
               { "name": "CORS_ORIGINS",            "value": "${{ secrets.CORS_ORIGINS }}" },
               { "name": "WEBSITES_PORT",           "value": "8080" }
             ]

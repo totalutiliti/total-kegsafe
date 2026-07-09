@@ -37,4 +37,15 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  // Testes de integração/e2e: interagem com mocks e respostas HTTP de tipagem
+  // frouxa (supertest, Prisma). Relaxa as regras type-aware e de var não usada
+  // nesses arquivos — não afeta o código de produção.
+  {
+    files: ['test/**/*.ts'],
+    ...tseslint.configs.disableTypeChecked,
+    rules: {
+      ...tseslint.configs.disableTypeChecked.rules,
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
 );

@@ -131,6 +131,10 @@ export class ComponentService {
    * Calcula o health score de um componente
    * MAX(cyclePercentage, dayPercentage)
    * GREEN < 80% | YELLOW 80-99% | RED >= 100%
+   *
+   * Quando cyclesSinceLastService = 0, o componente nunca foi usado/mantido,
+   * então a degradação por tempo não se aplica (lastServiceDate é apenas a data
+   * de referência inicial, não uma manutenção real).
    */
   calculateHealthScore(
     cyclesSinceLastService: number,
@@ -141,7 +145,10 @@ export class ComponentService {
     const cyclePercentage = (cyclesSinceLastService / maxCycles) * 100;
 
     let dayPercentage = 0;
-    if (lastServiceDate) {
+    // Só considerar degradação por tempo se o componente já foi utilizado (ciclos > 0).
+    // Componentes com 0 ciclos nunca entraram em serviço — lastServiceDate é apenas
+    // a data de referência inicial (fabricação/cadastro), não uma manutenção real.
+    if (lastServiceDate && cyclesSinceLastService > 0) {
       const daysSinceService = Math.floor(
         (Date.now() - lastServiceDate.getTime()) / (1000 * 60 * 60 * 24),
       );

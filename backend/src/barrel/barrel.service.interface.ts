@@ -115,6 +115,12 @@ export interface IBarrelService {
     dto: TransferBarrelDto,
   ): Promise<unknown>;
 
+  batchUpdateStatus(
+    tenantId: string,
+    dto: { barrelIds: string[]; status: string; reason?: string },
+    userId: string,
+  ): Promise<{ updated: number }>;
+
   getOwnershipHistory(
     tenantId: string,
     barrelId: string,

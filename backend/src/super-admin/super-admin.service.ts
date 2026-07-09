@@ -327,6 +327,12 @@ export class SuperAdminService {
       data: { passwordHash, mustChangePassword: true },
     });
 
+    // Segurança: invalidar as sessões ativas do usuário após o reset de senha.
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true },
+    });
+
     await this.logAction(
       actorId,
       'USER_PASSWORD_RESET',
@@ -394,8 +400,10 @@ export class SuperAdminService {
     limit?: number;
     tenantId?: string;
   }) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    // Conversão explícita para números — query params podem chegar como strings
+    // quando o DTO não é uma classe pura (interseção TypeScript perde metadados)
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const where: Prisma.BarrelBatchWhereInput = {};
 
     if (query.tenantId) {

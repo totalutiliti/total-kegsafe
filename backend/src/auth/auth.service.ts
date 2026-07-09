@@ -152,11 +152,18 @@ export class AuthService {
       where: { token: tokenHash },
     });
 
-    if (
-      !storedToken ||
-      storedToken.revoked ||
-      storedToken.expiresAt < new Date()
-    ) {
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+      throw new TokenExpiredException();
+    }
+
+    // Detecção de reuso: um refresh token já revogado sendo reapresentado
+    // indica possível roubo (ele foi rotacionado no refresh anterior). Revoga
+    // TODAS as sessões do usuário como contenção.
+    if (storedToken.revoked) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: storedToken.userId, revoked: false },
+        data: { revoked: true },
+      });
       throw new TokenExpiredException();
     }
 
@@ -247,6 +254,12 @@ export class AuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { passwordHash: newHash, mustChangePassword: false },
+    });
+
+    // Segurança: invalidar todas as sessões ativas após a troca de senha.
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true },
     });
 
     return { message: 'Password changed successfully' };

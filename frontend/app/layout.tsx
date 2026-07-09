@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { ReactQueryProvider } from "@/lib/query-provider";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -14,6 +15,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "KegSafe Tech — Gestão de Barris",
   description: "Plataforma SaaS para gestão de ativos cervejeiros. Rastreamento logístico e manutenção preditiva.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KegSafe",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f59e0b",
 };
 
 export default function RootLayout({
@@ -36,6 +47,7 @@ export default function RootLayout({
             />
             </TooltipProvider>
           </ReactQueryProvider>
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

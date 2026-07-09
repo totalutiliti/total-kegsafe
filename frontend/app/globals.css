@@ -124,4 +124,123 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Focus indicators for keyboard navigation (WCAG 2.4.7) */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
+  }
+
+  /* Autofill: preserva o visual do tema (evita o fundo claro do Chrome no dark) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--muted) inset;
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
+/* Acessibilidade: respeita "reduzir movimento" do sistema operacional (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Campos de login SEMPRE legíveis: fundo branco + texto escuro, à prova de
+   autofill do navegador e de qualquer tema (evita "texto branco no branco"). */
+input.kegsafe-login-input,
+input.kegsafe-login-input:hover,
+input.kegsafe-login-input:focus,
+input.kegsafe-login-input:-webkit-autofill,
+input.kegsafe-login-input:-webkit-autofill:hover,
+input.kegsafe-login-input:-webkit-autofill:focus,
+input.kegsafe-login-input:-webkit-autofill:active {
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+  caret-color: #171717 !important;
+  background-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
+@keyframes pulse-red-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px 0 rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.5);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red-glow 2s ease-in-out infinite;
+}
+
+@media print {
+  /* Hide non-content elements */
+  nav,
+  aside,
+  .no-print,
+  button,
+  [role="dialog"],
+  [data-slot="popover"],
+  .fixed {
+    display: none !important;
+  }
+
+  /* Full width content */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Force white backgrounds */
+  .bg-card\/50,
+  .bg-card,
+  .bg-background,
+  .bg-muted\/50,
+  .bg-muted\/30 {
+    background: white !important;
+  }
+
+  /* Force dark text */
+  .text-foreground,
+  .text-muted-foreground {
+    color: #1a1a1a !important;
+  }
+
+  /* Borders visible */
+  .border-border {
+    border-color: #e5e5e5 !important;
+  }
+
+  /* Charts - preserve colors */
+  svg {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  .space-y-6 > * {
+    page-break-inside: avoid;
+  }
 }

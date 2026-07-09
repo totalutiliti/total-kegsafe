@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { Breadcrumb } from '@/components/breadcrumb';
+import { toast } from "@/lib/toast-with-sound";
 
 interface UnlinkedBarrel {
   id: string;
@@ -159,16 +160,11 @@ export default function LinkQrPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: 'Barris', href: '/barrels' },
+        { label: 'Vincular QR Codes' },
+      ]} />
       <div className="flex items-center gap-4">
-        <Link href="/barrels">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-border text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Vincular QR Codes

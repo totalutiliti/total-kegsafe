@@ -200,8 +200,8 @@ describe('RBAC — Role-Based Access Control (integration)', () => {
         .set('Cookie', adminCookie)
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThanOrEqual(4);
+      expect(Array.isArray(res.body.items)).toBe(true);
+      expect(res.body.items.length).toBeGreaterThanOrEqual(4);
     });
 
     it('LOGISTICS cannot list users', async () => {

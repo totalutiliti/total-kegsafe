@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Inject,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -27,6 +28,7 @@ import { LinkQrDto } from './dto/link-qr.dto.js';
 import { ScanBarrelDto } from './dto/scan-barrel.dto.js';
 import { GenerateBatchDto } from './dto/generate-batch.dto.js';
 import { TransferBarrelDto } from './dto/transfer-barrel.dto.js';
+import { BatchUpdateStatusDto } from './dto/batch-update.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -200,6 +202,14 @@ export class BarrelController {
     @Body() dto: GenerateBatchDto,
     @CurrentUser() user: JwtUser,
   ) {
+    // Segurança multi-tenant: só o SUPER_ADMIN pode direcionar o lote a outro
+    // tenant via dto.tenantId. Um ADMIN/MANAGER comum não deve sequer enviar o
+    // campo — se enviar, é bloqueado (evita escrita cross-tenant).
+    if (dto.tenantId && user.role !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Apenas SUPER_ADMIN pode gerar lotes para outro tenant.',
+      );
+    }
     return this.barrelService.generateBatch(tenantId, dto, user.id);
   }
 
@@ -234,6 +244,16 @@ export class BarrelController {
   // =============================================
   // PATCH endpoints
   // =============================================
+
+  @Patch('batch-status')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  async batchUpdateStatus(
+    @TenantId() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: BatchUpdateStatusDto,
+  ) {
+    return this.barrelService.batchUpdateStatus(tenantId, dto, userId);
+  }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)

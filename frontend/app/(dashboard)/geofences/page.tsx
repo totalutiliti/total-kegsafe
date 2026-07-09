@@ -5,11 +5,23 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Map, Radio, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Map, Radio, ChevronLeft, ChevronRight, LayoutGrid, Pencil, Trash2, Search } from 'lucide-react';
 import { CreateGeofenceDialog } from '@/components/dialogs/create-geofence-dialog';
+import { EditGeofenceDialog } from '@/components/dialogs/edit-geofence-dialog';
 import { GeofenceMap } from '@/components/geofence-map-wrapper';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RoleGuard } from '@/components/role-guard';
-import { toast } from 'sonner';
+import { useSearchShortcut } from '@/hooks/use-keyboard-shortcuts';
+import { toast } from '@/lib/toast-with-sound';
 
 const typeConfig: Record<string, { label: string; color: string }> = {
     FACTORY: { label: 'Fábrica', color: 'bg-orange-500/10 text-orange-400' },
@@ -22,23 +34,51 @@ export default function GeofencesPage() {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'cards' | 'map'>('cards');
-    const limit = 20;
+    const [editGeofence, setEditGeofence] = useState<any | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [limit, setLimit] = useState(20);
+    const searchRef = useSearchShortcut();
     const totalPages = Math.ceil(total / limit);
 
     useEffect(() => {
-        fetchGeofences();
-    }, [page]);
+        const timeout = setTimeout(() => {
+            fetchGeofences();
+        }, search ? 400 : 0);
+        return () => clearTimeout(timeout);
+    }, [page, search, limit]);
 
     const fetchGeofences = () => {
         setLoading(true);
-        api.get('/geofences', { params: { page, limit } })
+        const params: any = { page, limit };
+        if (search) params.search = search;
+        api.get('/geofences', { params })
             .then(r => {
                 setGeofences(r.data.items);
                 setTotal(r.data.total);
             })
             .catch(() => toast.error('Erro ao carregar geofences'))
             .finally(() => setLoading(false));
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        try {
+            await api.delete(`/geofences/${deleteTarget.id}`);
+            toast.success('Geofence excluída com sucesso');
+            setConfirmOpen(false);
+            setDeleteTarget(null);
+            fetchGeofences();
+        } catch {
+            toast.error('Erro ao excluir geofence');
+        } finally {
+            setDeleting(false);
+        }
     };
 
     return (
@@ -72,6 +112,17 @@ export default function GeofencesPage() {
                     </div>
                 </div>
 
+                <div className="relative sm:max-w-sm">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        ref={searchRef}
+                        placeholder="Buscar por nome..."
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                        className="border-border bg-muted/50 pl-10 text-foreground placeholder:text-muted-foreground"
+                    />
+                </div>
+
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <p className="text-muted-foreground">Carregando...</p>
@@ -95,7 +146,27 @@ export default function GeofencesPage() {
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between mb-2">
                                                 <h3 className="text-sm font-medium text-foreground truncate">{geo.name}</h3>
-                                                <Badge variant="outline" className={`text-[10px] ${tc.color}`}>{tc.label}</Badge>
+                                                <div className="flex items-center gap-1">
+                                                    <Badge variant="outline" className={`text-[10px] ${tc.color}`}>{tc.label}</Badge>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                                                onClick={() => { setEditGeofence(geo); setEditOpen(true); }}>
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Editar geofence</TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-400"
+                                                                onClick={() => { setDeleteTarget({ id: geo.id, name: geo.name }); setConfirmOpen(true); }}>
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Excluir geofence</TooltipContent>
+                                                    </Tooltip>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <Radio className="h-3 w-3" /> Raio: {geo.radiusMeters}m
@@ -112,9 +183,25 @@ export default function GeofencesPage() {
 
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                                    Página {page} de {totalPages}
-                                </p>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Itens:</span>
+                                        <Select value={String(limit)} onValueChange={v => { setLimit(Number(v)); setPage(1); }}>
+                                            <SelectTrigger className="w-[70px] h-8 text-xs border-border bg-muted/50">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-border bg-card">
+                                                <SelectItem value="10">10</SelectItem>
+                                                <SelectItem value="20">20</SelectItem>
+                                                <SelectItem value="50">50</SelectItem>
+                                                <SelectItem value="100">100</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                                        Página {page} de {totalPages}
+                                    </p>
+                                </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
@@ -140,6 +227,24 @@ export default function GeofencesPage() {
                     </>
                 )}
             </div>
+
+            <EditGeofenceDialog
+                geofence={editGeofence}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                onUpdated={fetchGeofences}
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                title="Excluir geofence"
+                description={`Deseja realmente excluir a geofence "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
+                confirmLabel="Excluir"
+                variant="destructive"
+                loading={deleting}
+                onConfirm={handleDelete}
+            />
         </RoleGuard>
     );
 }

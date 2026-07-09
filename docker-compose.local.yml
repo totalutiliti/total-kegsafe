@@ -1,0 +1,63 @@
+# ============================================================================
+# KegSafe Tech — Stack LOCAL de teste (NÃO é produção)
+# Sobe backend + frontend + Postgres em Docker.
+# O backend roda com NODE_ENV=development para que os cookies httpOnly de auth
+# funcionem sobre http://localhost (em produção NODE_ENV=production usa secure=true/HTTPS).
+# Uso: docker compose -f docker-compose.local.yml up -d --build
+# ============================================================================
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kegsafe-db-local
+    environment:
+      POSTGRES_USER: kegsafe
+      POSTGRES_PASSWORD: kegsafe_local_pw
+      POSTGRES_DB: kegsafe
+    ports:
+      - '5441:5432' # acesso opcional do host p/ debug; o backend usa a rede interna (db:5432)
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kegsafe -d kegsafe']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - kegsafe_local_pg:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: kegsafe-backend-local
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: postgresql://kegsafe:kegsafe_local_pw@db:5432/kegsafe?schema=public
+      JWT_SECRET: LOCALtestJWTkey0123456789ABCDEFghij
+      JWT_EXPIRATION: 15m
+      JWT_REFRESH_SECRET: LOCALtestREFRESHkey0123456789ABCDEF
+      JWT_REFRESH_EXPIRATION: 7d
+      PEPPER_SECRET: LOCALtestPEPPERkey0123456789ABCDEFg
+      CORS_ORIGINS: http://localhost:3000
+    restart: on-failure
+    ports:
+      - '8085:8080' # host 8085 (8080 já usado por outro projeto: bella-api)
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8085
+    container_name: kegsafe-frontend-local
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      HOSTNAME: 0.0.0.0
+    ports:
+      - '3000:8080'
+    depends_on:
+      - backend
+
+volumes:
+  kegsafe_local_pg:

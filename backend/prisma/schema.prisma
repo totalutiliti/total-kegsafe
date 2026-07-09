@@ -241,7 +241,12 @@ model Barrel {
 
   /// Fabricante do barril (ex: Franke, Portinox, Blefa)
   manufacturer    String?      @db.VarChar(100)
-  
+
+  /// Estilo de chopp atualmente envasado no barril (ex: "Germânia Pilsen")
+  /// Rótulo do produto no ativo — usado para exibição operacional e rastreio por estilo.
+  /// Opcional: barris vazios/em manutenção podem não ter estilo definido.
+  currentBeerStyle String?     @db.VarChar(100)
+
   /// Modelo da válvula do barril
   /// Determina compatibilidade com extratoras
   valveModel      ValveModel?
@@ -324,17 +329,16 @@ model Barrel {
   triages            Triage[]
   ownershipHistory   OwnershipHistory[]
 
-  // Índices otimizados para queries frequentes
-  @@unique([tenantId, internalCode])
-  @@unique([tenantId, qrCode])
-  @@unique([tenantId, chassisNumber])
+  // Índices e constraints otimizados
+  @@unique([internalCode])                              // GLOBAL — código vem da sequência global
+  @@unique([qrCode])                                    // GLOBAL — QR Code é etiqueta física única
+  @@unique([tenantId, chassisNumber])                   // Per-tenant — chassi é dado do tenant
   @@index([tenantId, status])                           // Listagem por status
   @@index([tenantId, lastEventAt])                      // Ordenação temporal
   @@index([tenantId, status, lastEventAt])              // Filtro + ordenação
   @@index([tenantId, deletedAt])                        // Soft delete filter
   @@index([tenantId, totalCycles])                      // Ranking por uso
   @@index([tenantId, totalMaintenanceCost])             // Ranking por custo
-  @@index([qrCode])                                     // Lookup por scan (cross-tenant check)
   @@index([tenantId, lastClientId])                     // Barris por cliente
   @@index([tenantId, capacityLiters, status])           // Filtro por capacidade
   @@map("barrels")
@@ -346,6 +350,7 @@ enum BarrelStatus {
   ACTIVE          // Na fábrica, disponível para expedição
   IN_TRANSIT      // Em trânsito (expedido ou coletado)
   AT_CLIENT       // Entregue no cliente (PDV)
+  IN_YARD         // No pátio da fábrica, aguardando triagem/higienização
   IN_MAINTENANCE  // Em manutenção na oficina
   BLOCKED         // Bloqueado por segurança (não pode ser usado)
   DISPOSED        // Descartado/baixa patrimonial

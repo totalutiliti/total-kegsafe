@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AlertType, AlertPriority, GeofenceType } from '@prisma/client';
+import { Prisma, AlertType, AlertPriority, GeofenceType } from '@prisma/client';
 import {
   ResourceNotFoundException,
   ResourceAlreadyExistsException,
@@ -12,11 +12,29 @@ export class ClientService {
 
   async findAll(
     tenantId: string,
-    query?: { page?: number; limit?: number; includeInactive?: boolean },
+    query?: {
+      page?: number;
+      limit?: number;
+      includeInactive?: boolean;
+      search?: string;
+    },
   ) {
     const page = query?.page || 1;
     const limit = query?.limit || 20;
-    const where = {
+    const searchTerm = query?.search?.trim();
+
+    // Busca com unaccent — usa raw SQL p/ IDs, Prisma p/ hydrate
+    if (searchTerm) {
+      return this.findAllWithSearch(
+        tenantId,
+        searchTerm,
+        page,
+        limit,
+        query?.includeInactive,
+      );
+    }
+
+    const where: Prisma.ClientWhereInput = {
       tenantId,
       deletedAt: null,
       ...(query?.includeInactive ? {} : { isActive: true }),
@@ -32,6 +50,61 @@ export class ClientService {
       }),
       this.prisma.client.count({ where }),
     ]);
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  private async findAllWithSearch(
+    tenantId: string,
+    search: string,
+    page: number,
+    limit: number,
+    includeInactive?: boolean,
+  ) {
+    const pattern = `%${search}%`;
+    const skip = (page - 1) * limit;
+    const activeFilter = includeInactive
+      ? Prisma.empty
+      : Prisma.sql`AND "isActive" = true`;
+
+    const [matchedIds, countResult] = await Promise.all([
+      this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM clients
+        WHERE "tenantId" = ${tenantId}::uuid
+          AND "deletedAt" IS NULL
+          ${activeFilter}
+          AND (
+            unaccent("name") ILIKE unaccent(${pattern})
+            OR unaccent(COALESCE("tradeName",'')) ILIKE unaccent(${pattern})
+            OR "cnpj" ILIKE ${pattern}
+          )
+        ORDER BY "name" ASC
+        LIMIT ${limit} OFFSET ${skip}
+      `,
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*)::bigint AS "count" FROM clients
+        WHERE "tenantId" = ${tenantId}::uuid
+          AND "deletedAt" IS NULL
+          ${activeFilter}
+          AND (
+            unaccent("name") ILIKE unaccent(${pattern})
+            OR unaccent(COALESCE("tradeName",'')) ILIKE unaccent(${pattern})
+            OR "cnpj" ILIKE ${pattern}
+          )
+      `,
+    ]);
+
+    const total = Number(countResult[0].count);
+    if (matchedIds.length === 0) {
+      return { items: [], total: 0, page, limit, totalPages: 0 };
+    }
+
+    const ids = matchedIds.map((r) => r.id);
+    const items = await this.prisma.client.findMany({
+      where: { id: { in: ids } },
+      include: { geofences: true },
+      orderBy: { name: 'asc' },
+    });
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }

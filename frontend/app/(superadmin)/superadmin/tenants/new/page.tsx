@@ -18,7 +18,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 function slugify(text: string): string {
     return text

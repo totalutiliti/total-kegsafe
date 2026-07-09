@@ -42,6 +42,7 @@ export class DashboardService {
         active: statusMap[BarrelStatus.ACTIVE] || 0,
         inTransit: statusMap[BarrelStatus.IN_TRANSIT] || 0,
         atClient: statusMap[BarrelStatus.AT_CLIENT] || 0,
+        inYard: statusMap[BarrelStatus.IN_YARD] || 0,
         inMaintenance: statusMap[BarrelStatus.IN_MAINTENANCE] || 0,
         blocked: statusMap[BarrelStatus.BLOCKED] || 0,
         disposed: statusMap[BarrelStatus.DISPOSED] || 0,

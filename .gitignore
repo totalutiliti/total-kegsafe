@@ -40,3 +40,21 @@ audit_*.js
 audit_*.txt
 *.tmp
 .claude/settings.local.json
+nul
+
+# Chaves e certificados — NUNCA versionar
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+*secret*.json
+
+# Arquivos soltos de debug/dados no backend (não versionar)
+backend/api_resp.json
+backend/*_error.txt
+backend/test_*.js
+backend/*.sql
+
+# Env local do docker de teste
+.env

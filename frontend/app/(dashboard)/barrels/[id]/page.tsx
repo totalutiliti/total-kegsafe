@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter,
@@ -28,15 +29,18 @@ import {
 import {
     ArrowLeft, Package, Wrench, Calendar, MapPin, Truck, Factory,
     ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Clock,
-    ArrowRightLeft, Building2, User,
+    ArrowRightLeft, Building2, User, Beer,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { toast } from '@/lib/toast-with-sound';
+import { useRecentHistory } from '@/hooks/use-recent-history';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
     PRE_REGISTERED: { label: 'Pré-Registrado', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
     ACTIVE: { label: 'Ativo', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
     IN_TRANSIT: { label: 'Em Trânsito', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     AT_CLIENT: { label: 'No Cliente', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+    IN_YARD: { label: 'No Pátio', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
     IN_MAINTENANCE: { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
     BLOCKED: { label: 'Bloqueado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
     DISPOSED: { label: 'Descartado', color: 'bg-zinc-500/10 text-muted-foreground border-zinc-500/20' },
@@ -93,6 +97,8 @@ export default function BarrelDetailPage() {
     const [maintenanceDescription, setMaintenanceDescription] = useState('');
     const [maintenanceScheduledDate, setMaintenanceScheduledDate] = useState('');
 
+    const { recordVisit } = useRecentHistory();
+
     const canTransfer = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
     const canSendToMaintenance = (barrel?.status === 'ACTIVE' || barrel?.status === 'BLOCKED') &&
         (user?.role === 'ADMIN' || user?.role === 'MAINTENANCE' || user?.role === 'MANAGER');
@@ -117,6 +123,18 @@ export default function BarrelDetailPage() {
         };
         if (params.id) load();
     }, [params.id]);
+
+    useEffect(() => {
+        if (barrel) {
+            recordVisit({
+                id: barrel.id,
+                type: 'barrel',
+                label: barrel.internalCode,
+                sublabel: `${barrel.capacityLiters}L • ${(statusConfig[barrel.status] || statusConfig.ACTIVE).label}`,
+                href: `/barrels/${barrel.id}`,
+            });
+        }
+    }, [barrel?.id]);
 
     // Load tenants for transfer modal (try super-admin endpoint, fallback gracefully)
     const openTransferModal = async () => {
@@ -211,14 +229,21 @@ export default function BarrelDetailPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
+            <Breadcrumb items={[
+                { label: 'Dashboard', href: '/' },
+                { label: 'Barris', href: '/barrels' },
+                { label: barrel?.internalCode || 'Detalhe' },
+            ]} />
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
                 <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl font-bold text-foreground">{barrel.internalCode}</h1>
                         <Badge variant="outline" className={`${sc.color}`}>{sc.label}</Badge>
+                        {barrel.currentBeerStyle && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
+                                <Beer className="h-3 w-3" /> {barrel.currentBeerStyle}
+                            </Badge>
+                        )}
                         {barrel.condition === 'USED' && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">Usado</Badge>
                         )}
@@ -307,10 +332,13 @@ export default function BarrelDetailPage() {
                             ? Math.min((cycle.cyclesSinceLastService / config.maxCycles) * 100, 100)
                             : 0;
                         return (
-                            <Card key={cycle.id} className={`border ${hc.bg}`}>
+                            <Card key={cycle.id} className={`border ${hc.bg} ${cycle.healthScore === 'RED' ? 'animate-pulse-red border-red-500/50' : ''}`}>
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-sm font-medium text-foreground truncate pr-2">{config.name || 'Componente'}</h3>
+                                        <div className="flex items-center gap-1.5">
+                                            {cycle.healthScore === 'RED' && <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 animate-pulse" />}
+                                            <h3 className="text-sm font-medium text-foreground truncate">{config.name || 'Componente'}</h3>
+                                        </div>
                                         <Badge variant="outline" className={`text-[10px] ${hc.bg} ${hc.color}`}>{hc.label}</Badge>
                                     </div>
                                     {/* Progress bar */}
@@ -449,6 +477,7 @@ export default function BarrelDetailPage() {
                 <DialogContent className="border-border bg-card max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-foreground">Enviar para Manutenção</DialogTitle>
+                        <DialogDescription className="sr-only">Solicite uma ordem de serviço de manutenção</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -532,6 +561,7 @@ export default function BarrelDetailPage() {
                         <DialogTitle className="text-foreground">
                             Transferir Propriedade
                         </DialogTitle>
+                        <DialogDescription className="sr-only">Registre uma movimentação logística</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">

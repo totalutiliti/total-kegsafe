@@ -24,6 +24,9 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    // Fecha o pool pg do adapter para um shutdown limpo (evita conexões
+    // penduradas no drain do SIGTERM do App Service).
+    await pool.end();
   }
 
   getCurrentTenantId(): string | undefined {

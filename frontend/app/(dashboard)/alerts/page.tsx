@@ -41,7 +41,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { RoleGuard } from '@/components/role-guard';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-with-sound';
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
     CRITICAL: { label: 'Critico', color: 'bg-red-500/10 text-red-400 border-red-500/20' },

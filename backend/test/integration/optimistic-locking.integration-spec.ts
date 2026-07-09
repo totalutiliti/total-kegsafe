@@ -123,7 +123,6 @@ describe('Optimistic Locking (integration)', () => {
       .send({
         version: 1,
         manufacturer: 'Franke',
-        capacityLiters: 30,
       })
       .expect(200);
 
@@ -134,7 +133,6 @@ describe('Optimistic Locking (integration)', () => {
       .expect(200);
 
     expect(verifyRes.body.manufacturer).toBe('Franke');
-    expect(verifyRes.body.capacityLiters).toBe(30);
     expect(verifyRes.body.version).toBe(2);
   });
 

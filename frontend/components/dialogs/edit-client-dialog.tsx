@@ -1,0 +1,185 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { toast } from '@/lib/toast-with-sound';
+
+interface EditClientDialogProps {
+    client: any | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onUpdated?: () => void;
+}
+
+export function EditClientDialog({ client, open, onOpenChange, onUpdated }: EditClientDialogProps) {
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState({
+        name: '',
+        tradeName: '',
+        cnpj: '',
+        phone: '',
+        email: '',
+        address: '',
+        latitude: '',
+        longitude: '',
+    });
+
+    useEffect(() => {
+        if (client) {
+            setForm({
+                name: client.name || '',
+                tradeName: client.tradeName || '',
+                cnpj: client.cnpj || '',
+                phone: client.phone || '',
+                email: client.email || '',
+                address: client.address || '',
+                latitude: client.latitude ? String(client.latitude) : '',
+                longitude: client.longitude ? String(client.longitude) : '',
+            });
+        }
+    }, [client, open]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!client) return;
+        if (!form.name.trim()) { toast.error('O campo "Razão Social" é obrigatório'); return; }
+        if (!form.tradeName.trim()) { toast.error('O campo "Nome Fantasia" é obrigatório'); return; }
+        if (!form.cnpj.trim()) { toast.error('O campo "CNPJ" é obrigatório'); return; }
+
+        setLoading(true);
+        try {
+            await api.patch(`/clients/${client.id}`, {
+                ...form,
+                latitude: form.latitude ? +form.latitude : undefined,
+                longitude: form.longitude ? +form.longitude : undefined,
+            });
+            toast.success('Cliente atualizado com sucesso!');
+            onOpenChange(false);
+            onUpdated?.();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Erro ao atualizar cliente');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Editar Cliente</DialogTitle>
+                    <DialogDescription className="sr-only">Edite os dados do cliente</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Razão Social <span className="text-red-400">*</span></Label>
+                            <Input
+                                required
+                                aria-required="true"
+                                value={form.name}
+                                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Nome Fantasia <span className="text-red-400">*</span></Label>
+                            <Input
+                                required
+                                aria-required="true"
+                                value={form.tradeName}
+                                onChange={e => setForm(f => ({ ...f, tradeName: e.target.value }))}
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">CNPJ <span className="text-red-400">*</span></Label>
+                            <Input
+                                required
+                                aria-required="true"
+                                value={form.cnpj}
+                                onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
+                                placeholder="00000000000000"
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Telefone</Label>
+                            <Input
+                                value={form.phone}
+                                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                                placeholder="(11) 99999-9999"
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-muted-foreground">Email</Label>
+                        <Input
+                            type="email"
+                            value={form.email}
+                            onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                            className="border-border bg-muted/50 text-foreground"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-muted-foreground">Endereço</Label>
+                        <Input
+                            value={form.address}
+                            onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                            className="border-border bg-muted/50 text-foreground"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Latitude</Label>
+                            <Input
+                                type="number"
+                                step="any"
+                                value={form.latitude}
+                                onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
+                                placeholder="-23.5505"
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-muted-foreground">Longitude</Label>
+                            <Input
+                                type="number"
+                                step="any"
+                                value={form.longitude}
+                                onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
+                                placeholder="-46.6333"
+                                className="border-border bg-muted/50 text-foreground"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => onOpenChange(false)}
+                            className="text-muted-foreground"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-gradient-to-r from-amber-500 to-orange-600 text-white"
+                        >
+                            {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>) : 'Salvar Alterações'}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}

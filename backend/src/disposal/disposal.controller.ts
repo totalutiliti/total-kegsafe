@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DisposalService } from './disposal.service.js';
@@ -105,7 +106,22 @@ export class DisposalController {
   @Post(':id/photo')
   @Roles(Role.ADMIN, Role.MANAGER)
   @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      // 1ª camada: rejeita cedo pelo MIME declarado. A validação autoritativa
+      // (magic bytes) acontece no service (detectImage).
+      fileFilter: (_req, file, cb) => {
+        const ok = /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype);
+        cb(
+          ok
+            ? null
+            : new BadRequestException(
+                'Tipo de arquivo não permitido (apenas imagens).',
+              ),
+          ok,
+        );
+      },
+    }),
   )
   async uploadPhoto(
     @TenantId() tenantId: string,

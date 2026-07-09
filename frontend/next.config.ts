@@ -8,6 +8,7 @@ const cspHeader = [
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
   `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3009'} https://*.azurecontainerapps.io`,
+  "worker-src 'self'",
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
