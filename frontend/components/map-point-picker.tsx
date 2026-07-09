@@ -29,6 +29,28 @@ function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => vo
     return null;
 }
 
+/**
+ * Corrige "tiles cinza": este mapa vive dentro de um diálogo que anima ao abrir,
+ * então o container costuma ter altura 0 no mount. Recalcula o tamanho após o
+ * mount e a cada resize do container (ResizeObserver).
+ */
+function InvalidateSize() {
+    const map = useMap();
+    useEffect(() => {
+        const invalidate = () => map.invalidateSize();
+        const t = setTimeout(invalidate, 150);
+        const ro = new ResizeObserver(invalidate);
+        ro.observe(map.getContainer());
+        window.addEventListener('resize', invalidate);
+        return () => {
+            clearTimeout(t);
+            ro.disconnect();
+            window.removeEventListener('resize', invalidate);
+        };
+    }, [map]);
+    return null;
+}
+
 function RecenterMap({ lat, lng }: { lat: number | null; lng: number | null }) {
     const map = useMap();
     useEffect(() => {
@@ -59,6 +81,7 @@ export default function MapPointPicker({ latitude, longitude, radius = 500, onCh
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <ClickHandler onChange={onChange} />
+                    <InvalidateSize />
                     <RecenterMap lat={latitude} lng={longitude} />
                     {latitude && longitude && (
                         <>

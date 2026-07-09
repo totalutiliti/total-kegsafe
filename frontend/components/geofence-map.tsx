@@ -26,6 +26,29 @@ interface GeofenceMapProps {
     geofences: any[];
 }
 
+/**
+ * Corrige o bug clássico de "tiles cinza" do Leaflet: quando o container ganha
+ * altura DEPOIS do mapa inicializar (troca de aba grade↔mapa, layout tardio),
+ * o Leaflet calcula "zero tiles" e não recarrega. Aqui forçamos invalidateSize()
+ * no mount e sempre que o container for redimensionado.
+ */
+function InvalidateSize() {
+    const map = useMap();
+    useEffect(() => {
+        const invalidate = () => map.invalidateSize();
+        const t = setTimeout(invalidate, 150);
+        const ro = new ResizeObserver(invalidate);
+        ro.observe(map.getContainer());
+        window.addEventListener('resize', invalidate);
+        return () => {
+            clearTimeout(t);
+            ro.disconnect();
+            window.removeEventListener('resize', invalidate);
+        };
+    }, [map]);
+    return null;
+}
+
 function FitBounds({ geofences }: { geofences: any[] }) {
     const map = useMap();
     const fitted = useRef(false);
@@ -63,6 +86,7 @@ export default function GeofenceMap({ geofences }: GeofenceMapProps) {
                 attribution={tile.attribution}
                 url={tile.url}
             />
+            <InvalidateSize />
             <FitBounds geofences={geofences} />
             {geofences.map((geo) => {
                 const tc = typeColors[geo.type] || typeColors.CLIENT;
