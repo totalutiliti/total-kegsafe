@@ -1,114 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-    Beer,
-    Thermometer,
-    Droplets,
-    Hop,
-    Star,
-    Snowflake,
-    Zap,
-    Package,
-    Phone,
-} from 'lucide-react';
-import {
-    BEER_STYLES,
-    DRAFT_MACHINES,
-    BARREL_SIZES,
-    type BeerStyle,
-} from '@/lib/germania-catalog';
-
-type CategoryFilter = 'Todos' | 'Tradicional' | 'Especial';
-
-const categoryBadge: Record<string, string> = {
-    Tradicional: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    Especial: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-};
-
-function StyleCard({ style }: { style: BeerStyle }) {
-    const isBestSeller = style.name === 'Germânia Pilsen';
-    return (
-        <Card className="border-border bg-card/50 hover:bg-muted/30 transition-colors h-full overflow-hidden">
-            <CardContent className="p-0">
-                {/* Faixa de cor do chopp */}
-                <div className="h-2 w-full" style={{ backgroundColor: style.color }} />
-                <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <span
-                                className="h-8 w-8 shrink-0 rounded-full border border-border shadow-inner"
-                                style={{ backgroundColor: style.color }}
-                                aria-hidden="true"
-                            />
-                            <h3 className="text-sm font-semibold text-foreground truncate">{style.name}</h3>
-                        </div>
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${categoryBadge[style.category]}`}>
-                            {style.category}
-                        </Badge>
-                    </div>
-
-                    {isBestSeller && (
-                        <div className="flex items-center gap-1 mb-2 text-[11px] text-amber-400">
-                            <Star className="h-3 w-3 fill-amber-400" /> Estilo mais vendido
-                        </div>
-                    )}
-                    {style.onlyGrowler && (
-                        <div className="flex items-center gap-1 mb-2 text-[11px] text-purple-400">
-                            <Star className="h-3 w-3" /> Exclusivo em growler
-                        </div>
-                    )}
-
-                    {/* Mini-specs */}
-                    <div className="grid grid-cols-3 gap-2 my-3">
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                            <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                                <Hop className="h-3 w-3" />
-                                <span className="text-[10px] uppercase tracking-wide">IBU</span>
-                            </div>
-                            <p className="text-sm font-semibold text-foreground mt-0.5">{style.ibu}</p>
-                        </div>
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                            <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                                <Droplets className="h-3 w-3" />
-                                <span className="text-[10px] uppercase tracking-wide">Teor</span>
-                            </div>
-                            <p className="text-sm font-semibold text-foreground mt-0.5">{style.abv}</p>
-                        </div>
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                            <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                                <Thermometer className="h-3 w-3" />
-                                <span className="text-[10px] uppercase tracking-wide">Temp.</span>
-                            </div>
-                            <p className="text-xs font-semibold text-foreground mt-1">{style.temp}</p>
-                        </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">{style.note}</p>
-
-                    <div className="flex flex-wrap gap-1.5">
-                        {style.formats.map((f) => (
-                            <span
-                                key={f}
-                                className="rounded-full border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground"
-                            >
-                                {f}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
+import { Beer, Snowflake, Zap, Package, Phone } from 'lucide-react';
+import { DRAFT_MACHINES, BARREL_SIZES } from '@/lib/germania-catalog';
 
 export default function CatalogoPage() {
-    const [filter, setFilter] = useState<CategoryFilter>('Todos');
-
-    const styles = BEER_STYLES.filter((s) => filter === 'Todos' || s.category === filter);
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -120,20 +16,14 @@ export default function CatalogoPage() {
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Catálogo Germânia</h1>
                         <p className="text-sm text-muted-foreground">
-                            Estilos de chopp, barris e chopeiras da Cervejaria Germânia
+                            Barris e chopeiras da Cervejaria Germânia
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Card className="border-border bg-card/50">
-                    <CardContent className="p-4 text-center">
-                        <p className="text-2xl font-bold text-foreground">{BEER_STYLES.length}</p>
-                        <p className="text-[11px] text-muted-foreground">Estilos de Chopp</p>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Card className="border-border bg-card/50">
                     <CardContent className="p-4 text-center">
                         <p className="text-2xl font-bold text-foreground">{BARREL_SIZES.length}</p>
@@ -180,35 +70,6 @@ export default function CatalogoPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Estilos */}
-            <div>
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-                    <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Beer className="h-4 w-4 text-amber-400" /> Estilos de Chopp
-                    </h2>
-                    <div className="flex gap-2">
-                        {(['Todos', 'Tradicional', 'Especial'] as CategoryFilter[]).map((c) => (
-                            <button
-                                key={c}
-                                onClick={() => setFilter(c)}
-                                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                                    filter === c
-                                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                                        : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                }`}
-                            >
-                                {c}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {styles.map((style) => (
-                        <StyleCard key={style.name} style={style} />
-                    ))}
-                </div>
-            </div>
 
             {/* Chopeiras */}
             <div>

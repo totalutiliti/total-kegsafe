@@ -29,7 +29,7 @@ import {
 import {
     ArrowLeft, Package, Wrench, Calendar, MapPin, Truck, Factory,
     ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Clock,
-    ArrowRightLeft, Building2, User, Beer,
+    ArrowRightLeft, Building2, User,
 } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { toast } from '@/lib/toast-with-sound';
@@ -239,11 +239,6 @@ export default function BarrelDetailPage() {
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl font-bold text-foreground">{barrel.internalCode}</h1>
                         <Badge variant="outline" className={`${sc.color}`}>{sc.label}</Badge>
-                        {barrel.currentBeerStyle && (
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
-                                <Beer className="h-3 w-3" /> {barrel.currentBeerStyle}
-                            </Badge>
-                        )}
                         {barrel.condition === 'USED' && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">Usado</Badge>
                         )}

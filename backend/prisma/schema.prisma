@@ -242,11 +242,6 @@ model Barrel {
   /// Fabricante do barril (ex: Franke, Portinox, Blefa)
   manufacturer    String?      @db.VarChar(100)
 
-  /// Estilo de chopp atualmente envasado no barril (ex: "Germânia Pilsen")
-  /// Rótulo do produto no ativo — usado para exibição operacional e rastreio por estilo.
-  /// Opcional: barris vazios/em manutenção podem não ter estilo definido.
-  currentBeerStyle String?     @db.VarChar(100)
-
   /// Modelo da válvula do barril
   /// Determina compatibilidade com extratoras
   valveModel      ValveModel?
