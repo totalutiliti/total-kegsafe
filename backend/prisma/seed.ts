@@ -102,29 +102,6 @@ const users = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Estilos de chopp Germânia (fonte: planilha oficial germania_produtos.xlsx)
-// Usados para "envasar" cada barril (campo currentBeerStyle) e alimentar o
-// Catálogo. Carioquinha é exclusiva de growler → NÃO entra em barril.
-// ---------------------------------------------------------------------------
-// Distribuição ponderada: Pilsen é o "estilo mais vendido".
-const barrelBeerStyles: string[] = [
-  'Germânia Pilsen',
-  'Germânia Pilsen',
-  'Germânia Pilsen',
-  'Germânia Pilsen',
-  'Germânia Puro Malte',
-  'Germânia Puro Malte',
-  'Germânia Escuro',
-  'Germânia Vinhedo',
-  'Germânia Amber Lager',
-  'Germânia IPA',
-  'Germânia Munich Helles',
-  'Germânia Weissbier',
-  'Germânia Black',
-  'Slow Beer',
-];
-
 const componentConfigs = [
   {
     name: 'Sifão (Tubo Extrator)',
@@ -485,8 +462,7 @@ async function main() {
 
   // 8. Criar Barris + ComponentCycles (idempotente)
   // Frota Germânia: capacidades reais (10/15/20/30/50 L) com peso de tara e
-  // custo de aquisição coerentes por tamanho. Cada barril é "envasado" com um
-  // estilo real (currentBeerStyle).
+  // custo de aquisição coerentes por tamanho.
   const manufacturers = ['Franke', 'Portinox', 'Blefa'];
   const valveModels = ['TYPE_S', 'TYPE_S', 'TYPE_S', 'TYPE_D'] as const;
   const barrelStatuses: BarrelStatus[] = [
@@ -544,7 +520,6 @@ async function main() {
         tareWeightKg: spec.tare,
         material: 'INOX_304',
         acquisitionCost: spec.cost,
-        currentBeerStyle: barrelBeerStyles[i % barrelBeerStyles.length],
         status,
         totalCycles,
         manufactureDate,
@@ -731,11 +706,11 @@ async function main() {
           },
         });
 
-        // Mark barrel as DISPOSED for completed disposals (sucata → sem estilo envasado)
+        // Mark barrel as DISPOSED for completed disposals
         if (scenario.status === DisposalStatus.COMPLETED) {
           await prisma.barrel.update({
             where: { id: barrelId },
-            data: { status: BarrelStatus.DISPOSED, currentBeerStyle: null },
+            data: { status: BarrelStatus.DISPOSED },
           });
         }
 
