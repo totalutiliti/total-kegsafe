@@ -5,15 +5,16 @@ import { MapContainer, TileLayer, Circle, CircleMarker, Popup, Tooltip, useMap }
 import L from 'leaflet';
 import { useTheme } from '@/lib/theme-provider';
 
+// Tiles do OpenStreetMap: provedor mais universal e o menos sujeito a bloqueio
+// por ad-blockers/extensões de privacidade (o CARTO costuma estar em listas de
+// rastreadores → tiles cinza no navegador do cliente). Mesma fonte do seletor de ponto.
+const OSM_TILE = {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+};
 const TILES = {
-    dark: {
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-    },
-    light: {
-        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-    },
+    dark: OSM_TILE,
+    light: OSM_TILE,
 };
 
 const typeColors: Record<string, { color: string; label: string }> = {
